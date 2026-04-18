@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { api } from '../lib/api';
 
 export function Login() {
   const { user, isLoading } = useAuth();
@@ -9,6 +10,9 @@ export function Login() {
   useEffect(() => {
     if (!isLoading && user) void navigate('/dashboard', { replace: true });
   }, [user, isLoading, navigate]);
+
+  // Wake up Render's free-tier backend before the user clicks
+  useEffect(() => { api.get('/api/health').catch(() => {}); }, []);
 
   const searchParams = new URLSearchParams(window.location.search);
   const error = searchParams.get('error');

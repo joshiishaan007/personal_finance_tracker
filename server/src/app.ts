@@ -1,4 +1,5 @@
 import express from 'express';
+import passport from 'passport';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -35,6 +36,7 @@ export function createApp(env: Env): express.Express {
   app.use(compression() as express.RequestHandler);
   app.use(express.json({ limit: '5mb' }));
   app.use(cookieParser());
+  app.use(passport.initialize());
   app.use(requestIdMiddleware);
   app.use(globalRateLimiter);
 
