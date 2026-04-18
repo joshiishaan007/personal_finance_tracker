@@ -9,11 +9,12 @@ import type { AuthRequest } from '../middleware/auth.middleware';
 
 export function authRouter(env: Env): Router {
   const router = Router();
+  const clientUrl = env.CLIENT_URL.replace(/\/+$/, '');
 
   passport.use(new GoogleStrategy({
     clientID: env.GOOGLE_CLIENT_ID,
     clientSecret: env.GOOGLE_CLIENT_SECRET,
-    callbackURL: `${env.CLIENT_URL}/api/auth/google/callback`,
+    callbackURL: `${clientUrl}/api/auth/google/callback`,
   }, async (_accessToken, _refreshToken, profile, done) => {
     try {
       const user = await findOrCreateUser({
@@ -36,7 +37,7 @@ export function authRouter(env: Env): Router {
   router.get('/google/callback',
     passport.authenticate('google', {
       session: false,
-      failureRedirect: `${env.CLIENT_URL}/login?error=auth_failed`,
+      failureRedirect: `${clientUrl}/login?error=auth_failed`,
     }),
     (req, res) => {
       const user = req.user as { id: string };
@@ -44,15 +45,19 @@ export function authRouter(env: Env): Router {
       res.cookie('token', token, {
         httpOnly: true,
         secure: env.NODE_ENV === 'production',
-        sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+        sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
-      res.redirect(`${env.CLIENT_URL}/dashboard`);
+      res.redirect(`${clientUrl}/dashboard`);
     },
   );
 
   router.post('/logout', requireAuth, (_req, res) => {
-    res.clearCookie('token');
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    });
     res.json({ success: true });
   });
 

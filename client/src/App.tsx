@@ -52,6 +52,8 @@ export default function App() {
       </Route>
 
       <Route path="/500" element={<ServerError />} />
+      {/* Safety net: if an /api/* URL ever reaches React Router, redirect home */}
+      <Route path="/api/*" element={<Navigate to="/" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
