@@ -2,8 +2,6 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-const API_URL = import.meta.env.VITE_API_URL ?? '';
-
 export function Login() {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -31,7 +29,7 @@ export function Login() {
         )}
 
         <a
-          href={`${API_URL}/api/auth/google`}
+          href="/api/auth/google"
           className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
         >
           <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
