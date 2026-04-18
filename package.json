@@ -1,0 +1,15 @@
+{
+  "name": "finbuddy",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter server dev\" \"pnpm --filter client dev\"",
+    "build": "pnpm --filter shared build && pnpm --filter server build && pnpm --filter client build",
+    "test": "pnpm --filter server test && pnpm --filter client test",
+    "lint": "pnpm --filter client lint && pnpm --filter server lint",
+    "typecheck": "pnpm --filter shared typecheck && pnpm --filter server typecheck && pnpm --filter client typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

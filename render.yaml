@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: finbuddy-api
+    env: node
+    plan: free
+    buildCommand: pnpm install && pnpm --filter shared build && pnpm --filter server build
+    startCommand: node server/dist/index.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: CLIENT_URL
+        sync: false
+      - key: SERVER_URL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
