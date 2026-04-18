@@ -22,7 +22,7 @@ import { notificationRouter } from './routes/notification.routes';
 import { userRouter } from './routes/user.routes';
 import type { Env } from './config/env';
 
-export function createApp(env: Env) {
+export function createApp(env: Env): express.Express {
   const app = express();
 
   app.use(helmet());

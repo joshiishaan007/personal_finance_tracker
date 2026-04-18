@@ -13,7 +13,7 @@ import { NotificationModel } from '../models/notification.model';
 import { AIInsightModel } from '../models/aiInsight.model';
 import type { AuthRequest } from '../middleware/auth.middleware';
 
-const router = Router();
+const router: import('express').Router = Router();
 router.use(requireAuth);
 
 router.patch('/preferences', validate(UpdatePreferencesSchema), async (req, res) => {

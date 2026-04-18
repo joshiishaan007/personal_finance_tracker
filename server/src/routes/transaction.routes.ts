@@ -14,7 +14,7 @@ import type { AuthRequest } from '../middleware/auth.middleware';
 import type { Request } from 'express';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
-const router = Router();
+const router: import('express').Router = Router();
 router.use(requireAuth);
 
 function makeHash(date: string, amount: number, note?: string): string {

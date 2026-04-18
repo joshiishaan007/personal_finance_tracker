@@ -14,7 +14,7 @@ export function validate(schema: ZodSchema, source: 'body' | 'query' | 'params' 
       return;
     }
     // Replace with parsed/coerced values
-    (req as Record<string, unknown>)[source] = result.data;
+    (req as unknown as Record<string, unknown>)[source] = result.data;
     next();
   };
 }

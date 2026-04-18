@@ -5,7 +5,7 @@ import { CreateBudgetSchema, UpdateBudgetSchema } from '@finbuddy/shared';
 import { BudgetModel } from '../models/budget.model';
 import type { AuthRequest } from '../middleware/auth.middleware';
 
-const router = Router();
+const router: import('express').Router = Router();
 router.use(requireAuth);
 
 router.get('/', async (req, res) => {

@@ -7,7 +7,7 @@ import { TransactionModel } from '../models/transaction.model';
 import { createHash } from 'crypto';
 import type { AuthRequest } from '../middleware/auth.middleware';
 
-const router = Router();
+const router: import('express').Router = Router();
 router.use(requireAuth);
 
 function advanceDate(date: Date, frequency: string): Date {

@@ -5,7 +5,7 @@ import { CreateCategorySchema, UpdateCategorySchema } from '@finbuddy/shared';
 import { CategoryModel } from '../models/category.model';
 import type { AuthRequest } from '../middleware/auth.middleware';
 
-const router = Router();
+const router: import('express').Router = Router();
 router.use(requireAuth);
 
 router.get('/', async (req, res) => {

@@ -5,7 +5,7 @@ import { BudgetModel } from '../models/budget.model';
 import type { AuthRequest } from '../middleware/auth.middleware';
 import { Types } from 'mongoose';
 
-const router = Router();
+const router: import('express').Router = Router();
 router.use(requireAuth);
 
 router.get('/', async (req, res) => {

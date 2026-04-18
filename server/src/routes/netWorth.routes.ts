@@ -5,7 +5,7 @@ import { UpsertNetWorthSchema } from '@finbuddy/shared';
 import { NetWorthSnapshotModel } from '../models/netWorthSnapshot.model';
 import type { AuthRequest } from '../middleware/auth.middleware';
 
-const router = Router();
+const router: import('express').Router = Router();
 router.use(requireAuth);
 
 router.get('/', async (req, res) => {

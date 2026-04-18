@@ -4,16 +4,12 @@
     "module": "CommonJS",
     "moduleResolution": "node",
     "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "declaration": true,
-    "paths": {
-      "@finbuddy/shared": ["../shared/src/index.ts"]
-    }
+    "declaration": false
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

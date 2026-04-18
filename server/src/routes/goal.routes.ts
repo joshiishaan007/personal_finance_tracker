@@ -5,7 +5,7 @@ import { CreateGoalSchema, UpdateGoalSchema } from '@finbuddy/shared';
 import { GoalModel } from '../models/goal.model';
 import type { AuthRequest } from '../middleware/auth.middleware';
 
-const router = Router();
+const router: import('express').Router = Router();
 router.use(requireAuth);
 
 router.get('/', async (req, res) => {

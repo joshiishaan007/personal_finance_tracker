@@ -3,7 +3,7 @@ import { requireAuth } from '../middleware/auth.middleware';
 import { NotificationModel } from '../models/notification.model';
 import type { AuthRequest } from '../middleware/auth.middleware';
 
-const router = Router();
+const router: import('express').Router = Router();
 router.use(requireAuth);
 
 router.get('/', async (req, res) => {

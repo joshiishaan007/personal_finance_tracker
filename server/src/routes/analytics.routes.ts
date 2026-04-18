@@ -4,7 +4,7 @@ import { TransactionModel } from '../models/transaction.model';
 import type { AuthRequest } from '../middleware/auth.middleware';
 import { Types } from 'mongoose';
 
-const router = Router();
+const router: import('express').Router = Router();
 router.use(requireAuth);
 
 router.get('/dashboard', async (req, res) => {
