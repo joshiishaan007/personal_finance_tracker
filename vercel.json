@@ -1,22 +1,9 @@
 {
   "version": 2,
-  "buildCommand": "cd .. && pnpm install && pnpm --filter shared build && pnpm --filter client build",
-  "outputDirectory": "dist",
-  "installCommand": "cd .. && pnpm install",
-  "framework": "vite",
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "https://personal-finance-tracker-g4qc.onrender.com/api/$1"
-    },
-    {
-      "src": "/assets/(.*)",
-      "headers": { "cache-control": "public, max-age=31536000, immutable" },
-      "dest": "/assets/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/api/:path*",
+      "destination": "https://personal-finance-tracker-g4qc.onrender.com/api/:path*"
     }
   ]
 }
