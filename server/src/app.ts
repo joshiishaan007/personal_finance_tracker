@@ -27,9 +27,10 @@ export function createApp(env: Env): express.Express {
 
   app.use(helmet());
   app.use(cors({
-    origin: env.CLIENT_URL,
+    origin: [env.CLIENT_URL, env.SERVER_URL],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id'],
   }));
   app.use(compression() as express.RequestHandler);
   app.use(express.json({ limit: '5mb' }));
@@ -37,6 +38,7 @@ export function createApp(env: Env): express.Express {
   app.use(requestIdMiddleware);
   app.use(globalRateLimiter);
 
+  app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
   app.use('/api/auth', authRouter(env));
   app.use('/api/transactions', transactionRouter);
   app.use('/api/categories', categoryRouter);
