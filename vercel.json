@@ -1,9 +1,16 @@
 {
   "version": 2,
+  "buildCommand": "pnpm install && pnpm --filter shared build && pnpm --filter client build",
+  "outputDirectory": "client/dist",
+  "installCommand": "pnpm install",
   "rewrites": [
     {
       "source": "/api/:path*",
       "destination": "https://personal-finance-tracker-g4qc.onrender.com/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
