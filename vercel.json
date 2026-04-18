@@ -5,6 +5,10 @@
   "installCommand": "cd .. && pnpm install",
   "framework": "vite",
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://personal-finance-tracker-g4qc.onrender.com/api/:path*"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
