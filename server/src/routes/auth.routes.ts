@@ -46,9 +46,14 @@ export function authRouter(env: Env): Router {
         httpOnly: true,
         secure: env.NODE_ENV === 'production',
         sameSite: 'lax',
+        path: '/',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
-      res.redirect(`${clientUrl}/dashboard`);
+      // Send a 200 HTML response instead of a 302 redirect.
+      // Vercel's proxy strips Set-Cookie from 302 responses; it forwards them correctly on 200.
+      res.type('html').send(
+        `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=${clientUrl}/dashboard"></head><body>Redirecting...</body></html>`,
+      );
     },
   );
 
