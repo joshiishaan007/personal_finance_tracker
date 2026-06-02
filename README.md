@@ -1,4 +1,4 @@
-# FinBuddy 💜
+# Personal Finance Tracker 💜
 
 Your lifetime personal finance companion — built to be used daily for 30+ years.
 

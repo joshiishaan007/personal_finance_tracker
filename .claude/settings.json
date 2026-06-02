@@ -1,0 +1,22 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          { "type": "command", "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-banned-tags.sh\"" },
+          { "type": "command", "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-raw-palette.sh\"" },
+          { "type": "command", "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-css-files.sh\"" },
+          { "type": "command", "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/remind-check.sh\"" }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-banner.sh\"" }
+        ]
+      }
+    ]
+  }
+}
