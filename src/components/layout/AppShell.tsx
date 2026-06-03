@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -20,13 +20,12 @@ import {
   Sun,
   Moon,
   LogOut,
-  Command,
   type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { NotificationBell } from '@/components/NotificationBell';
-import { CommandPalette } from '@/components/CommandPalette';
+import { OfflineBanner } from '@/components/OfflineBanner';
 import { Link } from '@/components/ui/Link';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
@@ -38,14 +37,13 @@ interface NavItem {
   to: string;
   label: string;
   icon: LucideIcon;
-  shortcut?: string;
 }
 
 const PRIMARY_NAV: NavItem[] = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, shortcut: 'g d' },
-  { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight, shortcut: 'g t' },
-  { to: '/analytics', label: 'Analytics', icon: ChartColumnBig, shortcut: 'g a' },
-  { to: '/goals', label: 'Goals', icon: Target, shortcut: 'g g' },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
+  { to: '/analytics', label: 'Analytics', icon: ChartColumnBig },
+  { to: '/goals', label: 'Goals', icon: Target },
 ];
 
 const MORE_NAV: NavItem[] = [
@@ -59,10 +57,6 @@ const MORE_NAV: NavItem[] = [
 ];
 
 const ALL_NAV: NavItem[] = [...PRIMARY_NAV, ...MORE_NAV];
-
-// CommandPalette's contract wants a string `icon`; the redesigned nav uses lucide
-// components, so feed the palette an icon-less projection (it renders the label).
-const PALETTE_ITEMS = ALL_NAV.map((i) => ({ to: i.to, label: i.label, icon: '', shortcut: i.shortcut }));
 
 function isActive(pathname: string, to: string): boolean {
   return pathname === to || pathname.startsWith(`${to}/`);
@@ -99,37 +93,11 @@ function Avatar({ src, name }: { src?: string; name: string }) {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
-  const router = useRouter();
   const pathname = usePathname();
-  const [paletteOpen, setPaletteOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
 
   const activeItem = ALL_NAV.find((i) => isActive(pathname, i.to));
   const pageTitle = activeItem?.label ?? 'Personal Finance Tracker';
-
-  useEffect(() => {
-    const keys: string[] = [];
-    let timer: ReturnType<typeof setTimeout>;
-
-    function handler(e: KeyboardEvent) {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setPaletteOpen(true); return; }
-      if (e.key === '?') { setPaletteOpen(true); return; }
-      if (e.key === '/') { e.preventDefault(); setPaletteOpen(true); return; }
-      keys.push(e.key);
-      clearTimeout(timer);
-      timer = setTimeout(() => keys.splice(0), 1000);
-      const combo = keys.join(' ');
-      if (combo === 'g d') { keys.splice(0); router.push('/dashboard'); }
-      if (combo === 'g t') { keys.splice(0); router.push('/transactions'); }
-      if (combo === 'g a') { keys.splice(0); router.push('/analytics'); }
-      if (combo === 'g g') { keys.splice(0); router.push('/goals'); }
-      if (combo === 'n') { keys.splice(0); /* open new tx form handled in Transactions */ }
-    }
-
-    window.addEventListener('keydown', handler);
-    return () => { window.removeEventListener('keydown', handler); clearTimeout(timer); };
-  }, [router]);
 
   function renderSidebarItem(item: NavItem) {
     const active = isActive(pathname, item.to);
@@ -186,20 +154,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <LogOut size={18} strokeWidth={2.2} />
             <Text as="span">Sign out</Text>
           </Button>
-          <Button
-            variant="ghost"
-            onClick={() => setPaletteOpen(true)}
-            className="w-full flex items-center gap-2 px-3 mt-1 text-xs text-slate-400 justify-start min-h-0 active:scale-[0.98]"
-            aria-label="Open command palette"
-          >
-            <Command size={14} strokeWidth={2.2} />
-            <Text as="span" className="text-xs">K for commands</Text>
-          </Button>
         </div>
       </aside>
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
+        <OfflineBanner />
         {/* Glass sticky top bar */}
         <header className="sticky top-0 z-30 glass pt-safe flex items-center justify-between px-4 py-3 lg:px-6">
           <div className="flex items-center min-w-0">
@@ -207,15 +167,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <GradientText className="lg:hidden text-lg">Personal Finance Tracker</GradientText>
           </div>
           <div className="flex items-center gap-1.5">
-            <Button
-              variant="ghost"
-              onClick={() => setPaletteOpen(true)}
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm text-slate-400 border border-slate-200/70 dark:border-white/10 rounded-xl hover:border-brand-300 dark:hover:border-brand-500/50 min-h-0 active:scale-95"
-              aria-label="Open command palette"
-            >
-              <Command size={14} strokeWidth={2.2} />
-              <Text as="span" className="text-xs">K</Text>
-            </Button>
             <NotificationBell />
             <ThemeToggle />
             <Avatar src={user?.avatar} name={user?.name ?? '?'} />
@@ -300,12 +251,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       )}
-
-      <CommandPalette
-        open={paletteOpen}
-        onClose={() => setPaletteOpen(false)}
-        items={PALETTE_ITEMS}
-      />
     </div>
   );
 }

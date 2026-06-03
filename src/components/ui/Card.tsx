@@ -13,7 +13,7 @@ interface Props {
 const paddingMap = { none: '', sm: 'p-3', md: 'p-4', lg: 'p-6' };
 
 const variantMap: Record<Variant, string> = {
-  default: 'bg-white dark:bg-ink-900 border border-slate-200/80 dark:border-white/[0.06] shadow-card',
+  default: 'bg-white/75 dark:bg-ink-900/65 backdrop-blur-xl backdrop-saturate-150 border border-white/60 dark:border-white/[0.07] shadow-card',
   glass: 'glass shadow-card',
   gradient: 'bg-aurora-soft border border-white/50 dark:border-white/10 shadow-card',
   plain: 'bg-white dark:bg-ink-900',
