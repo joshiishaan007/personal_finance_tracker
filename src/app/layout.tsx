@@ -16,6 +16,9 @@ const display = Chakra_Petch({
 export const metadata: Metadata = {
   title: 'Personal Finance Tracker',
   description: 'Your lifetime personal finance companion',
+  applicationName: 'Personal Finance Tracker',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: { capable: true, title: 'Finance', statusBarStyle: 'default' },
 };
 
 export const viewport: Viewport = {

@@ -8,6 +8,7 @@ export const ENDPOINTS = {
   transactions: {
     list: (qs?: string) => `/api/transactions${qs ? `?${qs}` : ''}`,
     create: '/api/transactions',
+    frequent: '/api/transactions/frequent',
     detail: (id: string) => `/api/transactions/${id}`,
     importPreview: '/api/transactions/import/preview',
     importCommit: '/api/transactions/import/commit',
@@ -58,6 +59,10 @@ export const ENDPOINTS = {
   ai: {
     insights: '/api/ai/insights',
     dismiss: '/api/ai/insights/dismiss',
+    parse: '/api/ai/parse',
+  },
+  engagement: {
+    daily: '/api/engagement/daily',
   },
   export: {
     json: '/api/export/json',

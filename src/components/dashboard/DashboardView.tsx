@@ -23,6 +23,10 @@ import { ProgressRing } from '@/components/ProgressRing';
 import { EmptyState } from '@/components/EmptyState';
 import { SectionHeader } from '@/components/SectionHeader';
 import { StatCard } from '@/components/StatCard';
+import { QuickAddBar } from '@/components/transaction/QuickAddBar';
+import { QuickAddChips } from '@/components/transaction/QuickAddChips';
+import { StreakBadge } from '@/components/engagement/StreakBadge';
+import { EndOfDayCard } from '@/components/engagement/EndOfDayCard';
 import { ChartCard } from '@/components/charts/ChartCard';
 import { AreaTrend } from '@/components/charts/AreaTrend';
 import { Donut } from '@/components/charts/Donut';
@@ -132,14 +136,22 @@ export function DashboardView() {
       <Card variant="gradient" className="animate-fade-in">
         <div className="flex items-start gap-3">
           <IconBadge icon={greeting.icon} gradient size="lg" />
-          <div className="min-w-0">
-            <Heading level={2}>
-              <GradientText>{greeting.text}</GradientText>
-            </Heading>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-3">
+              <Heading level={2}>
+                <GradientText>{greeting.text}</GradientText>
+              </Heading>
+              <StreakBadge className="shrink-0" />
+            </div>
             <Text variant="small" className="mt-1 italic">&quot;{getDailyQuote()}&quot;</Text>
           </div>
         </div>
       </Card>
+
+      <div className="space-y-3">
+        <QuickAddBar />
+        <QuickAddChips />
+      </div>
 
       {dashLoading ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -287,6 +299,8 @@ export function DashboardView() {
           </div>
         </Card>
       </div>
+
+      <EndOfDayCard />
 
       <div>
         {aiData?.insights && aiData.insights.length > 0 ? (

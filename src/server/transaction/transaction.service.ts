@@ -22,7 +22,10 @@ export const transactionService = {
 
   create: (userId: string, data: CreateTransaction) => {
     const hash = makeHash(data.date, data.amount, data.note);
-    return repo.create({ ...data, userId, hash, date: new Date(data.date), schemaVersion: 1 });
+    const doc = { ...data, userId, hash, date: new Date(data.date), schemaVersion: 1 };
+    // clientId present (offline-capable path) → idempotent upsert so replays don't
+    // duplicate; otherwise a plain insert (two identical entries stay distinct).
+    return data.clientId ? repo.upsertByClientId(userId, data.clientId, doc) : repo.create(doc);
   },
 
   async update(userId: string, id: string, data: UpdateTransaction): Promise<Result<unknown, 'not_found'>> {
@@ -84,5 +87,18 @@ export const transactionService = {
   async rollbackImport(userId: string, batchId: string) {
     const result = await repo.deleteBatch(userId, batchId);
     return { deleted: result.deletedCount };
+  },
+
+  async frequent(userId: string) {
+    const since = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+    const rows = await repo.frequentTemplates(userId, since, 6);
+    return rows.map((r) => ({
+      categoryId: String(r._id.categoryId),
+      amount: r._id.amount,
+      paymentMethod: r._id.paymentMethod,
+      count: r.count,
+      categoryName: r.category?.name ?? null,
+      categoryIcon: r.category?.icon ?? null,
+    }));
   },
 };

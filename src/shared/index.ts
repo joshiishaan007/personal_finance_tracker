@@ -7,5 +7,7 @@ export * from './schemas/recurringRule.schema';
 export * from './schemas/netWorth.schema';
 export * from './schemas/notification.schema';
 export * from './schemas/aiInsight.schema';
+export * from './schemas/ai.schema';
+export * from './schemas/engagement.schema';
 export * from './types/common';
 export * from './types/api';

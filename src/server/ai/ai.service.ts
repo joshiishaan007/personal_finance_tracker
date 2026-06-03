@@ -1,10 +1,11 @@
 import { createHash } from 'crypto';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { aiRepository as repo } from './ai.repository';
+import { categoryRepository } from '../category/category.repository';
 import { getEnv } from '../env';
 import { logger } from '../logger';
 import { Ok, Err, type Result } from '../http/result';
-import type { Insight } from '@/shared';
+import { ParsedDraftSchema, type Insight, type ParsedDraft } from '@/shared';
 
 interface AggregatedContext {
   monthKey: string;
@@ -74,25 +75,49 @@ Example: [{"type":"savings_opportunity","title":"Room to save on Food","body":"Y
 `;
 
 // External-IO boundary: the ONLY try/catch in this feature, wrapping just the
-// third-party Gemini SDK call plus parsing its untrusted output. Returns a
-// Result so callers branch on it instead of catching. Never logs the API key.
-async function generateInsights(prompt: string): Promise<Result<Insight[], 'quota'>> {
+// third-party Gemini SDK call plus JSON-parsing its untrusted output. Returns the
+// first JSON value found (object or array) or null on any failure, so callers
+// branch on a value instead of catching. Never logs the API key.
+async function callGemini(prompt: string): Promise<unknown | null> {
   try {
-    const genAI = new GoogleGenerativeAI(getEnv().GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const env = getEnv();
+    const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: env.GEMINI_MODEL });
     const result = await model.generateContent(prompt);
     const text = result.response.text().trim();
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      logger.warn({ text }, 'Gemini response had no JSON array');
-      return Err('quota');
+    const match = text.match(/[[{][\s\S]*[\]}]/);
+    if (!match) {
+      logger.warn({ text }, 'Gemini response had no JSON');
+      return null;
     }
-    return Ok(JSON.parse(jsonMatch[0]) as Insight[]);
+    return JSON.parse(match[0]);
   } catch (err) {
-    logger.warn({ err }, 'Gemini call failed');
-    return Err('quota');
+    // 429 (free-tier quota exhausted / model has no free allowance) is expected
+    // and transient — log it concisely instead of dumping the full error+stack.
+    const status = (err as { status?: number } | null)?.status;
+    if (status === 429) logger.info({ model: getEnv().GEMINI_MODEL }, 'Gemini quota hit (429) — using fallback');
+    else logger.warn({ err }, 'Gemini call failed');
+    return null;
   }
 }
+
+async function generateInsights(prompt: string): Promise<Result<Insight[], 'quota'>> {
+  const parsed = await callGemini(prompt);
+  if (!Array.isArray(parsed)) return Err('quota');
+  return Ok(parsed as Insight[]);
+}
+
+const buildParsePrompt = (text: string, cats: Array<{ id: string; name: string; type: string }>) => `
+You convert a user's shorthand expense/income note into ONE structured transaction.
+Categories (pick the categoryId whose name+type best fits — never invent an id):
+${JSON.stringify(cats)}
+
+User note: "${text}"
+
+Respond ONLY with a single JSON object, no prose:
+{"amount": number (in major units e.g. rupees, positive), "type": "income"|"expense"|"transfer"|"investment", "categoryId": "<one id from the list, matching the chosen type>", "paymentMethod": "cash"|"card"|"upi"|"netbanking"|"wallet"|"cheque"|"other", "note": "<short cleaned description>"}
+If no payment method is mentioned, use "cash". Default type is "expense".
+`;
 
 export const aiService = {
   async getOrGenerate(userId: string) {
@@ -140,5 +165,27 @@ export const aiService = {
   async dismiss(userId: string) {
     await repo.dismissActive(userId);
     return { dismissed: true };
+  },
+
+  async parseTransaction(userId: string, text: string): Promise<Result<ParsedDraft, 'bad_request'>> {
+    const categories = await categoryRepository.list(userId);
+    const catList = categories.map((c) => ({ id: String(c._id), name: c.name, type: c.type }));
+
+    const parsed = await callGemini(buildParsePrompt(text, catList));
+    const draft = ParsedDraftSchema.safeParse(parsed);
+    if (!draft.success) {
+      logger.info({ userId }, 'Quick-add parse failed validation');
+      return Err('bad_request');
+    }
+
+    // Gemini must pick a real category whose type matches the chosen tx type —
+    // reject hallucinated ids so the client never pre-fills a phantom category.
+    const match = catList.find((c) => c.id === draft.data.categoryId && c.type === draft.data.type);
+    if (!match) {
+      logger.info({ userId }, 'Quick-add parse returned unknown/mismatched category');
+      return Err('bad_request');
+    }
+
+    return Ok(draft.data);
   },
 };

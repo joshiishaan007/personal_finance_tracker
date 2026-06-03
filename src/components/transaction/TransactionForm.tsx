@@ -37,6 +37,8 @@ interface Props {
   onClose: () => void;
   editTx?: Transaction | null;
   categories: Category[];
+  // Pre-fill for a fresh transaction (e.g. natural-language quick-add); ignored when editing.
+  prefill?: Partial<FormValues> | null;
 }
 
 const PAYMENT_METHODS = [
@@ -49,7 +51,7 @@ const PAYMENT_METHODS = [
   { value: 'other', label: 'Other' },
 ];
 
-export function TransactionForm({ open, onClose, editTx, categories }: Props) {
+export function TransactionForm({ open, onClose, editTx, categories, prefill }: Props) {
   const { user } = useAuth();
   const currency = user?.currency ?? 'INR';
 
@@ -81,9 +83,14 @@ export function TransactionForm({ open, onClose, editTx, categories }: Props) {
         tags: editTx.tags.join(', '),
       });
     } else {
-      reset({ type: 'expense', date: new Date().toISOString().split('T')[0], paymentMethod: 'cash' });
+      reset({
+        type: 'expense',
+        date: new Date().toISOString().split('T')[0],
+        paymentMethod: 'cash',
+        ...prefill,
+      });
     }
-  }, [editTx, reset, open]);
+  }, [editTx, reset, open, prefill]);
 
   function onSubmit(values: FormValues) {
     const payload: CreateTransaction = {

@@ -17,9 +17,12 @@ export const CreateTransactionSchema = z.object({
   goalId: z.string().optional(),
   attachmentUrl: z.string().url().optional(),
   importBatchId: z.string().optional(),
+  // Client-generated idempotency key — lets offline-queued creates replay safely
+  // without duplicating (the server upserts on it). Optional for non-offline paths.
+  clientId: z.string().optional(),
 });
 
-export const UpdateTransactionSchema = CreateTransactionSchema.partial().omit({ importBatchId: true });
+export const UpdateTransactionSchema = CreateTransactionSchema.partial().omit({ importBatchId: true, clientId: true });
 
 export const TransactionFilterSchema = z.object({
   startDate: z.string().datetime().optional(),

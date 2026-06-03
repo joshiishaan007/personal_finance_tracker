@@ -34,6 +34,11 @@ export const transactionController = {
     return ok({ items, total, page: filter.page, limit: filter.limit, hasMore: filter.page * filter.limit < total });
   },
 
+  async frequent(_req: NextRequest) {
+    const { userId } = requireAuth();
+    return ok(await svc.frequent(userId));
+  },
+
   async create(req: NextRequest) {
     const { userId } = requireAuth();
     const data = validateBody(CreateTransactionSchema, await req.json());

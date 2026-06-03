@@ -1,5 +1,12 @@
+import { Types } from 'mongoose';
 import { TransactionModel } from '../models/transaction.model';
 import type { TransactionFilter } from '@/shared';
+
+export interface FrequentTemplateRow {
+  _id: { categoryId: string; amount: number; paymentMethod: string };
+  count: number;
+  category?: { name: string; icon: string };
+}
 
 function buildQuery(userId: string, f: Partial<TransactionFilter>): Record<string, unknown> {
   const query: Record<string, unknown> = { userId };
@@ -41,6 +48,15 @@ export const transactionRepository = {
 
   create: (doc: Record<string, unknown>) => TransactionModel.create(doc),
 
+  // Idempotent create keyed on the client-generated clientId — an offline replay
+  // of the same queued create returns the existing row instead of duplicating.
+  upsertByClientId: (userId: string, clientId: string, doc: Record<string, unknown>) =>
+    TransactionModel.findOneAndUpdate(
+      { userId, clientId },
+      { $setOnInsert: doc },
+      { upsert: true, new: true },
+    ).lean(),
+
   update: (userId: string, id: string, set: Record<string, unknown>) =>
     TransactionModel.findOneAndUpdate({ _id: id, userId }, { $set: set }, { new: true }).lean(),
 
@@ -54,4 +70,23 @@ export const transactionRepository = {
 
   deleteBatch: (userId: string, batchId: string) =>
     TransactionModel.deleteMany({ userId, importBatchId: batchId }),
+
+  // Most-repeated expense templates (same category + amount + payment method) since
+  // `since` — the basis for one-tap "repeat" chips. count>=2 keeps it to real habits.
+  frequentTemplates: (userId: string, since: Date, limit: number): Promise<FrequentTemplateRow[]> =>
+    TransactionModel.aggregate<FrequentTemplateRow>([
+      { $match: { userId: new Types.ObjectId(userId), date: { $gte: since }, type: 'expense' } },
+      {
+        $group: {
+          _id: { categoryId: '$categoryId', amount: '$amount', paymentMethod: '$paymentMethod' },
+          count: { $sum: 1 },
+          lastDate: { $max: '$date' },
+        },
+      },
+      { $match: { count: { $gte: 2 } } },
+      { $sort: { count: -1, lastDate: -1 } },
+      { $limit: limit },
+      { $lookup: { from: 'categories', localField: '_id.categoryId', foreignField: '_id', as: 'category' } },
+      { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
+    ]),
 };
