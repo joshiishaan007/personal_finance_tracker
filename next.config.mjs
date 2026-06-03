@@ -10,6 +10,7 @@ const nextConfig = {
   // Next 14.2: this lives under `experimental` (top-level `serverExternalPackages` is Next 15).
   experimental: {
     serverComponentsExternalPackages: ['mongoose', 'pino', 'pino-pretty'],
+    optimizePackageImports: ['lucide-react', 'recharts', 'date-fns'],
   },
 };
 
