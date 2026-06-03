@@ -23,8 +23,8 @@ application-enforced**: every query scopes by `userId`.
 - `{ timestamps: true }` → `createdAt`/`updatedAt`. `schemaVersion: Number` on documents for forward migration.
 - User-owned docs have `userId: { type: ObjectId, ref: 'User', required: true }`. Relations use `ref` + `ObjectId`.
 - **Money is an integer** (`amount: Number`, minor units / paise — never a float). Mirror the shared `CreateTransactionSchema` (`z.number().int().positive()`); use `toMinorUnits`/`formatAmount` from `@/shared` for conversion.
-- **Indexes are compound and `userId`-first**, matching access patterns: `{ userId:1, date:-1 }`, `{ userId:1, type:1 }`, `{ userId:1, categoryId:1, date:-1 }`, `{ userId:1, importBatchId:1 }`, `{ userId:1, hash:1 }`. Add an index for any new filter/sort path you introduce — server-side sort/filter (§2.6) relies on them.
-- Dedup pattern: a per-user `hash` (`sha256(date|amount|note)`) + the `{ userId:1, hash:1 }` index back CSV-import idempotency.
+- **Indexes are compound and `userId`-first**, matching access patterns: `{ userId:1, date:-1 }`, `{ userId:1, type:1 }`, `{ userId:1, categoryId:1, date:-1 }`, `{ userId:1, importBatchId:1 }`, `{ userId:1, hash:1 }`, and the **partial-unique** `{ userId:1, clientId:1 }` (`partialFilterExpression: { clientId: { $exists: true } }` — migration `002`). Add an index for any new filter/sort path you introduce — server-side sort/filter (§2.6) relies on them.
+- Two distinct idempotency mechanisms on `transaction`: (1) CSV-import dedup via a per-user content `hash` (`sha256(date|amount|note)`) + `{ userId:1, hash:1 }`; (2) **offline-replay** idempotency via a client-generated `clientId` + the partial-unique index (`service.create` upserts on it). Use `clientId` for replay-safety — NOT the content hash, which would wrongly merge two genuinely-identical entries.
 
 ## Migrations (`migrations/`)
 - **Ordinal, numbered files**: `NNN_description.ts` (`001_seed_default_categories.ts`). Each `export default { version, description, async up(mongoose) }`.

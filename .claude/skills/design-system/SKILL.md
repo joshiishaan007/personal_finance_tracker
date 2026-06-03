@@ -18,35 +18,42 @@ Client UI (`src/components/**`, widgets in `src/app/**`). Tailwind + the tokens 
 - **Tailwind only.** No CSS Modules / SCSS / CSS-in-JS / inline `<style>` / `style={{}}`. Compose with `cn` (`src/lib/utils.ts`).
 - **Tokens not raw values.** Use the named token classes below; NEVER an arbitrary `[#hex]` in feature code — add a token to `tailwind.config.ts` instead.
 - **Accent budget: one emphasis color (`brand`) per screen.** Reserve `success/warn/danger` for status only.
-- Buttons: one radius scale (`rounded-lg` sm/md, `rounded-xl` lg — already in `Button`). Numbers in tables/stats: tabular alignment. **Icons: one set only. No emojis in UI.**
+- Buttons: one radius scale (`rounded-lg` sm/md, `rounded-xl` lg — already in `Button`). Numbers in tables/stats: tabular alignment. **Icons: one set only (lucide). No *decorative* emojis** — but category/goal `icon` fields are emoji *data* (seeded, user-editable) and are rendered as-is next to their label; that's data, not UI decoration.
 
-## Design tokens (detected — real, from `tailwind.config.ts` + `src/app/globals.css`)
+## Theme: neutral slate + steel-blue, glassy (current)
+The palette is intentionally **neutral/classy, not pink** — `brand` is **steel blue**, surfaces lean on slate/`ink` neutrals, and cards use a frosted **glass** treatment. Don't reintroduce violet/fuchsia/pink accents. (See the `ui-aesthetic-preference` memory.)
 
-**Brand / accent — indigo** (the single emphasis color)
+## Design tokens (real — from `tailwind.config.ts` + `src/app/globals.css`)
+
+**Brand — steel blue** (the single emphasis color)
 | Token | Hex | | Token | Hex |
 |---|---|---|---|---|
-| `brand-50` | `#EEF2FF` | | `brand-500` | `#6366F1` (base accent) |
-| `brand-100` | `#E0E7FF` | | `brand-600` | `#4F46E5` (primary button) |
-| `brand-200` | `#C7D2FE` | | `brand-700` | `#4338CA` (hover) |
-| `brand-400` | `#818CF8` | | `brand-900` | `#312E81` |
+| `brand-50` | `#EFF6FF` | | `brand-500` | `#3B82F6` (base accent) |
+| `brand-300` | `#93C5FD` | | `brand-600` | `#2563EB` (primary button) |
+| `brand-400` | `#60A5FA` | | `brand-700` | `#1D4ED8` (hover) |
+| | | | `brand-900` | `#1E3A8A` |
+
+**Secondary / tertiary** — `accent` = neutral slate-steel (`accent-500 #647391`, `accent-600 #4D5B77`; used by `IconBadge tone="accent"`); `aqua` = cyan (`aqua-500 #06B6D4`).
 
 **Status** (status/feedback only, not decoration)
-| Role | 50 | 500 | 700 |
-|---|---|---|---|
-| `success` (green) | `#ECFDF5` | `#10B981` | `#047857` |
-| `warn` (amber) | `#FFFBEB` | `#F59E0B` | `#B45309` |
-| `danger` (red) | `#FEF2F2` | `#EF4444` | `#B91C1C` |
+| Role | 500 | 600/700 |
+|---|---|---|
+| `success` (mint-green) | `#22D3A7` | `#12B88C` / `#0E8E6C` |
+| `warn` (amber) | `#F59E0B` | `#D97706` |
+| `danger` (rose-red) | `#FB5C6B` | `#E11D48` |
 
-**Neutrals** — Tailwind `slate-*`. Surfaces/text: `bg-slate-50 text-slate-900` (light) / `dark:bg-slate-900 dark:text-slate-50`. Dark mode is `class`-based (`ThemeContext`).
+**Neutrals** — Tailwind `slate-*` (light) + `ink-*` dark surfaces (`ink-950 #0B0B14`, `ink-900 #14141F`, `ink-800 #20202F`). Surfaces/text: `bg-slate-50 text-slate-900` / `dark:bg-ink-950 dark:text-slate-100`. Dark mode is `class`-based (`ThemeContext`).
 
-**Chart series** — CSS vars in `globals.css`, use for `recharts` series in order:
-`--chart-1 #6366F1` · `--chart-2 #10B981` · `--chart-3 #F59E0B` · `--chart-4 #EF4444` · `--chart-5 #8B5CF6` · `--chart-6 #EC4899`.
+**Gradients / glass** — `bg-aurora` = `slate-700 → blue-600 → sky` (wordmark, FABs, active nav, `IconBadge gradient`); `bg-aurora-soft` (gradient Card); the `.glass` utility (`globals.css` — translucent + `backdrop-blur-xl` + highlight ring) and the **glass-default `Card`** (`variant="default"` is translucent backdrop-blur; `glass`/`gradient`/`plain` also available). `shadow-glow` uses steel-blue.
 
-**Type** — font `Inter, system-ui, sans-serif` (`font-sans`). Size/weight via Tailwind utilities; the `Heading level` / `Text variant` elements (`src/components/ui/`) centralize the scale — use them.
+**Chart series** — CSS vars in `globals.css` (light; brighter in `.dark`), use for `recharts` series in order:
+`--chart-1 #2563EB` (blue) · `--chart-2 #0EA5E9` (sky) · `--chart-3 #06B6D4` (cyan) · `--chart-4 #12B88C` (mint) · `--chart-5 #F59E0B` (amber) · `--chart-6 #64748B` (slate) · `--chart-7 #6366F1` (indigo) · `--chart-8 #14B8A6` (teal). No pink/fuchsia in charts.
+
+**Type** — body **Exo 2** (`--font-body`, `font-sans`), display/numbers **Chakra Petch** (`--font-display`, `font-display`), both via `next/font` in `layout.tsx`. Size/weight via the `Heading level` / `Text variant` elements (`src/components/ui/`) — use them.
 
 **Focus ring** — global `focus-visible:ring-2 ring-brand-500 ring-offset-2` (in `globals.css`); element wrappers re-apply it.
 
-**Motion** — `animate-fade-in` (150ms), `animate-slide-up` (150ms), `animate-shimmer` (skeletons, via the `.skeleton` utility). Keep transitions ≤150ms.
+**Motion** — `animate-fade-in` · `animate-slide-up` · `animate-shimmer` (skeletons) · `animate-float`/`pulse-glow`/`gradient-shift`/`pop`/`fall` (e.g. `ConfettiBurst`). `ConfettiBurst` colors come from the `--chart-*` vars.
 
 ## When you need a token that doesn't exist
 Add it to `tailwind.config.ts` `theme.extend` (a new `brand` shade, a chart var in `globals.css`) — never inline an arbitrary hex in a component.

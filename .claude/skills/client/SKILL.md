@@ -20,11 +20,11 @@ Next.js 14 (App Router) · React 18 · @tanstack/react-query 5 (+ devtools) · a
 - `src/app/(app)/<route>/page.tsx` — one per screen (dashboard, transactions, budgets, goals, net-worth, pl, recurring, analytics, reports, settings, profile). Each renders ONE widget.
 - `src/app/(app)/layout.tsx` — the auth guard + `AppShell` (nav). `(auth)/` holds the login flow; `onboarding/` the first-run flow.
 - `src/app/api/**` — Route Handlers (the backend; see the `server` skill).
-- `src/components/ui/` — **element tier**: `Button Input Textarea Select Card Modal Badge Heading Text Link Label List Table Image`.
-- `src/components/` — **component tier**: `EmptyState AIInsightCard ProgressRing SkeletonLoader NotificationBell CommandPalette ConfettiBurst`, plus per-feature **widget** folders (`transaction/TransactionsView.tsx`, `budget/`, `goal/`, ...).
-- `src/hooks/` — data hooks: `useTransactions useBudgets useGoals useCategories useRecurring useNetWorth useNotifications useAnalytics useProfitLoss useReports useAIInsight useUser`.
+- `src/components/ui/` — **element tier**: `Button Input Textarea Select Card Modal Badge Heading Text Link Label List Table Image GradientText IconBadge`.
+- `src/components/` — **component tier**: `EmptyState AIInsightCard ProgressRing SkeletonLoader NotificationBell ConfettiBurst SectionHeader StatCard OfflineBanner OfflineSync ServiceWorkerRegistrar`, plus per-feature **widget** folders (`transaction/` — `TransactionsView`, `TransactionForm`, `QuickAddBar`, `QuickAddChips`; `engagement/` — `StreakBadge`, `EndOfDayCard`; `dashboard/`, `budget/`, `goal/`, ...). (The Command Palette + keyboard page-shortcuts were removed.)
+- `src/hooks/` — data hooks: `useTransactions` (+ `useFrequentTransactions`) `useBudgets useGoals useCategories useRecurring useNetWorth useNotifications useAnalytics useProfitLoss useReports useAIInsight useUser useDailyEngagement`; AI quick-add `useQuickAdd` (`useQuickParse`); client-concern `useDailyMood` (localStorage).
 - `src/contexts/` — `AuthContext` (auth/guard), theme.
-- `src/lib/` — `api.ts` (axios, same-origin, `withCredentials`), `endpoints.ts` (the ENDPOINTS registry), `queryClient.ts`, `offlineQueue.ts`, `utils.ts` (`cn`, formatters).
+- `src/lib/` — `api.ts` (axios, same-origin, `withCredentials`), `endpoints.ts` (the ENDPOINTS registry), `queryClient.ts`, `offlineQueue.ts` (IndexedDB write-queue), `quickParse.ts` (local no-API quick-add parser), `utils.ts` (`cn`, formatters).
 - `middleware.ts` (repo root) — cookie-presence page guard; bounces visitors with no `token` cookie off protected pages (full JWT check stays server-side in `requireAuth`).
 
 ## Data flow (§2.0) — never skip a layer
@@ -49,7 +49,8 @@ page (src/app) → widget → hooks/use<Feature> (useQuery/useMutation) → api 
 ## Sharp edges (verified)
 - **Same-origin, no CORS.** `api` baseURL is `''`; always go through `ENDPOINTS` (paths are `/api/...`). No cross-origin cookie hacks remain.
 - **Two guards:** `middleware.ts` does a cheap cookie-presence redirect for protected pages; `(app)/layout.tsx` + `AuthContext` do the real auth-state gate. Add a new protected page under `(app)` and it's covered by both.
-- **Offline queue** (`src/lib/offlineQueue.ts`) replays writes when back online — mutations must be idempotent-safe (the server dedups transactions by hash). Consider replay when adding a new write.
+- **Offline writes + PWA.** `useCreateTransaction` is offline-capable: when `navigator.onLine` is false it `enqueue`s the create to the IndexedDB queue (`offlineQueue.ts`), optimistically inserts an echo into `['transactions']` caches, and skips the failing refetch. `OfflineSync` (mounted in `providers.tsx`) `flushQueue`s on reconnect, then invalidates. Idempotency is via a client-generated **`clientId`** (UUID in the body) that the server **upserts** on — NOT the content `hash` (which would wrongly merge two identical entries). Any new offline-capable write must send a `clientId` and have a server upsert. The app is an installable **PWA**: `app/manifest.ts`, generated icons (`app/icon.tsx`/`apple-icon.tsx`, `next/og`, edge runtime), a hand-rolled `public/sw.js` (network-first navigations, cache-first hashed static, never caches `/api/*`; bump `CACHE` per deploy), registered by `ServiceWorkerRegistrar` (production only). `app/offline/page.tsx` is the offline fallback.
+- **Quick-add is local-first.** `QuickAddBar` parses `"coffee 200 upi"` via `parseQuickAdd` (`src/lib/quickParse.ts`, pure, no network) and only falls back to Gemini (`useQuickParse` → `/api/ai/parse`) when local parsing is unsure AND online — keeping Gemini calls rare (free-tier safe) and quick-add instant/offline.
 - **`Image`/`Link` wrappers** wrap `next/image` / `next/link` — use them (not the raw Next components) so the element tier stays the single styling point.
 
 ## Quality gates

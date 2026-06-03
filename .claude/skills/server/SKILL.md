@@ -18,9 +18,9 @@ Next.js 14 Route Handlers (Node runtime) · Mongoose 8 (MongoDB) · zod (via `@/
 ## Layout
 - `src/app/api/<feature>/route.ts` (+ `[id]/route.ts`, nested paths) — thin handlers: `export const runtime='nodejs'; export const dynamic='force-dynamic'; export const GET = catchRoute(c.method)`.
 - `src/server/http/` — the HTTP helpers (see below). `index.ts` re-exports them.
-- `src/server/<feature>/` — `<f>.controller.ts` / `<f>.service.ts` / `<f>.repository.ts` per feature (transaction, budget, goal, category, recurring, netWorth, analytics, pl, reports, notification, ai, export, auth, user).
+- `src/server/<feature>/` — `<f>.controller.ts` / `<f>.service.ts` / `<f>.repository.ts` per feature (transaction, budget, goal, category, recurring, netWorth, analytics, pl, reports, notification, ai, export, auth, user, **engagement**).
 - `src/server/models/*.model.ts` — Mongoose schemas (10: user, transaction, category, budget, goal, recurringRule, netWorthSnapshot, notification, aiInsight, auditLog).
-- `src/server/db.ts` — `connectDB()`, the serverless-cached Mongoose connection (db name `personal-finance-tracker`).
+- `src/server/db.ts` — `connectDB()`, the serverless-cached Mongoose connection (db name **`personal`** — must match `migrations/runner.ts`).
 - `src/server/env.ts` — `getEnv()` (validated env). `src/server/logger.ts` — pino.
 - `src/server/migrations/` — ordinal migrations + `runner.ts` (`pnpm migrate`).
 
@@ -33,7 +33,7 @@ Next.js 14 Route Handlers (Node runtime) · Mongoose 8 (MongoDB) · zod (via `@/
 - `HttpError(status, msg)` — thrown only at the framework boundary.
 
 ## API routes (`src/app/api/`)
-`auth` (google, google/callback, logout, me) · `transactions` (+import preview/commit/batch) · `categories` · `budgets` · `goals` · `recurring` · `analytics` · `net-worth` · `pl` · `reports` · `ai` · `export` · `notifications` · `user`.
+`auth` (google, google/callback, logout, me) · `transactions` (+ `frequent`, import preview/commit/batch) · `categories` · `budgets` · `goals` · `recurring` · `analytics` · `net-worth` · `pl` · `reports` · `ai` (`insights`, `insights/dismiss`, `parse`) · `engagement` (`daily`) · `export` · `notifications` · `user`.
 
 ## Conventions
 - **Response envelope:** `{ success: true, data }` / `{ success: false, error }`. Always — via `ok`/`created`/`fail`.
@@ -45,7 +45,8 @@ Next.js 14 Route Handlers (Node runtime) · Mongoose 8 (MongoDB) · zod (via `@/
 ## Sharp edges (verified)
 - **`runtime = 'nodejs'`** on every route handler — Mongoose/jsonwebtoken need Node, not Edge.
 - **`dynamic = 'force-dynamic'`** on every route handler — all routes are per-request (DB + auth cookie). Without it Next tries to prerender non-cookie GETs at build and `catchRoute`'s `connectDB()` hits the DB during `next build`.
-- **AI route** (`src/app/api/ai/insights/route.ts`) sets `export const maxDuration = 30` — Gemini is buffered (~10s); give it headroom.
+- **AI routes** (`src/app/api/ai/insights/route.ts`, `ai/parse/route.ts`) set `export const maxDuration = 30` — Gemini is buffered (~10s); give it headroom. The single Gemini try/catch boundary is `callGemini` in `ai.service.ts` (returns parsed JSON or `null`); `parseTransaction` validates the draft with `ParsedDraftSchema` + rejects hallucinated/type-mismatched categories → `Err('bad_request')`. Quick-add is local-first (client `quickParse.ts`), so `/api/ai/parse` is a rare fallback.
+- **Offline create idempotency:** `transaction.service.create` upserts on a client-supplied `clientId` (`repo.upsertByClientId`) when present, else plain insert. This (not the content `hash`) is what makes offline-queue replays safe. Index: partial-unique `{ userId:1, clientId:1 }` (migration `002`).
 - **Cached Mongoose connection** (`src/server/db.ts`) on `globalThis` — serverless-safe, one connection reused across invocations. `catchRoute` already awaits `connectDB()`; don't connect again per handler.
 - **CSV import:** parsed from `req.formData()` (the `file` Blob + mapping fields), 10 MB cap, `csv-parse/sync`. Amounts may be major or minor units (`amountIsMinorUnits` flag → ×100 or round); dedup is a `sha256(date|amount|note)` `hash` per user; `/import/commit` checks `seenHashes` in-batch AND an existing-doc lookup. Preserve both.
 - **Auth is manual** (no passport): `/api/auth/google` redirects to Google; `/api/auth/google/callback` exchanges the `code`, fetches the profile, `findOrCreateUser`, signs the JWT, and sets the httpOnly cookie. Same-origin — no CORS, no cross-origin cookie hacks.
