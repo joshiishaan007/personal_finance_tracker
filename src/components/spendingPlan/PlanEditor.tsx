@@ -174,7 +174,7 @@ export function PlanEditor({ open, onClose, buckets: initial, assignments: initi
               <Text variant="small" className="text-brand-700 dark:text-brand-300">
                 <Text as="span" className="font-semibold text-brand-700 dark:text-brand-300">Tip: </Text>
                 If a category covers both needs and wants (e.g. &quot;Food &amp; Dining&quot;), create two separate
-                categories — &quot;Groceries&quot; → Needs and &quot;Dining Out&quot; → Wants — and use those for new
+                categories — &quot;Food&quot; → Needs and &quot;Dining Out&quot; → Wants — and use those for new
                 transactions. Tag each one to the right bucket here.
               </Text>
             </div>

@@ -109,7 +109,7 @@ export function SpendingPlanView() {
               <Text variant="small" className="mt-0.5">
                 Transactions in these categories won&apos;t appear in any bucket.
                 Tap to assign them — or split a broad category like &quot;Food &amp; Dining&quot; into
-                &quot;Groceries&quot; (Needs) and &quot;Dining Out&quot; (Wants) for accurate tracking.
+                &quot;Food&quot; (Needs) and &quot;Dining Out&quot; (Wants) for accurate tracking.
               </Text>
             </div>
             <Badge variant="warn" className="shrink-0">{data.unassignedCategoryIds.length}</Badge>
