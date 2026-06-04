@@ -100,23 +100,27 @@ export function PlanEditor({ open, onClose, buckets: initial, assignments: initi
           <div className="space-y-3">
             {buckets.map((b) => (
               <div key={b.id} className="flex items-end gap-2">
-                <Input
-                  type="color"
-                  aria-label={`${b.name} color`}
-                  value={b.color}
-                  onChange={(e) => patchBucket(b.id, { color: e.target.value })}
-                  className="h-10 w-10 shrink-0 cursor-pointer p-1"
-                />
+                <div className="shrink-0">
+                  <Label className="text-xs text-slate-500 mb-1 block">Color</Label>
+                  <input
+                    type="color"
+                    aria-label={`${b.name} color`}
+                    value={b.color}
+                    onChange={(e) => patchBucket(b.id, { color: e.target.value })}
+                    className="h-9 w-10 cursor-pointer rounded-lg border border-slate-200 dark:border-white/10 p-0.5 bg-white dark:bg-ink-800"
+                  />
+                </div>
                 <div className="flex-1 min-w-0">
                   <Input
-                    aria-label="Bucket name"
+                    label="Name"
+                    placeholder="e.g. Needs"
                     value={b.name}
                     onChange={(e) => patchBucket(b.id, { name: e.target.value })}
                   />
                 </div>
                 <div className="w-20 shrink-0">
                   <Input
-                    aria-label="Percent"
+                    label="%"
                     type="number"
                     min={0}
                     max={100}
@@ -126,7 +130,7 @@ export function PlanEditor({ open, onClose, buckets: initial, assignments: initi
                 </div>
                 <div className="w-28 shrink-0">
                   <Select
-                    aria-label="Kind"
+                    label="Kind"
                     options={KIND_OPTIONS}
                     value={b.kind}
                     onChange={(e) => patchBucket(b.id, { kind: e.target.value as AllocationBucket['kind'] })}
