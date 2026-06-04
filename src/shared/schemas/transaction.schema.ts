@@ -15,6 +15,9 @@ export const CreateTransactionSchema = z.object({
   isRecurring: z.boolean().default(false),
   recurringRuleId: z.string().optional(),
   goalId: z.string().optional(),
+  // Links an investment contribution to an Investment wallet; the server then
+  // auto-accumulates its investedAmount on create and rolls it back on delete.
+  investmentId: z.string().optional(),
   attachmentUrl: z.string().url().optional(),
   importBatchId: z.string().optional(),
   // Client-generated idempotency key — lets offline-queued creates replay safely

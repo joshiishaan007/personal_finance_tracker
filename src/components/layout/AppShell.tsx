@@ -11,6 +11,9 @@ import {
   Wallet,
   Landmark,
   TrendingUp,
+  PieChart,
+  LineChart,
+  Scale,
   Repeat,
   FileText,
   User,
@@ -51,9 +54,12 @@ const FINANCE_PRIMARY: NavItem[] = [
   { to: '/savings', label: 'Savings Goals', icon: Target },
 ];
 const FINANCE_MORE: NavItem[] = [
+  { to: '/spending-plan', label: 'Spending Plan', icon: PieChart },
+  { to: '/investments', label: 'Investments', icon: LineChart },
   { to: '/budgets', label: 'Budgets', icon: Wallet },
   { to: '/net-worth', label: 'Net Worth', icon: Landmark },
   { to: '/pl', label: 'P&L', icon: TrendingUp },
+  { to: '/gross-pl', label: 'Gross P&L', icon: Scale },
   { to: '/recurring', label: 'Recurring', icon: Repeat },
   { to: '/reports', label: 'Reports', icon: FileText },
   { to: '/profile', label: 'Profile', icon: User },

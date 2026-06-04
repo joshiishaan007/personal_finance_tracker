@@ -7,6 +7,9 @@ import { RecurringRuleModel } from '../models/recurringRule.model';
 import { NetWorthSnapshotModel } from '../models/netWorthSnapshot.model';
 import { NotificationModel } from '../models/notification.model';
 import { AIInsightModel } from '../models/aiInsight.model';
+import { SpendingPlanModel } from '../models/spendingPlan.model';
+import { InvestmentModel } from '../models/investment.model';
+import { GrossPLEntryModel } from '../models/grossPL.model';
 
 export const userRepository = {
   findById: (userId: string) => UserModel.findById(userId),
@@ -24,6 +27,9 @@ export const userRepository = {
       NetWorthSnapshotModel.deleteMany({ userId }),
       NotificationModel.deleteMany({ userId }),
       AIInsightModel.deleteMany({ userId }),
+      SpendingPlanModel.deleteMany({ userId }),
+      InvestmentModel.deleteMany({ userId }),
+      GrossPLEntryModel.deleteMany({ userId }),
       UserModel.findByIdAndDelete(userId),
     ]),
 };
