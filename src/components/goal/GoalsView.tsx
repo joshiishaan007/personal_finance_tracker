@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ColorInput } from '@/components/ui/ColorInput';
+import { IconPicker } from '@/components/ui/IconPicker';
 import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';
 import { Heading } from '@/components/ui/Heading';
@@ -47,7 +48,7 @@ export function GoalsView() {
 
   const { data: goals, isLoading } = useGoals();
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
   });
 
@@ -197,7 +198,7 @@ export function GoalsView() {
       <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditGoal(null); }} title={editGoal ? 'Edit Goal' : 'New Goal'}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="flex gap-3">
-            <Input label="Icon" {...register('icon')} className="w-20" />
+            <IconPicker label="Icon" value={watch('icon') ?? '🎯'} onChange={(v) => setValue('icon', v)} className="w-28 shrink-0" />
             <div className="flex-1"><Input label="Goal Name" error={errors.title?.message} {...register('title')} /></div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

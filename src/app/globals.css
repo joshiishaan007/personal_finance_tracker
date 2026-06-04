@@ -84,6 +84,26 @@
   }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
 
+  /* Thin, brand-tinted scrollbar — apply wherever overflow-y-auto is used */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--brand-300) / 0.35) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar { width: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgb(var(--brand-300) / 0.35);
+    border-radius: 9999px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--brand-400) / 0.6);
+  }
+  .dark .scrollbar-thin {
+    scrollbar-color: rgb(var(--brand-600) / 0.4) transparent;
+  }
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb { background: rgb(var(--brand-600) / 0.4); }
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: rgb(var(--brand-500) / 0.65); }
+
   /* Aurora text gradient for hero numbers/wordmarks */
   .text-gradient {
     @apply bg-aurora bg-clip-text text-transparent;

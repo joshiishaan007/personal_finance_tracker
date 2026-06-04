@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, AlertTriangle, SplitSquareHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AllocationBucket, BucketComputed } from '@/shared';
 import { useCategories } from '@/hooks/useCategories';
@@ -14,6 +14,13 @@ import { Badge } from '@/components/ui/Badge';
 import { Heading } from '@/components/ui/Heading';
 import { Text } from '@/components/ui/Text';
 import { Label } from '@/components/ui/Label';
+
+// One color per new bucket, cycling through the palette so successive buckets
+// look distinct without the user needing a color picker.
+const BUCKET_PALETTE = [
+  '#0EA5E9', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444',
+  '#6366F1', '#14B8A6', '#F97316', '#84CC16', '#64748B',
+];
 
 interface Props {
   open: boolean;
@@ -43,15 +50,30 @@ export function PlanEditor({ open, onClose, buckets: initial, assignments: initi
 
   const total = buckets.reduce((s, b) => s + (Number.isFinite(b.percent) ? b.percent : 0), 0);
   const planCats = (categories ?? []).filter((c) => c.type === 'expense' || c.type === 'investment');
+  // Separate unassigned (need attention) from already-assigned for the sorted list.
+  const unassigned = planCats.filter((c) => !assignments[c._id]);
+  const assigned = planCats.filter((c) => !!assignments[c._id]);
 
   function patchBucket(id: string, patch: Partial<AllocationBucket>) {
-    setBuckets((bs) => bs.map((b) => (b.id === id ? { ...b, ...patch } : b)));
+    setBuckets((bs) => bs.map((b) => {
+      if (b.id !== id) return b;
+      const updated = { ...b, ...patch };
+      // Keep name in sync with kind so the view label stays meaningful.
+      if (patch.kind) updated.name = KIND_OPTIONS.find((k) => k.value === patch.kind)?.label ?? updated.name;
+      return updated;
+    }));
   }
 
   function addBucket() {
     setBuckets((bs) => [
       ...bs,
-      { id: crypto.randomUUID(), name: 'New bucket', percent: 0, color: '#6366F1', kind: 'custom' },
+      {
+        id: crypto.randomUUID(),
+        name: 'Custom',
+        percent: 0,
+        color: BUCKET_PALETTE[bs.length % BUCKET_PALETTE.length],
+        kind: 'custom',
+      },
     ]);
   }
 
@@ -96,24 +118,16 @@ export function PlanEditor({ open, onClose, buckets: initial, assignments: initi
 
           <div className="space-y-3">
             {buckets.map((b) => (
-              <div key={b.id} className="flex items-end gap-2">
-                <Input
-                  type="color"
-                  aria-label={`${b.name} color`}
-                  value={b.color}
-                  onChange={(e) => patchBucket(b.id, { color: e.target.value })}
-                  className="h-10 w-10 shrink-0 cursor-pointer p-1"
+              <div key={b.id} className="flex items-center gap-2">
+                {/* Color swatch — read-only, auto-assigned on creation */}
+                <div
+                  className="shrink-0 h-4 w-4 rounded-full border border-white/40 dark:border-white/10"
+                  style={{ backgroundColor: b.color }}
+                  aria-hidden
                 />
-                <div className="flex-1 min-w-0">
-                  <Input
-                    aria-label="Bucket name"
-                    value={b.name}
-                    onChange={(e) => patchBucket(b.id, { name: e.target.value })}
-                  />
-                </div>
                 <div className="w-20 shrink-0">
                   <Input
-                    aria-label="Percent"
+                    label="%"
                     type="number"
                     min={0}
                     max={100}
@@ -121,9 +135,9 @@ export function PlanEditor({ open, onClose, buckets: initial, assignments: initi
                     onChange={(e) => patchBucket(b.id, { percent: e.target.valueAsNumber || 0 })}
                   />
                 </div>
-                <div className="w-28 shrink-0">
+                <div className="flex-1 min-w-0">
                   <Select
-                    aria-label="Kind"
+                    label="Kind"
                     options={KIND_OPTIONS}
                     value={b.kind}
                     onChange={(e) => patchBucket(b.id, { kind: e.target.value as AllocationBucket['kind'] })}
@@ -133,7 +147,7 @@ export function PlanEditor({ open, onClose, buckets: initial, assignments: initi
                   variant="ghost"
                   size="sm"
                   onClick={() => removeBucket(b.id)}
-                  className="shrink-0 p-2 text-slate-400 hover:text-danger-500"
+                  className="shrink-0 self-end mb-0.5 p-2 text-slate-400 hover:text-danger-500"
                   aria-label="Remove bucket"
                 >
                   <Trash2 size={16} />
@@ -154,16 +168,44 @@ export function PlanEditor({ open, onClose, buckets: initial, assignments: initi
         </section>
 
         <section className="space-y-3">
-          <Heading level={5}>Assign categories</Heading>
+          <div className="flex items-center justify-between gap-2">
+            <Heading level={5}>Assign categories</Heading>
+            {unassigned.length > 0 && (
+              <Badge variant="warn" className="gap-1 shrink-0">
+                <AlertTriangle size={11} strokeWidth={2.4} />
+                {unassigned.length} unassigned
+              </Badge>
+            )}
+          </div>
+
+          {/* Split-category tip — shown when any unassigned categories exist */}
+          {unassigned.length > 0 && (
+            <div className="flex items-start gap-2 rounded-xl bg-brand-50 dark:bg-brand-900/20 p-3">
+              <SplitSquareHorizontal size={16} className="mt-0.5 shrink-0 text-brand-600 dark:text-brand-400" />
+              <Text variant="small" className="text-brand-700 dark:text-brand-300">
+                <Text as="span" className="font-semibold text-brand-700 dark:text-brand-300">Tip: </Text>
+                If a category covers both needs and wants (e.g. &quot;Food &amp; Dining&quot;), create two separate
+                categories — &quot;Food&quot; → Needs and &quot;Dining Out&quot; → Wants — and use those for new
+                transactions. Tag each one to the right bucket here.
+              </Text>
+            </div>
+          )}
+
           {planCats.length === 0 ? (
             <Text variant="muted">No expense or investment categories yet.</Text>
           ) : (
             <div className="space-y-2">
-              {planCats.map((c) => (
+              {/* Unassigned categories float to the top so they're hard to miss */}
+              {[...unassigned, ...assigned].map((c) => (
                 <Label key={c._id} className="flex items-center justify-between gap-3 font-normal">
-                  <Text as="span" className="truncate">
-                    {c.icon} {c.name}
-                  </Text>
+                  <div className="flex items-center gap-2 min-w-0">
+                    {!assignments[c._id] && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-warn-500 shrink-0" aria-hidden />
+                    )}
+                    <Text as="span" className="truncate">
+                      {c.icon} {c.name}
+                    </Text>
+                  </div>
                   <div className="w-40 shrink-0">
                     <Select
                       aria-label={`Bucket for ${c.name}`}

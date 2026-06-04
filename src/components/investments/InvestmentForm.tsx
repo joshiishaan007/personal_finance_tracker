@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toMinorUnits, type Currency } from '@/shared';
@@ -13,6 +13,17 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { Modal } from '@/components/ui/Modal';
+import { IconPicker } from '@/components/ui/IconPicker';
+
+// Deterministic accent per investment kind so cards look visually distinct
+// without asking the user to pick a color.
+const KIND_COLORS: Record<string, string> = {
+  fd: '#0EA5E9',
+  rd: '#10B981',
+  sip: '#8B5CF6',
+  equity: '#F59E0B',
+  ppf: '#14B8A6',
+};
 
 const FormSchema = z.object({
   name: z.string().min(1, 'Name is required').max(80),
@@ -73,7 +84,7 @@ export function InvestmentForm({ open, onClose, editInvestment }: Props) {
   const updateInv = useUpdateInvestment(editInvestment?._id ?? '');
   const isPending = editInvestment ? updateInv.isPending : createInv.isPending;
 
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, watch, setValue, control, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       kind: 'fd',
@@ -108,13 +119,18 @@ export function InvestmentForm({ open, onClose, editInvestment }: Props) {
       reset({
         kind: 'fd',
         icon: '💹',
-        color: '#6366F1',
+        color: KIND_COLORS['fd'],
         status: 'active',
         compounding: 'quarterly',
         startDate: new Date().toISOString().split('T')[0],
       });
     }
   }, [editInvestment, reset, open]);
+
+  // Keep color in sync with kind for new investments so cards look distinct.
+  useEffect(() => {
+    if (!editInvestment) setValue('color', KIND_COLORS[kind] ?? '#6366F1');
+  }, [kind, editInvestment, setValue]);
 
   function onSubmit(values: FormValues) {
     const k = values.kind;
@@ -208,10 +224,13 @@ export function InvestmentForm({ open, onClose, editInvestment }: Props) {
           <Select label="Status" options={STATUS_OPTIONS} {...register('status')} />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Input label="Icon" placeholder="💹" {...register('icon')} />
-          <Input label="Color" type="color" {...register('color')} />
-        </div>
+        <Controller
+          control={control}
+          name="icon"
+          render={({ field }) => (
+            <IconPicker label="Icon" value={field.value} onChange={field.onChange} />
+          )}
+        />
 
         <Textarea label="Note (optional)" placeholder="Notes…" rows={2} {...register('note')} />
 

@@ -16,6 +16,7 @@ import {
   Scale,
   Repeat,
   FileText,
+  Tag,
   User,
   Settings,
   Plus,
@@ -62,6 +63,7 @@ const FINANCE_MORE: NavItem[] = [
   { to: '/gross-pl', label: 'Gross P&L', icon: Scale },
   { to: '/recurring', label: 'Recurring', icon: Repeat },
   { to: '/reports', label: 'Reports', icon: FileText },
+  { to: '/categories', label: 'Categories', icon: Tag },
   { to: '/profile', label: 'Profile', icon: User },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
@@ -186,7 +188,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-ink-950">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col w-64 glass border-r p-4 gap-1.5 overflow-y-auto">
+      <aside className="hidden lg:flex flex-col w-64 glass border-r p-4 gap-1.5 overflow-y-auto scrollbar-thin">
         <Link href={fab.href.startsWith('/goals') ? '/goals' : '/dashboard'} className="flex items-center gap-2 px-2 py-3 no-underline hover:no-underline">
           <GradientText className="text-lg leading-tight">Personal Finance Tracker</GradientText>
         </Link>
@@ -232,7 +234,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-safe-nav lg:pb-0">
+        <main className="flex-1 overflow-y-auto pb-safe-nav lg:pb-0 scrollbar-thin">
           {children}
         </main>
       </div>
@@ -301,7 +303,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     )}
                   >
                     <Icon size={22} strokeWidth={2.2} className={active ? 'text-brand-600 dark:text-brand-300' : 'text-slate-500 dark:text-slate-400'} />
-                    <Text as="span">{item.label}</Text>
+                    <Text as="span" className="text-center leading-tight">{item.label}</Text>
                   </Link>
                 );
               })}
