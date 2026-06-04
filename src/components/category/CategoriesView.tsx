@@ -245,29 +245,33 @@ export function CategoriesView() {
                     {cat.name}
                   </Text>
 
-                  {cat.isDefault && (
-                    <Lock size={13} className="text-slate-300 dark:text-slate-600 shrink-0" aria-label="System default" />
+                  {cat.isDefault ? (
+                    // System defaults have no userId — update/delete would 404.
+                    // Show lock; user can create their own copy instead.
+                    <Lock size={13} className="text-slate-300 dark:text-slate-600 shrink-0" aria-label="System category — create a copy to customise" />
+                  ) : (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEdit(cat)}
+                        className="shrink-0 p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                        aria-label={`Edit ${cat.name}`}
+                      >
+                        <Pencil size={15} />
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteConfirm(cat)}
+                        className="shrink-0 p-1.5 text-slate-400 hover:text-danger-500"
+                        aria-label={`Delete ${cat.name}`}
+                      >
+                        <Trash2 size={15} />
+                      </Button>
+                    </>
                   )}
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openEdit(cat)}
-                    className="shrink-0 p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                    aria-label={`Edit ${cat.name}`}
-                  >
-                    <Pencil size={15} />
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setDeleteConfirm(cat)}
-                    className="shrink-0 p-1.5 text-slate-400 hover:text-danger-500"
-                    aria-label={`Delete ${cat.name}`}
-                  >
-                    <Trash2 size={15} />
-                  </Button>
                 </div>
               ))}
             </Card>
@@ -286,14 +290,6 @@ export function CategoriesView() {
             remove it from all future transaction choices. Existing transactions keep their category label but it will show as unknown
             in filters. This cannot be undone.
           </Text>
-          {deleteConfirm?.isDefault && (
-            <div className="flex items-start gap-2 rounded-xl bg-warn-50 dark:bg-warn-800/20 p-3">
-              <Lock size={15} className="mt-0.5 shrink-0 text-warn-600" />
-              <Text variant="small" className="text-warn-700 dark:text-warn-400">
-                This is a system default category. You can still delete it, but it may be re-created on the next seed run.
-              </Text>
-            </div>
-          )}
           <div className="flex gap-3 pt-1">
             <Button type="button" variant="secondary" onClick={() => setDeleteConfirm(null)} className="flex-1">Cancel</Button>
             <Button
