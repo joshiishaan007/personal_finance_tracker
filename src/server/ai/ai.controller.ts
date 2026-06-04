@@ -8,8 +8,13 @@ import { aiService as svc } from './ai.service';
 export const aiController = {
   async insights(_req: NextRequest) {
     const { userId } = requireAuth();
-    const insights = await svc.getOrGenerate(userId);
-    return ok(insights ?? null);
+    return ok(await svc.getCached(userId)); // read-only, never calls Gemini
+  },
+
+  async generate(_req: NextRequest) {
+    const { userId } = requireAuth();
+    const r = await svc.generate(userId);
+    return r.state === 'ok' ? ok(r.data) : fail(r.reason);
   },
 
   async dismiss(_req: NextRequest) {

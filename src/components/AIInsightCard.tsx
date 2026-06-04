@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, X, AlertTriangle, PiggyBank, TrendingDown, Target, type LucideIcon } from 'lucide-react';
+import { Sparkles, AlertTriangle, PiggyBank, TrendingDown, Target, type LucideIcon } from 'lucide-react';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 
@@ -15,19 +15,12 @@ interface Insight {
 
 interface Props {
   insights: Insight[];
-  onDismiss?: () => void;
 }
 
-export function AIInsightCard({ insights, onDismiss }: Props) {
-  const [dismissed, setDismissed] = useState(false);
+export function AIInsightCard({ insights }: Props) {
   const [whyOpen, setWhyOpen] = useState<number | null>(null);
 
-  function dismiss() {
-    setDismissed(true);
-    onDismiss?.();
-  }
-
-  if (dismissed || insights.length === 0) return null;
+  if (insights.length === 0) return null;
 
   const typeIcon: Record<string, LucideIcon> = {
     spending_anomaly: AlertTriangle,
@@ -39,14 +32,9 @@ export function AIInsightCard({ insights, onDismiss }: Props) {
 
   return (
     <div className="bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-900/30 dark:to-brand-900/20 border border-brand-200 dark:border-brand-700 rounded-xl p-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Sparkles size={16} className="text-brand-600 dark:text-brand-400" />
-          <Text as="span" className="text-sm font-semibold text-brand-700 dark:text-brand-400">AI Insights</Text>
-        </div>
-        <Button variant="ghost" size="sm" onClick={dismiss} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" aria-label="Dismiss AI insights">
-          <X size={16} />
-        </Button>
+      <div className="flex items-center gap-2 mb-3">
+        <Sparkles size={16} className="text-brand-600 dark:text-brand-400" />
+        <Text as="span" className="text-sm font-semibold text-brand-700 dark:text-brand-400">AI Insights</Text>
       </div>
       <div className="space-y-3">
         {insights.map((ins, i) => {

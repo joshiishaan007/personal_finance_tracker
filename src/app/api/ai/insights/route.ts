@@ -3,7 +3,9 @@ import { aiController as c } from '@/server/ai/ai.controller';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-// Gemini is buffered (~10s); give the route headroom over the default.
-export const maxDuration = 30;
+// Newer Gemini models (2.5-flash, gemma-4-31b) can take 30-50s. Vercel Hobby
+// cap is 60s — set maxDuration at the ceiling so the SDK timeout fires first.
+export const maxDuration = 60;
 
-export const GET = catchRoute(c.insights);
+export const GET = catchRoute(c.insights); // cached only — no Gemini
+export const POST = catchRoute(c.generate); // explicit generation
