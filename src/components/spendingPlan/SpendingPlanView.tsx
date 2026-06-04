@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Pencil, AlertTriangle, Wallet, Info } from 'lucide-react';
+import { Pencil, AlertTriangle, Wallet, Info, SplitSquareHorizontal } from 'lucide-react';
 import { fmt, cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSpendingPlan } from '@/hooks/useSpendingPlan';
@@ -92,6 +92,30 @@ export function SpendingPlanView() {
           </div>
         )}
       </Card>
+
+      {/* Unassigned categories callout — prompt to open editor with one tap */}
+      {data.unassignedCategoryIds.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setEditorOpen(true)}
+          className="w-full text-left"
+        >
+          <Card variant="glass" interactive className="flex items-start gap-3">
+            <SplitSquareHorizontal size={18} className="mt-0.5 shrink-0 text-warn-600 dark:text-warn-400" />
+            <div className="min-w-0 flex-1">
+              <Text as="span" className="font-semibold text-slate-900 dark:text-slate-100">
+                {data.unassignedCategoryIds.length} {data.unassignedCategoryIds.length === 1 ? 'category' : 'categories'} not counted
+              </Text>
+              <Text variant="small" className="mt-0.5">
+                Transactions in these categories won&apos;t appear in any bucket.
+                Tap to assign them — or split a broad category like &quot;Food &amp; Dining&quot; into
+                &quot;Groceries&quot; (Needs) and &quot;Dining Out&quot; (Wants) for accurate tracking.
+              </Text>
+            </div>
+            <Badge variant="warn" className="shrink-0">{data.unassignedCategoryIds.length}</Badge>
+          </Card>
+        </button>
+      )}
 
       <div className="grid sm:grid-cols-2 gap-4">
         {buckets.map((b) => {
