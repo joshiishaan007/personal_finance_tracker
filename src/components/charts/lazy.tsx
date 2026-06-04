@@ -41,3 +41,8 @@ export const Sparkline = dynamic(() => import('./Sparkline').then((m) => m.Spark
   ssr: false,
   loading: () => <ChartSkeleton height={36} />,
 });
+
+export const PLBarChart = dynamic(() => import('./PLBarChart').then((m) => m.PLBarChart), {
+  ssr: false,
+  loading: () => <ChartSkeleton height={240} />,
+});

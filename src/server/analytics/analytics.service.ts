@@ -75,6 +75,44 @@ export const analyticsService = {
     return { monthly, ...currencyMeta };
   },
 
+  async monthlyPL(userId: string) {
+    const rows = await repo.allTimeMonthlyByType(userId);
+
+    // Build a sorted year-month → {income, expense} map.
+    const monthMap = new Map<string, { income: number; expense: number }>();
+    for (const row of rows) {
+      const id = row._id as { year: number; month: number; type: string };
+      const key = `${id.year}-${String(id.month).padStart(2, '0')}`;
+      const entry = monthMap.get(key) ?? { income: 0, expense: 0 };
+      const total = typeof row.total === 'number' ? row.total : 0;
+      if (id.type === 'income') entry.income = total;
+      else if (id.type === 'expense') entry.expense = total;
+      monthMap.set(key, entry);
+    }
+
+    const sorted = [...monthMap.entries()].sort(([a], [b]) => a.localeCompare(b));
+    const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    let cumulative = 0;
+    const months = sorted.map(([key, { income, expense }]) => {
+      const [y, m] = key.split('-').map(Number);
+      const net = income - expense;
+      cumulative += net;
+      return {
+        label: `${MONTH_ABBR[(m ?? 1) - 1] ?? ''} ${String(y ?? 0).slice(2)}`,
+        net,
+        cumulative,
+        income,
+        expense,
+      };
+    });
+
+    const totalIncome = sorted.reduce((s, [, { income }]) => s + income, 0);
+    const totalExpense = sorted.reduce((s, [, { expense }]) => s + expense, 0);
+
+    return { months, cumulative, totalIncome, totalExpense };
+  },
+
   // Old shape: the envelope `data` IS the raw aggregation array. Preserve exactly.
   custom(userId: string, startDate: string, endDate: string) {
     return repo.byTypeAndCategory(userId, new Date(startDate), new Date(endDate));

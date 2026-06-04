@@ -84,6 +84,9 @@
   }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
 
+  /* Kill the browser focus-outline on recharts SVG paths (click causes a white box). */
+  .recharts-sector { outline: none; }
+
   /* Thin, brand-tinted scrollbar — apply wherever overflow-y-auto is used */
   .scrollbar-thin {
     scrollbar-width: thin;
