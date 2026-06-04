@@ -16,8 +16,11 @@ export const UpdatePreferencesSchema = z.object({
   compactMode: z.boolean().optional(),
   weekStartsOn: z.number().min(0).max(6).optional(),
   timezone: z.string().optional(),
-  // Top-level user field (not nested under preferences), handled by userService.
+  // Top-level user fields (not nested under preferences), handled by userService.
   currency: z.enum(['INR', 'USD']).optional(),
+  // Starting balance (minor units) so the app's Total Balance reconciles to the
+  // user's real combined bank total: openingBalance + income - expense.
+  openingBalance: z.number().int().optional(),
 });
 
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>;

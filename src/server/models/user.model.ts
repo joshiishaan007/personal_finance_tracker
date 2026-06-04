@@ -9,6 +9,7 @@ export interface IUser extends Document {
   role: 'user' | 'admin';
   currency: Currency;
   timezone: string;
+  openingBalance: number;
   preferences: {
     theme: 'light' | 'dark' | 'system';
     mode: 'finance' | 'goals';
@@ -29,6 +30,7 @@ const userSchema = new Schema<IUser>({
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   currency: { type: String, default: 'INR' },
   timezone: { type: String, default: 'Asia/Kolkata' },
+  openingBalance: { type: Number, default: 0 },
   preferences: {
     theme: { type: String, enum: ['light', 'dark', 'system'], default: 'system' },
     mode: { type: String, enum: ['finance', 'goals'], default: 'finance' },

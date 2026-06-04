@@ -1,0 +1,197 @@
+'use client';
+
+import { useState } from 'react';
+import { Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { AllocationBucket, BucketComputed } from '@/shared';
+import { useCategories } from '@/hooks/useCategories';
+import { useUpdateSpendingPlan } from '@/hooks/useSpendingPlan';
+import { Modal } from '@/components/ui/Modal';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Badge } from '@/components/ui/Badge';
+import { Heading } from '@/components/ui/Heading';
+import { Text } from '@/components/ui/Text';
+import { Label } from '@/components/ui/Label';
+
+interface Props {
+  open: boolean;
+  onClose: () => void;
+  buckets: BucketComputed[];
+  assignments: Record<string, string>;
+}
+
+const KIND_OPTIONS = [
+  { value: 'needs', label: 'Needs' },
+  { value: 'wants', label: 'Wants' },
+  { value: 'savings', label: 'Savings' },
+  { value: 'custom', label: 'Custom' },
+];
+
+// Strip computed fields back down to the persisted bucket shape.
+function toBucket(b: BucketComputed | AllocationBucket): AllocationBucket {
+  return { id: b.id, name: b.name, percent: b.percent, color: b.color, kind: b.kind };
+}
+
+export function PlanEditor({ open, onClose, buckets: initial, assignments: initialAssign }: Props) {
+  const { data: categories } = useCategories();
+  const update = useUpdateSpendingPlan();
+
+  const [buckets, setBuckets] = useState<AllocationBucket[]>(() => initial.map(toBucket));
+  const [assignments, setAssignments] = useState<Record<string, string>>(() => ({ ...initialAssign }));
+
+  const total = buckets.reduce((s, b) => s + (Number.isFinite(b.percent) ? b.percent : 0), 0);
+  const planCats = (categories ?? []).filter((c) => c.type === 'expense' || c.type === 'investment');
+
+  function patchBucket(id: string, patch: Partial<AllocationBucket>) {
+    setBuckets((bs) => bs.map((b) => (b.id === id ? { ...b, ...patch } : b)));
+  }
+
+  function addBucket() {
+    setBuckets((bs) => [
+      ...bs,
+      { id: crypto.randomUUID(), name: 'New bucket', percent: 0, color: '#6366F1', kind: 'custom' },
+    ]);
+  }
+
+  function removeBucket(id: string) {
+    setBuckets((bs) => bs.filter((b) => b.id !== id));
+    // Drop assignments pointing at the removed bucket.
+    setAssignments((a) => Object.fromEntries(Object.entries(a).filter(([, v]) => v !== id)));
+  }
+
+  function assign(categoryId: string, bucketId: string) {
+    setAssignments((a) => {
+      const next = { ...a };
+      if (bucketId) next[categoryId] = bucketId;
+      else delete next[categoryId];
+      return next;
+    });
+  }
+
+  function onSave() {
+    update.mutate(
+      { buckets, assignments },
+      { onSuccess: () => onClose() },
+    );
+  }
+
+  const bucketOptions = [
+    { value: '', label: 'Unassigned' },
+    ...buckets.map((b) => ({ value: b.id, label: b.name })),
+  ];
+
+  return (
+    <Modal open={open} onClose={onClose} title="Edit spending plan" className="max-w-lg">
+      <div className="space-y-6">
+        <section className="space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <Heading level={5}>Buckets</Heading>
+            <Badge variant={total === 100 ? 'success' : 'warn'} className="gap-1">
+              {total !== 100 && <AlertTriangle size={11} strokeWidth={2.4} />}
+              {total}% allocated
+            </Badge>
+          </div>
+
+          <div className="space-y-3">
+            {buckets.map((b) => (
+              <div key={b.id} className="flex items-end gap-2">
+                <Input
+                  type="color"
+                  aria-label={`${b.name} color`}
+                  value={b.color}
+                  onChange={(e) => patchBucket(b.id, { color: e.target.value })}
+                  className="h-10 w-10 shrink-0 cursor-pointer p-1"
+                />
+                <div className="flex-1 min-w-0">
+                  <Input
+                    aria-label="Bucket name"
+                    value={b.name}
+                    onChange={(e) => patchBucket(b.id, { name: e.target.value })}
+                  />
+                </div>
+                <div className="w-20 shrink-0">
+                  <Input
+                    aria-label="Percent"
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={b.percent}
+                    onChange={(e) => patchBucket(b.id, { percent: e.target.valueAsNumber || 0 })}
+                  />
+                </div>
+                <div className="w-28 shrink-0">
+                  <Select
+                    aria-label="Kind"
+                    options={KIND_OPTIONS}
+                    value={b.kind}
+                    onChange={(e) => patchBucket(b.id, { kind: e.target.value as AllocationBucket['kind'] })}
+                  />
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeBucket(b.id)}
+                  className="shrink-0 p-2 text-slate-400 hover:text-danger-500"
+                  aria-label="Remove bucket"
+                >
+                  <Trash2 size={16} />
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={addBucket}
+            leftIcon={<Plus size={16} strokeWidth={2.4} />}
+            disabled={buckets.length >= 12}
+          >
+            Add bucket
+          </Button>
+        </section>
+
+        <section className="space-y-3">
+          <Heading level={5}>Assign categories</Heading>
+          {planCats.length === 0 ? (
+            <Text variant="muted">No expense or investment categories yet.</Text>
+          ) : (
+            <div className="space-y-2">
+              {planCats.map((c) => (
+                <Label key={c._id} className="flex items-center justify-between gap-3 font-normal">
+                  <Text as="span" className="truncate">
+                    {c.icon} {c.name}
+                  </Text>
+                  <div className="w-40 shrink-0">
+                    <Select
+                      aria-label={`Bucket for ${c.name}`}
+                      options={bucketOptions}
+                      value={assignments[c._id] ?? ''}
+                      onChange={(e) => assign(c._id, e.target.value)}
+                    />
+                  </div>
+                </Label>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <div className="flex gap-3 pt-2">
+          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={onSave}
+            loading={update.isPending}
+            className={cn('flex-1')}
+          >
+            Save plan
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}

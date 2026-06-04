@@ -12,5 +12,8 @@ export * from './schemas/engagement.schema';
 export * from './schemas/lifeGoal.schema';
 export * from './schemas/contribution.schema';
 export * from './schemas/task.schema';
+export * from './schemas/spendingPlan.schema';
+export * from './schemas/investment.schema';
+export * from './schemas/grossPL.schema';
 export * from './types/common';
 export * from './types/api';

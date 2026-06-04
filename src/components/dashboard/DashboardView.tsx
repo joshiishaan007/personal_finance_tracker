@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDashboard } from '@/hooks/useAnalytics';
 import { useRecurring } from '@/hooks/useRecurring';
 import { useGoals } from '@/hooks/useGoals';
+import { useBalance } from '@/hooks/useBalance';
 import { useAIInsight, useGenerateInsight } from '@/hooks/useAIInsight';
 import { fmt, fmtDate } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
@@ -114,12 +115,13 @@ export function DashboardView() {
   const { data: dash, isLoading: dashLoading } = useDashboard();
   const { data: goals, isLoading: goalsLoading } = useGoals();
   const { data: recurring, isLoading: recurringLoading } = useRecurring();
+  const { data: balance, isLoading: balanceLoading } = useBalance();
   const { data: aiData } = useAIInsight();
 
   // Gate the whole data region on the three queries that feed it, so the user
   // never sees half-filled cards (zeros, "No goals yet") flash before the real
   // values arrive. On a cached return visit all three are false -> instant render.
-  const loading = dashLoading || goalsLoading || recurringLoading;
+  const loading = dashLoading || goalsLoading || recurringLoading || balanceLoading;
   const generateInsight = useGenerateInsight();
   const [aiError, setAiError] = useState<string | null>(null);
 
@@ -182,6 +184,15 @@ export function DashboardView() {
         <DashboardSkeleton />
       ) : (
         <>
+        <StatCard
+          label="Total Balance"
+          value={balance?.total ?? 0}
+          format={fmtCur}
+          icon={Wallet}
+          tone="brand"
+          gradient
+        />
+
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             label="MTD Income"

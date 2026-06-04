@@ -29,6 +29,21 @@ export const ENDPOINTS = {
     create: '/api/goals',
     detail: (id: string) => `/api/goals/${id}`,
   },
+  spendingPlan: {
+    get: '/api/spending-plan',
+    update: '/api/spending-plan',
+  },
+  investments: {
+    list: '/api/investments',
+    create: '/api/investments',
+    detail: (id: string) => `/api/investments/${id}`,
+  },
+  grossPL: {
+    list: '/api/gross-pl',
+    create: '/api/gross-pl',
+    detail: (id: string) => `/api/gross-pl/${id}`,
+  },
+  balance: '/api/balance',
   recurring: {
     list: '/api/recurring',
     create: '/api/recurring',

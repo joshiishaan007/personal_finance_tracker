@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { toMinorUnits, type Currency } from '@/shared';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreateTransaction, useUpdateTransaction } from '@/hooks/useTransactions';
+import { useInvestments } from '@/hooks/useInvestments';
 import type { CreateTransaction } from '@/shared';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -22,6 +23,7 @@ const FormSchema = z.object({
   note: z.string().max(500).optional(),
   paymentMethod: z.enum(['cash', 'card', 'upi', 'netbanking', 'wallet', 'cheque', 'other']),
   tags: z.string().optional(),
+  investmentId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof FormSchema>;
@@ -30,6 +32,7 @@ interface Category { _id: string; name: string; icon: string; type: string; }
 interface Transaction {
   _id: string; amount: number; type: string; categoryId: string;
   date: string; note?: string; paymentMethod: string; tags: string[];
+  investmentId?: string;
 }
 
 interface Props {
@@ -70,6 +73,8 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
 
   const selectedType = watch('type');
   const filteredCategories = categories.filter((c) => c.type === selectedType);
+  const isInvestment = selectedType === 'investment';
+  const { data: investments } = useInvestments();
 
   useEffect(() => {
     if (editTx) {
@@ -81,6 +86,7 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
         note: editTx.note ?? '',
         paymentMethod: editTx.paymentMethod as FormValues['paymentMethod'],
         tags: editTx.tags.join(', '),
+        investmentId: editTx.investmentId ?? '',
       });
     } else {
       reset({
@@ -102,6 +108,8 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
       paymentMethod: values.paymentMethod,
       tags: values.tags ? values.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
       isRecurring: false,
+      // Only an investment-type tx may link an investment wallet.
+      investmentId: values.type === 'investment' && values.investmentId ? values.investmentId : undefined,
     };
     if (editTx) {
       updateTx.mutate(payload, { onSuccess: onClose });
@@ -147,6 +155,17 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
           ]}
           {...register('categoryId')}
         />
+
+        {isInvestment && (
+          <Select
+            label="Investment wallet (optional)"
+            options={[
+              { value: '', label: 'None' },
+              ...(investments ?? []).map((i) => ({ value: i._id, label: i.name })),
+            ]}
+            {...register('investmentId')}
+          />
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input
