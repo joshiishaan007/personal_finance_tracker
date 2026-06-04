@@ -164,10 +164,12 @@ export function DashboardView() {
         <div className="flex items-start gap-3">
           <IconBadge icon={greeting.icon} gradient size="lg" />
           <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-3">
-              <Heading level={2}>
-                <GradientText>{greeting.text}</GradientText>
-              </Heading>
+            <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1.5">
+              <div className="flex-1 min-w-0">
+                <Heading level={2}>
+                  <GradientText>{greeting.text}</GradientText>
+                </Heading>
+              </div>
               <StreakBadge className="shrink-0" />
             </div>
             <Text variant="small" className="mt-1 italic">&quot;{getDailyQuote()}&quot;</Text>
