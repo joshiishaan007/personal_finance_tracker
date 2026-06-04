@@ -20,8 +20,10 @@ Client UI (`src/components/**`, widgets in `src/app/**`). Tailwind + the tokens 
 - **Accent budget: one emphasis color (`brand`) per screen.** Reserve `success/warn/danger` for status only.
 - Buttons: one radius scale (`rounded-lg` sm/md, `rounded-xl` lg — already in `Button`). Numbers in tables/stats: tabular alignment. **Icons: one set only (lucide). No *decorative* emojis** — but category/goal `icon` fields are emoji *data* (seeded, user-editable) and are rendered as-is next to their label; that's data, not UI decoration.
 
-## Theme: neutral slate + steel-blue, glassy (current)
-The palette is intentionally **neutral/classy, not pink** — `brand` is **steel blue**, surfaces lean on slate/`ink` neutrals, and cards use a frosted **glass** treatment. Don't reintroduce violet/fuchsia/pink accents. (See the `ui-aesthetic-preference` memory.)
+## Theme: neutral slate + glass, with a MODE-DRIVEN accent
+The palette is intentionally **neutral/classy, not pink** — surfaces lean on slate/`ink` neutrals, cards use a frosted **glass** treatment, no violet/fuchsia/pink. (See `ui-aesthetic-preference` memory.)
+
+**`brand` is mode-driven via CSS vars** — `brand-50..950` (and the `aurora` gradient stops + `shadow-glow`) are defined as RGB CSS vars in `globals.css`, so `html[data-mode="goals"]` swaps the WHOLE accent: **Finance = steel-blue**, **Goals = teal/emerald**. Just use `brand-*`/`bg-aurora`/`shadow-glow` as normal — they recolor automatically per mode. `data-mode` is set by the no-flash script in `layout.tsx` (from the path) and kept in sync by `ModeContext`. Don't hardcode steel-blue or teal hex in components — use `brand-*`.
 
 ## Design tokens (real — from `tailwind.config.ts` + `src/app/globals.css`)
 
