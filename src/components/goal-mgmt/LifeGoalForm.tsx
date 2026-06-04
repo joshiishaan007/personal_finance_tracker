@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { Button } from '@/components/ui/Button';
+import { IconPicker } from '@/components/ui/IconPicker';
 
 const AREA_OPTIONS = ['personal', 'health', 'career', 'learning', 'finance', 'relationships', 'other'].map((a) => ({
   value: a,
@@ -47,7 +48,7 @@ export function LifeGoalForm({ open, onClose, editGoal }: Props) {
   const update = useUpdateLifeGoal(editGoal?._id ?? '');
   const isPending = editGoal ? update.isPending : create.isPending;
 
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: { area: 'personal', icon: '', status: 'active' },
   });
@@ -110,8 +111,8 @@ export function LifeGoalForm({ open, onClose, editGoal }: Props) {
   return (
     <Modal open={open} onClose={onClose} title={editGoal ? 'Edit Goal' : 'New Goal'}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid grid-cols-[4rem_1fr] gap-3">
-          <Input label="Icon" maxLength={2} {...register('icon')} />
+        <div className="grid grid-cols-[7rem_1fr] gap-3">
+          <IconPicker label="Icon" value={watch('icon') ?? '🎯'} onChange={(v) => setValue('icon', v)} />
           <Input label="Title" placeholder="e.g. Read 12 books" error={errors.title?.message} {...register('title')} />
         </div>
 

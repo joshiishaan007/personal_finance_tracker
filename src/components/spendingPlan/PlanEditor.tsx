@@ -15,6 +15,13 @@ import { Heading } from '@/components/ui/Heading';
 import { Text } from '@/components/ui/Text';
 import { Label } from '@/components/ui/Label';
 
+// One color per new bucket, cycling through the palette so successive buckets
+// look distinct without the user needing a color picker.
+const BUCKET_PALETTE = [
+  '#0EA5E9', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444',
+  '#6366F1', '#14B8A6', '#F97316', '#84CC16', '#64748B',
+];
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -60,7 +67,13 @@ export function PlanEditor({ open, onClose, buckets: initial, assignments: initi
   function addBucket() {
     setBuckets((bs) => [
       ...bs,
-      { id: crypto.randomUUID(), name: 'New bucket', percent: 0, color: '#6366F1', kind: 'custom' },
+      {
+        id: crypto.randomUUID(),
+        name: 'Custom',
+        percent: 0,
+        color: BUCKET_PALETTE[bs.length % BUCKET_PALETTE.length],
+        kind: 'custom',
+      },
     ]);
   }
 
@@ -105,17 +118,13 @@ export function PlanEditor({ open, onClose, buckets: initial, assignments: initi
 
           <div className="space-y-3">
             {buckets.map((b) => (
-              <div key={b.id} className="flex items-end gap-2">
-                <div className="shrink-0">
-                  <Label className="text-xs text-slate-500 mb-1 block">Color</Label>
-                  <input
-                    type="color"
-                    aria-label={`${b.name} color`}
-                    value={b.color}
-                    onChange={(e) => patchBucket(b.id, { color: e.target.value })}
-                    className="h-9 w-10 cursor-pointer rounded-lg border border-slate-200 dark:border-white/10 p-0.5 bg-white dark:bg-ink-800"
-                  />
-                </div>
+              <div key={b.id} className="flex items-center gap-2">
+                {/* Color swatch — read-only, auto-assigned on creation */}
+                <div
+                  className="shrink-0 h-4 w-4 rounded-full border border-white/40 dark:border-white/10"
+                  style={{ backgroundColor: b.color }}
+                  aria-hidden
+                />
                 <div className="w-20 shrink-0">
                   <Input
                     label="%"
@@ -138,7 +147,7 @@ export function PlanEditor({ open, onClose, buckets: initial, assignments: initi
                   variant="ghost"
                   size="sm"
                   onClick={() => removeBucket(b.id)}
-                  className="shrink-0 p-2 text-slate-400 hover:text-danger-500"
+                  className="shrink-0 self-end mb-0.5 p-2 text-slate-400 hover:text-danger-500"
                   aria-label="Remove bucket"
                 >
                   <Trash2 size={16} />
