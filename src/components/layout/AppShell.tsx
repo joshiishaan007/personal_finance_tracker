@@ -16,6 +16,7 @@ import {
   Scale,
   Repeat,
   FileText,
+  Tag,
   User,
   Settings,
   Plus,
@@ -62,6 +63,7 @@ const FINANCE_MORE: NavItem[] = [
   { to: '/gross-pl', label: 'Gross P&L', icon: Scale },
   { to: '/recurring', label: 'Recurring', icon: Repeat },
   { to: '/reports', label: 'Reports', icon: FileText },
+  { to: '/categories', label: 'Categories', icon: Tag },
   { to: '/profile', label: 'Profile', icon: User },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];

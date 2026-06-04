@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { ENDPOINTS } from '@/lib/endpoints';
-import type { CreateCategory } from '@/shared';
+import type { CreateCategory, UpdateCategory } from '@/shared';
 
 export interface Category {
   _id: string;
@@ -27,6 +27,22 @@ export function useCreateCategory() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateCategory) => api.post(ENDPOINTS.categories.create, data),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['categories'] }),
+  });
+}
+
+export function useUpdateCategory(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateCategory) => api.patch(ENDPOINTS.categories.detail(id), data),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['categories'] }),
+  });
+}
+
+export function useDeleteCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(ENDPOINTS.categories.detail(id)),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['categories'] }),
   });
 }
