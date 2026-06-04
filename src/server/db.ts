@@ -44,7 +44,17 @@ export async function connectDB(): Promise<typeof mongoose> {
       .connect(getEnv().MONGODB_URI, {
         dbName: "personal",
         bufferCommands: false,
-        serverSelectionTimeoutMS: 8000,
+        // Fail fast on cold start so the first failed request returns quickly
+        // rather than hanging. AuthContext retries on 5xx, so the user stays
+        // logged in through a transient Atlas connection hiccup.
+        serverSelectionTimeoutMS: 5000,
+        // Cap per-operation socket time so a slow Atlas query can't hang a
+        // Vercel serverless invocation past its maxDuration limit.
+        socketTimeoutMS: 30000,
+        // Small pool: each Vercel function instance is isolated; a large pool
+        // would exhaust Atlas M0's 500-connection ceiling under load.
+        maxPoolSize: 5,
+        minPoolSize: 0,
       })
       .catch((err) => {
         // Don't cache a failed connection — let the next request retry instead
