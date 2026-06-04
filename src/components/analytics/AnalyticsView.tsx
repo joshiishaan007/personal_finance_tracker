@@ -15,9 +15,7 @@ import { Button } from '@/components/ui/Button';
 import { StatCard } from '@/components/StatCard';
 import { ChartCard } from '@/components/charts/ChartCard';
 import { CalendarHeatmap } from '@/components/charts/CalendarHeatmap';
-import { Donut } from '@/components/charts/Donut';
-import { BarsGrouped } from '@/components/charts/BarsGrouped';
-import { AreaTrend } from '@/components/charts/AreaTrend';
+import { Donut, BarsGrouped, AreaTrend } from '@/components/charts/lazy';
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 

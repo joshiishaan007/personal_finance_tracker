@@ -44,6 +44,10 @@ export async function connectDB(): Promise<typeof mongoose> {
       .connect(getEnv().MONGODB_URI, {
         dbName: "personal",
         bufferCommands: false,
+        // Don't issue createIndexes on every serverless cold start — prod indexes
+        // are built via migrations (`pnpm migrate`). Dev keeps autoIndex on so new
+        // schema.index() declarations build locally during development.
+        autoIndex: process.env.NODE_ENV !== "production",
         // 10s gives Atlas enough time to respond on a cold Vercel start.
         // Routes that need it set maxDuration >= 15s so the function budget
         // comfortably covers this plus the actual operation.

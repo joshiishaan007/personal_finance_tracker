@@ -14,8 +14,7 @@ import { Badge } from '@/components/ui/Badge';
 import { SectionHeader } from '@/components/SectionHeader';
 import { StatCard } from '@/components/StatCard';
 import { ChartCard } from '@/components/charts/ChartCard';
-import { GaugeRadial } from '@/components/charts/GaugeRadial';
-import { AreaTrend } from '@/components/charts/AreaTrend';
+import { GaugeRadial, AreaTrend } from '@/components/charts/lazy';
 import { SkeletonCard } from '@/components/SkeletonLoader';
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

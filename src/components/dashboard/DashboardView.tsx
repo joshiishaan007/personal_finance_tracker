@@ -19,7 +19,6 @@ import { Button } from '@/components/ui/Button';
 import { Link } from '@/components/ui/Link';
 import { GradientText } from '@/components/ui/GradientText';
 import { IconBadge } from '@/components/ui/IconBadge';
-import { SkeletonCard } from '@/components/SkeletonLoader';
 import { AIInsightCard } from '@/components/AIInsightCard';
 import { ProgressRing } from '@/components/ProgressRing';
 import { EmptyState } from '@/components/EmptyState';
@@ -30,9 +29,7 @@ import { QuickAddChips } from '@/components/transaction/QuickAddChips';
 import { StreakBadge } from '@/components/engagement/StreakBadge';
 import { EndOfDayCard } from '@/components/engagement/EndOfDayCard';
 import { ChartCard } from '@/components/charts/ChartCard';
-import { AreaTrend } from '@/components/charts/AreaTrend';
-import { Donut } from '@/components/charts/Donut';
-import { GaugeRadial } from '@/components/charts/GaugeRadial';
+import { AreaTrend, Donut, GaugeRadial } from '@/components/charts/lazy';
 import type { LucideIcon } from 'lucide-react';
 
 const QUOTES: string[] = [
@@ -90,14 +87,39 @@ function getGreeting(name: string): Greeting {
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+// Full-layout placeholder shown until every data query feeding the dashboard has
+// resolved, so the real content appears fully populated in one pass instead of
+// filling in section by section. Heights mirror the real cards to avoid layout shift.
+function DashboardSkeleton() {
+  return (
+    <>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[0, 1, 2, 3].map((i) => <div key={i} className="skeleton rounded-2xl h-32" />)}
+      </div>
+      <div className="grid lg:grid-cols-2 gap-6">
+        <div className="skeleton rounded-2xl h-[316px]" />
+        <div className="skeleton rounded-2xl h-[316px]" />
+      </div>
+      <div className="grid lg:grid-cols-3 gap-6">
+        {[0, 1, 2].map((i) => <div key={i} className="skeleton rounded-2xl h-56" />)}
+      </div>
+    </>
+  );
+}
+
 export function DashboardView() {
   const { user } = useAuth();
   const router = useRouter();
 
   const { data: dash, isLoading: dashLoading } = useDashboard();
-  const { data: goals } = useGoals();
-  const { data: recurring } = useRecurring();
+  const { data: goals, isLoading: goalsLoading } = useGoals();
+  const { data: recurring, isLoading: recurringLoading } = useRecurring();
   const { data: aiData } = useAIInsight();
+
+  // Gate the whole data region on the three queries that feed it, so the user
+  // never sees half-filled cards (zeros, "No goals yet") flash before the real
+  // values arrive. On a cached return visit all three are false -> instant render.
+  const loading = dashLoading || goalsLoading || recurringLoading;
   const generateInsight = useGenerateInsight();
   const [aiError, setAiError] = useState<string | null>(null);
 
@@ -156,11 +178,10 @@ export function DashboardView() {
         <QuickAddChips />
       </div>
 
-      {dashLoading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
-        </div>
+      {loading ? (
+        <DashboardSkeleton />
       ) : (
+        <>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             label="MTD Income"
@@ -195,7 +216,6 @@ export function DashboardView() {
             tone="aqua"
           />
         </div>
-      )}
 
       <div className="grid lg:grid-cols-2 gap-6">
         <ChartCard
@@ -334,6 +354,8 @@ export function DashboardView() {
           </Card>
         )}
       </div>
+        </>
+      )}
     </div>
   );
 }

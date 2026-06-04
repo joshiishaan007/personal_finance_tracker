@@ -15,8 +15,7 @@ import { GradientText } from '@/components/ui/GradientText';
 import { IconBadge } from '@/components/ui/IconBadge';
 import { StatCard } from '@/components/StatCard';
 import { ChartCard } from '@/components/charts/ChartCard';
-import { AreaTrend } from '@/components/charts/AreaTrend';
-import { Donut } from '@/components/charts/Donut';
+import { AreaTrend, Donut } from '@/components/charts/lazy';
 import { format, parseISO } from 'date-fns';
 
 type AssetForm = { cash: number; bank: number; property: number; vehicles: number; other: number };
