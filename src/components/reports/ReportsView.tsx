@@ -111,7 +111,7 @@ export function ReportsView() {
                   {MONTH_NAMES[month - 1]} {year} grade
                 </Text>
                 <div className="leading-none">
-                  <GradientText className="text-7xl">{monthly.grade}</GradientText>
+                  <GradientText className="text-6xl sm:text-7xl">{monthly.grade}</GradientText>
                 </div>
                 <Text variant="muted" className="mt-3 max-w-sm text-sm">
                   Savings rate (40%) + Budget adherence (40%) + Goal progress (20%).

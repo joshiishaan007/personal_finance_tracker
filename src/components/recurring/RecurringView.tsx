@@ -170,7 +170,7 @@ export function RecurringView() {
                 >
                   {fmt(rule.templateTransaction.amount, currency)}
                 </Text>
-                <div className="flex gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
+                <div className="flex gap-1.5 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
                   <Button size="sm" variant="secondary" onClick={() => toggle.mutate({ id: rule._id, data: { isActive: !rule.isActive } })}>
                     {rule.isActive ? 'Pause' : 'Resume'}
                   </Button>

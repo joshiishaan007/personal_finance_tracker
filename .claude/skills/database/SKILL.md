@@ -15,7 +15,7 @@ a database the app never reads). No SQL, no RLS — **tenant isolation is
 application-enforced**: every query scopes by `userId`.
 
 ## Collections (`*.model.ts`)
-`user` · `transaction` · `category` · `budget` · `goal` · `recurringRule` · `netWorthSnapshot` · `notification` · `aiInsight` · `auditLog`. Global rows (e.g. default categories) use `isDefault: true` and have no `userId`.
+`user` · `transaction` · `category` · `budget` · `goal` (finance savings) · `recurringRule` · `netWorthSnapshot` · `notification` · `aiInsight` · `auditLog` · `lifeGoal` · `contribution` · `task` (the last three are the non-financial **Goals mode** domain; `contribution` `$inc`s its `lifeGoal.currentValue`). Global rows (e.g. default categories) use `isDefault: true` and have no `userId`. Index migration: `003_goals_domain_indexes` (after `001` seed, `002` clientId).
 
 ## Model conventions (verified from `transaction.model.ts`)
 - Export an `I<Name>` interface (`extends Document`) + the `<Name>Model`. Reference: `transaction.model.ts`.

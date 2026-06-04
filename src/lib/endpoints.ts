@@ -58,11 +58,28 @@ export const ENDPOINTS = {
   },
   ai: {
     insights: '/api/ai/insights',
+    generate: '/api/ai/insights',
     dismiss: '/api/ai/insights/dismiss',
     parse: '/api/ai/parse',
   },
   engagement: {
     daily: '/api/engagement/daily',
+  },
+  lifeGoals: {
+    list: '/api/life-goals',
+    create: '/api/life-goals',
+    detail: (id: string) => `/api/life-goals/${id}`,
+    summary: '/api/life-goals/summary',
+  },
+  contributions: {
+    list: (qs?: string) => `/api/contributions${qs ? `?${qs}` : ''}`,
+    create: '/api/contributions',
+    detail: (id: string) => `/api/contributions/${id}`,
+  },
+  tasks: {
+    list: (qs?: string) => `/api/tasks${qs ? `?${qs}` : ''}`,
+    create: '/api/tasks',
+    detail: (id: string) => `/api/tasks/${id}`,
   },
   export: {
     json: '/api/export/json',

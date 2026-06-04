@@ -145,7 +145,7 @@ export function BudgetsView() {
                       variant="ghost"
                       size="sm"
                       onClick={() => { if (confirm('Delete budget?')) deleteBudget.mutate(budget._id); }}
-                      className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-danger-500 transition-opacity p-1"
+                      className="text-slate-400 hover:text-danger-500 transition-opacity p-1 sm:opacity-0 sm:group-hover:opacity-100"
                       aria-label="Delete budget"
                     >
                       <Trash2 size={16} />

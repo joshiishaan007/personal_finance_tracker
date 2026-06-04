@@ -33,7 +33,7 @@ export function NotificationBell() {
       </Button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 overflow-hidden animate-fade-in">
+        <div className="fixed inset-x-3 top-[calc(env(safe-area-inset-top)+3.75rem)] z-50 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl animate-fade-in dark:border-white/10 dark:bg-ink-900 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96">
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
             <Heading level={5}>Notifications</Heading>
             {unread > 0 && (

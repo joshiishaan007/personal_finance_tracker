@@ -1,4 +1,5 @@
 import { exportRepository as repo } from './export.repository';
+import { userRepository } from '../user/user.repository';
 
 export const exportService = {
   async buildJson(userId: string) {
@@ -23,12 +24,18 @@ export const exportService = {
   },
 
   async buildTransactionsCsv(userId: string) {
-    const transactions = await repo.transactionsSorted(userId);
-    const header = 'date,amount,type,categoryId,note,tags,paymentMethod,isRecurring';
+    const [transactions, user] = await Promise.all([
+      repo.transactionsSorted(userId),
+      userRepository.findById(userId),
+    ]);
+    const currency = user?.currency ?? 'INR';
+    const header = `date,amount,currency,type,categoryId,note,tags,paymentMethod,isRecurring`;
     const rows = transactions.map((t) =>
       [
         t.date.toISOString().split('T')[0],
-        t.amount,
+        // Store amounts as major units (rupees/dollars) so the sheet is human-readable.
+        (t.amount / 100).toFixed(2),
+        currency,
         t.type,
         String(t.categoryId),
         `"${(t.note ?? '').replace(/"/g, '""')}"`,

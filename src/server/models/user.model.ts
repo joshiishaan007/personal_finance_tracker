@@ -11,6 +11,7 @@ export interface IUser extends Document {
   timezone: string;
   preferences: {
     theme: 'light' | 'dark' | 'system';
+    mode: 'finance' | 'goals';
     dashboardWidgets: string[];
     compactMode: boolean;
     weekStartsOn: number;
@@ -30,6 +31,7 @@ const userSchema = new Schema<IUser>({
   timezone: { type: String, default: 'Asia/Kolkata' },
   preferences: {
     theme: { type: String, enum: ['light', 'dark', 'system'], default: 'system' },
+    mode: { type: String, enum: ['finance', 'goals'], default: 'finance' },
     dashboardWidgets: { type: [String], default: [] },
     compactMode: { type: Boolean, default: false },
     weekStartsOn: { type: Number, default: 1 },

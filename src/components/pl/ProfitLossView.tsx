@@ -68,7 +68,7 @@ export function ProfitLossView() {
             <Button variant="ghost" size="sm" onClick={prevPeriod} aria-label="Previous month" className="min-h-0 rounded-full p-2">
               <ChevronLeft size={18} />
             </Button>
-            <Text as="span" className="min-w-28 text-center text-sm font-semibold tabular-nums">
+            <Text as="span" className="min-w-20 sm:min-w-28 text-center text-sm font-semibold tabular-nums">
               {MONTH_NAMES[month - 1].slice(0, 3)} {year}
             </Text>
             <Button variant="ghost" size="sm" onClick={nextPeriod} aria-label="Next month" className="min-h-0 rounded-full p-2">

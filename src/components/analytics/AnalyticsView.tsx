@@ -106,7 +106,7 @@ export function AnalyticsView() {
             <Button variant="ghost" size="sm" onClick={prev} className="min-h-0 p-2 rounded-xl" aria-label="Previous period">
               <ChevronLeft size={18} />
             </Button>
-            <Text as="span" className="font-display font-semibold min-w-32 text-center tabular-nums">
+            <Text as="span" className="font-display font-semibold min-w-20 sm:min-w-32 text-center tabular-nums">
               {tab === 'monthly' ? `${MONTH_NAMES[month - 1]} ${year}` : year}
             </Text>
             <Button variant="ghost" size="sm" onClick={next} className="min-h-0 p-2 rounded-xl" aria-label="Next period">

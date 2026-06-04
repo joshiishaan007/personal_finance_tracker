@@ -31,8 +31,9 @@ export const viewport: Viewport = {
   ],
 };
 
-// Pre-hydration: set the dark class before paint to avoid a theme flash.
-const noFlashTheme = `(function(){try{var t=localStorage.getItem('personal-finance-tracker-theme')||'system';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();`;
+// Pre-hydration: set the dark class + accent mode before paint to avoid a flash.
+// Mode is derived from the URL (/goals* → goals) so the teal accent is correct on first paint.
+const noFlashTheme = `(function(){try{var t=localStorage.getItem('personal-finance-tracker-theme')||'system';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.dataset.mode=location.pathname.indexOf('/goals')===0?'goals':'finance';}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -2,10 +2,11 @@ import { createHash } from 'crypto';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { aiRepository as repo } from './ai.repository';
 import { categoryRepository } from '../category/category.repository';
+import { userRepository } from '../user/user.repository';
 import { getEnv } from '../env';
 import { logger } from '../logger';
 import { Ok, Err, type Result } from '../http/result';
-import { ParsedDraftSchema, type Insight, type ParsedDraft } from '@/shared';
+import { ParsedDraftSchema, type Insight, type ParsedDraft, CurrencySymbols, type Currency } from '@/shared';
 
 interface AggregatedContext {
   monthKey: string;
@@ -57,45 +58,106 @@ async function buildContext(userId: string): Promise<AggregatedContext> {
   };
 }
 
-const buildPrompt = (ctx: AggregatedContext) => `
+// Build a prompt-friendly context with amounts in major units (rupees/dollars)
+// so the model works with human-readable numbers instead of paise/cents.
+function toMajorCtx(ctx: AggregatedContext) {
+  return {
+    monthKey: ctx.monthKey,
+    last3MonthsByCategory: Object.fromEntries(
+      Object.entries(ctx.last3MonthsByCategory).map(([k, v]) => [k, Math.round(v / 100)]),
+    ),
+    savingsRate: ctx.savingsRate,
+    incomeTotal: Math.round(ctx.incomeTotal / 100),
+    expenseTotal: Math.round(ctx.expenseTotal / 100),
+    recurringRatio: ctx.recurringRatio,
+    activeGoals: ctx.activeGoals,
+  };
+}
+
+const buildPrompt = (ctx: AggregatedContext, currency: string) => {
+  const sym = currency in CurrencySymbols ? CurrencySymbols[currency as Currency] : currency;
+  const majorCtx = toMajorCtx(ctx);
+  return `
 You are a personal finance advisor. Based on the user's financial summary, provide 1-3 concise, personalized insights.
 Each insight MUST cite the exact numbers that triggered it.
 
-Financial summary (amounts in smallest currency unit, e.g. paise):
-${JSON.stringify(ctx, null, 2)}
+Financial summary (amounts in ${currency} major units — e.g. ${sym}500 means five hundred ${currency}):
+${JSON.stringify(majorCtx, null, 2)}
 
 Respond ONLY with a valid JSON array. Each element must have:
 - type: "spending_anomaly" | "savings_opportunity" | "cashflow_warning" | "goal_projection" | "encouragement"
 - title: string (max 60 chars)
-- body: string (1-2 sentences with specific numbers)
+- body: string (1-2 sentences with specific numbers, prefix amounts with ${sym})
 - why: string (formula/numbers that triggered this — shown in tooltip)
-- dataPoints: object of key→number pairs
+- dataPoints: object of key→number pairs (major units)
 
-Example: [{"type":"savings_opportunity","title":"Room to save on Food","body":"You spent 8400 on Food vs your 3-month average of 6200.","why":"Current: 8400. 3mo avg: 6200. Deviation: +35%","dataPoints":{"currentSpend":8400,"avgSpend":6200}}]
+Example: [{"type":"savings_opportunity","title":"Room to save on Food","body":"You spent ${sym}8400 on Food vs your 3-month average of ${sym}6200.","why":"Current: ${sym}8400. 3mo avg: ${sym}6200. Deviation: +35%","dataPoints":{"currentSpend":8400,"avgSpend":6200}}]
 `;
+};
+
+// Robustly extract the FIRST complete JSON value (array or object) from LLM
+// output that may contain markdown fences, preamble, thinking text, or
+// explanatory text after the JSON. Uses bracket counting — not a greedy regex —
+// so trailing content can never bleed into the parsed value.
+function extractJson(raw: string): unknown | null {
+  // Strip markdown code fences (```json ... ``` or ``` ... ```)
+  const text = raw.replace(/^```(?:json|javascript)?\s*/im, '').replace(/\s*```\s*$/m, '').trim();
+
+  // Fast path: the whole cleaned text is valid JSON (ideal model output).
+  try { return JSON.parse(text); } catch { /* fall through */ }
+
+  // Find the first [ or { and use bracket counting to locate its exact close,
+  // ignoring any characters that follow (preamble / explanatory text).
+  let startIdx = -1;
+  let openChar = '';
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '[' || text[i] === '{') { startIdx = i; openChar = text[i]; break; }
+  }
+  if (startIdx === -1) return null;
+
+  const closeChar = openChar === '[' ? ']' : '}';
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+
+  for (let i = startIdx; i < text.length; i++) {
+    const ch = text[i];
+    if (escape) { escape = false; continue; }
+    if (inString) {
+      if (ch === '\\') escape = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') { inString = true; continue; }
+    if (ch === openChar) depth++;
+    else if (ch === closeChar && --depth === 0) {
+      try { return JSON.parse(text.slice(startIdx, i + 1)); } catch { return null; }
+    }
+  }
+  return null;
+}
 
 // External-IO boundary: the ONLY try/catch in this feature, wrapping just the
-// third-party Gemini SDK call plus JSON-parsing its untrusted output. Returns the
-// first JSON value found (object or array) or null on any failure, so callers
-// branch on a value instead of catching. Never logs the API key.
+// third-party Gemini SDK call. Returns the first JSON value or null on any
+// failure so callers branch on a value instead of catching. Never logs the key.
 async function callGemini(prompt: string): Promise<unknown | null> {
   try {
     const env = getEnv();
     const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: env.GEMINI_MODEL });
+    // 55s SDK timeout — fires before the 60s maxDuration ceiling so the
+    // function returns null cleanly instead of being killed mid-stream.
+    const model = genAI.getGenerativeModel({ model: env.GEMINI_MODEL }, { timeout: 55_000 });
     const result = await model.generateContent(prompt);
     const text = result.response.text().trim();
-    const match = text.match(/[[{][\s\S]*[\]}]/);
-    if (!match) {
-      logger.warn({ text }, 'Gemini response had no JSON');
-      return null;
-    }
-    return JSON.parse(match[0]);
+    const parsed = extractJson(text);
+    if (parsed === null) logger.warn({ text }, 'Gemini response had no parseable JSON');
+    return parsed;
   } catch (err) {
     // 429 (free-tier quota exhausted / model has no free allowance) is expected
     // and transient — log it concisely instead of dumping the full error+stack.
     const status = (err as { status?: number } | null)?.status;
     if (status === 429) logger.info({ model: getEnv().GEMINI_MODEL }, 'Gemini quota hit (429) — using fallback');
+    else if (status === 404) logger.error({ model: getEnv().GEMINI_MODEL }, 'Gemini model not found — check GEMINI_MODEL in .env.local');
     else logger.warn({ err }, 'Gemini call failed');
     return null;
   }
@@ -120,46 +182,35 @@ If no payment method is mentioned, use "cash". Default type is "expense".
 `;
 
 export const aiService = {
-  async getOrGenerate(userId: string) {
-    const ctx = await buildContext(userId);
+  // Read-only: returns the latest stored insight (or null). NEVER calls Gemini —
+  // so loading the dashboard never spends quota. Generation is explicit (below).
+  async getCached(userId: string) {
+    return (await repo.findLatest(userId)) ?? null;
+  },
 
-    // Need at least some transaction data to generate meaningful insights.
-    if (ctx.incomeTotal === 0 && ctx.expenseTotal === 0) {
-      logger.info({ userId }, 'AI insights skipped — no transaction data yet');
-      return null;
-    }
+  // Explicit generation (user clicks "Generate"). Returns a cached hit if the data
+  // is unchanged; otherwise calls Gemini once. Quota/parse failure → Err('quota')
+  // so the client can show a clear message instead of silently retrying.
+  async generate(userId: string): Promise<Result<unknown, 'quota'>> {
+    const [ctx, user] = await Promise.all([buildContext(userId), userRepository.findById(userId)]);
+    const currency = (user?.currency as Currency | undefined) ?? 'INR';
+    if (ctx.incomeTotal === 0 && ctx.expenseTotal === 0) return Ok(null);
 
     const contextHash = createHash('sha256')
       .update(ctx.monthKey + JSON.stringify(ctx.last3MonthsByCategory) + ctx.savingsRate)
       .digest('hex');
 
     const cached = await repo.findCached(userId, contextHash);
-    if (cached) {
-      logger.info({ userId }, 'Returning cached AI insight (hash match)');
-      return cached;
-    }
+    if (cached) return Ok(cached);
 
-    // Fall back to any previous insight if Gemini fails — better than nothing.
-    const previousInsight = await repo.findLatest(userId);
-
-    logger.info(
-      { userId, incomeTotal: ctx.incomeTotal, expenseTotal: ctx.expenseTotal },
-      'Calling Gemini for insights',
-    );
-    const gen = await generateInsights(buildPrompt(ctx));
-    if (gen.state === 'error') {
-      logger.warn({ userId }, 'Gemini failed — returning previous insight if available');
-      return previousInsight ?? null;
-    }
-
-    const insights = gen.data;
+    const gen = await generateInsights(buildPrompt(ctx, currency));
+    if (gen.state === 'error') return Err('quota');
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
-
-    const saved = await repo.replace(userId, { contextHash, insights, expiresAt, schemaVersion: 1 });
-    logger.info({ userId, count: insights.length }, 'AI insights saved');
-    return saved;
+    const saved = await repo.replace(userId, { contextHash, insights: gen.data, expiresAt, schemaVersion: 1 });
+    logger.info({ userId, count: gen.data.length }, 'AI insights saved');
+    return Ok(saved);
   },
 
   async dismiss(userId: string) {
