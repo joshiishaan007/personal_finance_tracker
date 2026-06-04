@@ -47,7 +47,7 @@ export function NotificationBell() {
               </Button>
             )}
           </div>
-          <div className="max-h-80 overflow-y-auto">
+          <div className="max-h-80 overflow-y-auto scrollbar-thin">
             {(data?.notifications ?? []).length === 0 ? (
               <Text variant="muted" className="flex flex-col items-center gap-2 py-8">
                 <PartyPopper size={24} strokeWidth={2.2} className="text-brand-500" />

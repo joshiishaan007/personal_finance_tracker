@@ -34,7 +34,7 @@ export function Modal({ open, onClose, title, children, className }: Props) {
             <Button variant="ghost" size="sm" onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" aria-label="Close"><X size={18} /></Button>
           </div>
         )}
-        <div className="p-4 sm:p-6 max-h-[calc(100vh-8rem)] overflow-y-auto">{children}</div>
+        <div className="p-4 sm:p-6 max-h-[calc(100vh-8rem)] overflow-y-auto scrollbar-thin">{children}</div>
       </div>
     </div>
   );
