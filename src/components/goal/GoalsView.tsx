@@ -181,7 +181,7 @@ export function GoalsView() {
                   ))}
                 </div>
 
-                <div className="flex gap-2 mt-3 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                <div className="flex gap-2 mt-3 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
                   <Button size="sm" variant="secondary" onClick={() => openEdit(goal)}>Edit</Button>
                   {goal.status === 'active' && pct >= 100 && (
                     <Button size="sm" variant="gradient" leftIcon={<Trophy size={14} strokeWidth={2.4} />} onClick={() => onMarkAchieved(goal._id)}>Mark Achieved</Button>
@@ -200,7 +200,7 @@ export function GoalsView() {
             <Input label="Icon" {...register('icon')} className="w-20" />
             <div className="flex-1"><Input label="Goal Name" error={errors.title?.message} {...register('title')} /></div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input label="Target Amount" type="number" step="0.01" error={errors.targetAmount?.message} {...register('targetAmount')} />
             <Input label="Already Saved" type="number" step="0.01" {...register('savedAmount')} />
           </div>

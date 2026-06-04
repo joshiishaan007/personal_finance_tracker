@@ -90,7 +90,7 @@ export function NetWorthView() {
 
       <Card variant="gradient" className="flex flex-col items-center text-center py-8">
         <Text as="span" variant="small" className="uppercase tracking-wide text-[11px]">Current Net Worth</Text>
-        <GradientText as="span" className="mt-1 text-4xl sm:text-5xl tabular-nums">
+        <GradientText as="span" className="mt-1 text-3xl sm:text-4xl md:text-5xl tabular-nums">
           {fmt(netWorth, currency)}
         </GradientText>
       </Card>

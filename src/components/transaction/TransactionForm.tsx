@@ -117,7 +117,7 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
       title={editTx ? 'Edit Transaction' : 'New Transaction'}
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input
             label="Amount"
             type="number"
@@ -148,7 +148,7 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
           {...register('categoryId')}
         />
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input
             label="Date"
             type="date"

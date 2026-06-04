@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   TrendingUp, TrendingDown, Wallet, PiggyBank, Target, CalendarClock,
@@ -9,11 +10,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDashboard } from '@/hooks/useAnalytics';
 import { useRecurring } from '@/hooks/useRecurring';
 import { useGoals } from '@/hooks/useGoals';
-import { useAIInsight, useDismissInsight } from '@/hooks/useAIInsight';
+import { useAIInsight, useGenerateInsight } from '@/hooks/useAIInsight';
 import { fmt, fmtDate } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
 import { Heading } from '@/components/ui/Heading';
 import { Text } from '@/components/ui/Text';
+import { Button } from '@/components/ui/Button';
 import { Link } from '@/components/ui/Link';
 import { GradientText } from '@/components/ui/GradientText';
 import { IconBadge } from '@/components/ui/IconBadge';
@@ -96,7 +98,8 @@ export function DashboardView() {
   const { data: goals } = useGoals();
   const { data: recurring } = useRecurring();
   const { data: aiData } = useAIInsight();
-  const dismissInsight = useDismissInsight();
+  const generateInsight = useGenerateInsight();
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const currency = dash?.currency ?? user?.currency ?? 'INR';
   const income = dash?.summary.income ?? 0;
@@ -244,11 +247,11 @@ export function DashboardView() {
           <SectionHeader
             title="Active Goals"
             icon={Target}
-            action={<Link href="/goals" className="text-xs">View all</Link>}
+            action={<Link href="/savings" className="text-xs">View all</Link>}
           />
           <div className="mt-4">
             {activeGoals.length === 0 ? (
-              <EmptyState icon={Target} title="No goals yet" action={{ label: 'Add goal', onClick: () => router.push('/goals') }} />
+              <EmptyState icon={Target} title="No goals yet" action={{ label: 'Add goal', onClick: () => router.push('/savings') }} />
             ) : (
               <div className="space-y-3">
                 {activeGoals.slice(0, 3).map((goal) => {
@@ -304,14 +307,30 @@ export function DashboardView() {
 
       <div>
         {aiData?.insights && aiData.insights.length > 0 ? (
-          <AIInsightCard insights={aiData.insights} onDismiss={() => dismissInsight.mutate()} />
+          <AIInsightCard insights={aiData.insights} />
         ) : (
           <Card variant="glass">
             <SectionHeader title="AI Insights" icon={Sparkles} />
-            <Text variant="small" className="mt-3 flex items-center gap-1.5">
-              Add more transactions to unlock personalized insights
-              <ArrowRight size={13} />
+            <Text variant="small" className="mt-3">
+              Generate personalized insights from your spending. Runs only when you ask — so it never
+              uses your AI quota on its own.
             </Text>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="mt-3"
+              loading={generateInsight.isPending}
+              rightIcon={<ArrowRight size={14} strokeWidth={2.4} />}
+              onClick={() => {
+                setAiError(null);
+                generateInsight.mutate(undefined, {
+                  onError: () => setAiError("AI is over its free limit right now — try again later."),
+                });
+              }}
+            >
+              Generate insights
+            </Button>
+            {aiError && <Text variant="small" className="mt-2 text-warn-600 dark:text-warn-400">{aiError}</Text>}
           </Card>
         )}
       </div>

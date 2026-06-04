@@ -8,6 +8,7 @@ import {
   ArrowLeftRight,
   ChartColumnBig,
   Target,
+  ListChecks,
   Wallet,
   Landmark,
   TrendingUp,
@@ -24,14 +25,17 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useMode } from '@/contexts/ModeContext';
 import { NotificationBell } from '@/components/NotificationBell';
 import { OfflineBanner } from '@/components/OfflineBanner';
+import { ModeSwitcher } from '@/components/layout/ModeSwitcher';
 import { Link } from '@/components/ui/Link';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
 import { Heading } from '@/components/ui/Heading';
 import { GradientText } from '@/components/ui/GradientText';
 import { cn } from '@/lib/utils';
+import type { AppMode } from '@/lib/mode';
 
 interface NavItem {
   to: string;
@@ -39,14 +43,15 @@ interface NavItem {
   icon: LucideIcon;
 }
 
-const PRIMARY_NAV: NavItem[] = [
+// Per-mode navigation. Finance keeps the money features (savings goals at
+// /savings); Goals is the life-goals + tasks app under /goals.
+const FINANCE_PRIMARY: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
   { to: '/analytics', label: 'Analytics', icon: ChartColumnBig },
-  { to: '/goals', label: 'Goals', icon: Target },
+  { to: '/savings', label: 'Savings Goals', icon: Target },
 ];
-
-const MORE_NAV: NavItem[] = [
+const FINANCE_MORE: NavItem[] = [
   { to: '/budgets', label: 'Budgets', icon: Wallet },
   { to: '/net-worth', label: 'Net Worth', icon: Landmark },
   { to: '/pl', label: 'P&L', icon: TrendingUp },
@@ -56,10 +61,30 @@ const MORE_NAV: NavItem[] = [
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
-const ALL_NAV: NavItem[] = [...PRIMARY_NAV, ...MORE_NAV];
+const GOALS_PRIMARY: NavItem[] = [
+  { to: '/goals', label: 'Goals', icon: Target },
+  { to: '/goals/tasks', label: 'Tasks', icon: ListChecks },
+];
+const GOALS_MORE: NavItem[] = [
+  { to: '/profile', label: 'Profile', icon: User },
+  { to: '/settings', label: 'Settings', icon: Settings },
+];
 
-function isActive(pathname: string, to: string): boolean {
+const NAV: Record<AppMode, { primary: NavItem[]; more: NavItem[]; fab: { href: string; label: string } }> = {
+  finance: { primary: FINANCE_PRIMARY, more: FINANCE_MORE, fab: { href: '/transactions?new=1', label: 'Add transaction' } },
+  goals: { primary: GOALS_PRIMARY, more: GOALS_MORE, fab: { href: '/goals?new=1', label: 'Add goal' } },
+};
+
+function isMatch(pathname: string, to: string): boolean {
   return pathname === to || pathname.startsWith(`${to}/`);
+}
+
+// The active item is the one with the LONGEST matching path, so /goals/tasks
+// highlights Tasks (not Goals Home) while /goals/<id> highlights Goals Home.
+function bestActiveTo(pathname: string, items: NavItem[]): string | undefined {
+  return items
+    .filter((i) => isMatch(pathname, i.to))
+    .sort((a, b) => b.to.length - a.to.length)[0]?.to;
 }
 
 function ThemeToggle() {
@@ -93,14 +118,24 @@ function Avatar({ src, name }: { src?: string; name: string }) {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
+  const { mode } = useMode();
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
 
-  const activeItem = ALL_NAV.find((i) => isActive(pathname, i.to));
-  const pageTitle = activeItem?.label ?? 'Personal Finance Tracker';
+  const { primary, more, fab } = NAV[mode];
+  const allNav = [...primary, ...more];
+  const activeTo = bestActiveTo(pathname, allNav);
+  const pageTitle = allNav.find((i) => i.to === activeTo)?.label ?? 'Personal Finance Tracker';
+
+  // Mobile bottom bar: 5 equal columns with the FAB dead-center — 2 left, FAB,
+  // then (right nav + More) padded with spacers so the FAB stays centered.
+  const bottomLeft = primary.slice(0, 2);
+  const bottomRightNav = primary.slice(2, 3);
+  const sheetItems = [...primary.slice(3), ...more];
+  const rightSpacers = Math.max(0, 2 - (bottomRightNav.length + 1));
 
   function renderSidebarItem(item: NavItem) {
-    const active = isActive(pathname, item.to);
+    const active = item.to === activeTo;
     const Icon = item.icon;
     return (
       <Link
@@ -126,23 +161,50 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
+  function renderBottomItem(item: NavItem) {
+    const active = item.to === activeTo;
+    const Icon = item.icon;
+    return (
+      <Link
+        key={item.to}
+        href={item.to}
+        aria-label={item.label}
+        className={cn(
+          'relative flex-1 flex items-center justify-center min-h-[56px] no-underline hover:no-underline active:scale-95 transition-colors',
+          active ? 'text-brand-600 dark:text-brand-300' : 'text-slate-500 dark:text-slate-400',
+        )}
+      >
+        {active && (
+          <motion.span
+            layoutId="bottomnav-active"
+            className="absolute top-0 h-0.5 w-8 rounded-full bg-aurora"
+            transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+          />
+        )}
+        <Icon size={24} strokeWidth={2.2} />
+      </Link>
+    );
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-ink-950">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col w-64 glass border-r p-4 gap-1.5 overflow-y-auto">
-        <Link href="/dashboard" className="flex items-center gap-2 px-2 py-3 mb-2 no-underline hover:no-underline">
+        <Link href={fab.href.startsWith('/goals') ? '/goals' : '/dashboard'} className="flex items-center gap-2 px-2 py-3 no-underline hover:no-underline">
           <GradientText className="text-lg leading-tight">Personal Finance Tracker</GradientText>
         </Link>
 
+        <ModeSwitcher className="mb-2" />
+
         <nav className="flex flex-col gap-1.5" aria-label="Primary">
-          {PRIMARY_NAV.map(renderSidebarItem)}
+          {primary.map(renderSidebarItem)}
         </nav>
 
         <div className="my-2 h-px bg-slate-200/70 dark:bg-white/5" />
         <Text as="span" className="px-3 text-xs text-slate-400 uppercase tracking-wide font-medium mb-1">More</Text>
 
         <nav className="flex flex-col gap-1.5" aria-label="Secondary">
-          {MORE_NAV.map(renderSidebarItem)}
+          {more.map(renderSidebarItem)}
         </nav>
 
         <div className="mt-auto pt-4 border-t border-slate-200/70 dark:border-white/5">
@@ -164,7 +226,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <header className="sticky top-0 z-30 glass pt-safe flex items-center justify-between px-4 py-3 lg:px-6">
           <div className="flex items-center min-w-0">
             <Heading level={4} className="hidden lg:block truncate">{pageTitle}</Heading>
-            <GradientText className="lg:hidden text-lg">Personal Finance Tracker</GradientText>
+            <GradientText className="lg:hidden text-lg">{mode === 'goals' ? 'Goals' : 'Finance'}</GradientText>
           </div>
           <div className="flex items-center gap-1.5">
             <NotificationBell />
@@ -183,30 +245,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         className="lg:hidden fixed bottom-0 left-0 right-0 glass border-t pb-safe flex items-stretch z-40"
         aria-label="Main navigation"
       >
-        {PRIMARY_NAV.slice(0, 2).map((item) => renderBottomItem(item, pathname))}
+        {bottomLeft.map(renderBottomItem)}
 
-        {/* Center FAB — opens the Transactions add modal via ?new=1 */}
+        {/* Center FAB — mode-aware quick add */}
         <div className="relative flex-1 flex justify-center">
           <Link
-            href="/transactions?new=1"
-            aria-label="Add transaction"
+            href={fab.href}
+            aria-label={fab.label}
             className="absolute -top-5 w-14 h-14 rounded-full bg-aurora shadow-glow grid place-items-center text-white no-underline hover:no-underline active:scale-95 transition-transform"
           >
             <Plus size={26} strokeWidth={2.4} className="text-white" />
           </Link>
         </div>
 
-        {PRIMARY_NAV.slice(2, 4).map((item) => renderBottomItem(item, pathname))}
+        {bottomRightNav.map(renderBottomItem)}
 
         <Button
           variant="ghost"
           onClick={() => setMoreOpen(true)}
-          className="flex-1 flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-slate-500 dark:text-slate-400 min-h-[56px] rounded-none px-0 active:scale-95"
+          className="flex-1 flex items-center justify-center text-slate-500 dark:text-slate-400 min-h-[56px] rounded-none px-0 active:scale-95"
           aria-label="More options"
         >
-          <MoreHorizontal size={22} strokeWidth={2.2} />
-          <Text as="span" className="text-[11px]">More</Text>
+          <MoreHorizontal size={24} strokeWidth={2.2} />
         </Button>
+
+        {Array.from({ length: rightSpacers }).map((_, i) => (
+          <div key={`spacer-${i}`} className="flex-1" aria-hidden />
+        ))}
       </nav>
 
       {/* Mobile more sheet */}
@@ -218,10 +283,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-300/70 dark:bg-white/10" />
+            <ModeSwitcher className="mb-4" />
             <div className="grid grid-cols-3 gap-3">
-              {MORE_NAV.map((item) => {
+              {sheetItems.map((item) => {
                 const Icon = item.icon;
-                const active = isActive(pathname, item.to);
+                const active = item.to === activeTo;
                 return (
                   <Link
                     key={item.to}
@@ -252,30 +318,5 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
     </div>
-  );
-}
-
-function renderBottomItem(item: NavItem, pathname: string) {
-  const active = isActive(pathname, item.to);
-  const Icon = item.icon;
-  return (
-    <Link
-      key={item.to}
-      href={item.to}
-      className={cn(
-        'relative flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-[11px] font-medium transition-colors min-h-[56px] no-underline hover:no-underline active:scale-95',
-        active ? 'text-brand-600 dark:text-brand-300' : 'text-slate-500 dark:text-slate-400',
-      )}
-    >
-      {active && (
-        <motion.span
-          layoutId="bottomnav-active"
-          className="absolute top-0 h-0.5 w-8 rounded-full bg-aurora"
-          transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-        />
-      )}
-      <Icon size={22} strokeWidth={2.2} />
-      <Text as="span" className="text-[11px]">{item.label}</Text>
-    </Link>
   );
 }
