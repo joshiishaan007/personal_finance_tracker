@@ -9,5 +9,8 @@ export * from './schemas/notification.schema';
 export * from './schemas/aiInsight.schema';
 export * from './schemas/ai.schema';
 export * from './schemas/engagement.schema';
+export * from './schemas/lifeGoal.schema';
+export * from './schemas/contribution.schema';
+export * from './schemas/task.schema';
 export * from './types/common';
 export * from './types/api';

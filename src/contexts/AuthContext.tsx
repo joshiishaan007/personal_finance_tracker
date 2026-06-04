@@ -13,6 +13,7 @@ interface UserData {
   timezone: string;
   preferences: {
     theme: 'light' | 'dark' | 'system';
+    mode: 'finance' | 'goals';
     compactMode: boolean;
     weekStartsOn: number;
   };
