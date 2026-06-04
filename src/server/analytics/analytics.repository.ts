@@ -88,6 +88,24 @@ export const analyticsRepository = {
       { $sort: { '_id.month': 1 } },
     ]),
 
+  // All-time monthly income/expense grouped by year+month — feeds the P&L chart.
+  allTimeMonthlyByType: (userId: string): Promise<AggRow[]> =>
+    TransactionModel.aggregate([
+      {
+        $match: {
+          userId: new Types.ObjectId(userId),
+          type: { $in: ['income', 'expense'] },
+        },
+      },
+      {
+        $group: {
+          _id: { year: { $year: '$date' }, month: { $month: '$date' }, type: '$type' },
+          total: { $sum: '$amount' },
+        },
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1 } },
+    ]),
+
   // Totals by type+category within a custom date range (joined to categories).
   byTypeAndCategory: (userId: string, start: Date, end: Date): Promise<AggRow[]> =>
     TransactionModel.aggregate([

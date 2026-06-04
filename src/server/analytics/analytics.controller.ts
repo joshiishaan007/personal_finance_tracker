@@ -42,4 +42,9 @@ export const analyticsController = {
     const { startDate, endDate } = validateQuery(DateRangeSchema, req);
     return ok(await svc.custom(userId, startDate, endDate));
   },
+
+  async monthlyPL() {
+    const { userId } = requireAuth();
+    return ok(await svc.monthlyPL(userId));
+  },
 };

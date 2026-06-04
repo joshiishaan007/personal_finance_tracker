@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Sector, ResponsiveContainer } from 'recharts';
 import { CHART_SERIES } from './chartTheme';
 import { Text } from '@/components/ui/Text';
 
@@ -13,16 +13,32 @@ interface Props {
   formatValue?: (v: number) => string;
 }
 
+// Render the active sector identically to a normal one — no expansion, no border.
+// This suppresses the default recharts white-box / stroke that appears on hover/click.
+function renderActiveShape(props: unknown) {
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props as {
+    cx: number; cy: number;
+    innerRadius: number; outerRadius: number;
+    startAngle: number; endAngle: number;
+    fill: string;
+  };
+  return (
+    <Sector
+      cx={cx} cy={cy}
+      innerRadius={innerRadius} outerRadius={outerRadius}
+      startAngle={startAngle} endAngle={endAngle}
+      fill={fill}
+    />
+  );
+}
+
 export function Donut({ data, height = 240, centerLabel, centerValue, formatValue }: Props) {
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
 
-  // recharts onMouseEnter passes (data, index) — we only need the index.
   const onEnter = useCallback((_: unknown, idx: number) => setActiveIdx(idx), []);
   const onLeave = useCallback(() => setActiveIdx(null), []);
 
   const active = activeIdx != null ? data[activeIdx] : null;
-
-  // While a segment is hovered, swap the center to show that segment's info.
   const displayLabel = active ? active.name : centerLabel;
   const displayValue = active
     ? (formatValue ? formatValue(active.value) : String(active.value))
@@ -43,6 +59,7 @@ export function Donut({ data, height = 240, centerLabel, centerValue, formatValu
             paddingAngle={2}
             stroke="none"
             animationDuration={850}
+            activeShape={renderActiveShape}
             onMouseEnter={onEnter}
             onMouseLeave={onLeave}
           >
@@ -50,9 +67,7 @@ export function Donut({ data, height = 240, centerLabel, centerValue, formatValu
               <Cell
                 key={i}
                 fill={CHART_SERIES[i % CHART_SERIES.length]}
-                // Dim non-active segments so the hovered one pops visually.
                 opacity={activeIdx == null || activeIdx === i ? 1 : 0.35}
-                style={{ transition: 'opacity 150ms ease, transform 150ms ease' }}
               />
             ))}
           </Pie>
