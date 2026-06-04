@@ -5,6 +5,7 @@ import { logger } from '../logger';
 import migration001 from './001_seed_default_categories';
 import migration002 from './002_transaction_client_id_index';
 import migration003 from './003_goals_domain_indexes';
+import migration004 from './004_sync_all_indexes';
 
 // Next stores local secrets in .env.local; this standalone script doesn't go
 // through Next, so load .env.local first (priority), then .env as a fallback.
@@ -21,6 +22,7 @@ const migrations: Migration[] = [
   migration001,
   migration002,
   migration003,
+  migration004,
 ];
 
 // Same Windows/Node quirk db.ts handles: c-ares can fall back to a dead 127.0.0.1

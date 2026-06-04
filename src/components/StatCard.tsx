@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
 import { IconBadge } from '@/components/ui/IconBadge';
 import { Text } from '@/components/ui/Text';
-import { Sparkline } from '@/components/charts/Sparkline';
+import { Sparkline } from '@/components/charts/lazy';
 import { useCountUp } from '@/hooks/useCountUp';
 
 type Tone = 'brand' | 'accent' | 'aqua' | 'success' | 'warn' | 'danger';

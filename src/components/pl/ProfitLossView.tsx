@@ -10,7 +10,7 @@ import { Text } from '@/components/ui/Text';
 import { SectionHeader } from '@/components/SectionHeader';
 import { StatCard } from '@/components/StatCard';
 import { ChartCard } from '@/components/charts/ChartCard';
-import { BarsGrouped } from '@/components/charts/BarsGrouped';
+import { BarsGrouped } from '@/components/charts/lazy';
 import { SkeletonCard } from '@/components/SkeletonLoader';
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];

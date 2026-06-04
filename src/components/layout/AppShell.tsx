@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -149,11 +148,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
       >
         {active && (
-          <motion.span
-            layoutId="sidebar-active"
-            className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-full bg-aurora"
-            transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-          />
+          <div className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-full bg-aurora" />
         )}
         <Icon size={18} strokeWidth={2.2} className={cn('shrink-0 transition-colors', active ? 'text-brand-600 dark:text-brand-300' : 'text-slate-400')} />
         <Text as="span" className={cn(active ? 'text-brand-700 dark:text-brand-200' : '')}>{item.label}</Text>
@@ -175,11 +170,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
       >
         {active && (
-          <motion.span
-            layoutId="bottomnav-active"
-            className="absolute top-0 h-0.5 w-8 rounded-full bg-aurora"
-            transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-          />
+          <div className="absolute top-0 h-0.5 w-8 rounded-full bg-aurora" />
         )}
         <Icon size={24} strokeWidth={2.2} />
       </Link>
