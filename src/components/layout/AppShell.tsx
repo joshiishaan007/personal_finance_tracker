@@ -165,7 +165,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         href={item.to}
         aria-label={item.label}
         className={cn(
-          'relative flex-1 flex items-center justify-center min-h-[56px] no-underline hover:no-underline active:scale-95 transition-colors',
+          'relative flex h-full items-center justify-center no-underline hover:no-underline active:scale-95 transition-colors',
           active ? 'text-brand-600 dark:text-brand-300' : 'text-slate-500 dark:text-slate-400',
         )}
       >
@@ -231,38 +231,41 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
-      {/* Mobile bottom nav */}
+      {/* Mobile bottom nav — five equal columns with the FAB dead-center */}
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 glass border-t pb-safe flex items-stretch z-40"
+        className="lg:hidden fixed inset-x-0 bottom-0 z-40 glass border-t pb-safe"
         aria-label="Main navigation"
       >
-        {bottomLeft.map(renderBottomItem)}
+        <div className="grid grid-cols-5 h-16">
+          {bottomLeft.map(renderBottomItem)}
 
-        {/* Center FAB — mode-aware quick add */}
-        <div className="relative flex-1 flex justify-center">
-          <Link
-            href={fab.href}
-            aria-label={fab.label}
-            className="absolute -top-5 w-14 h-14 rounded-full bg-aurora shadow-glow grid place-items-center text-white no-underline hover:no-underline active:scale-95 transition-transform"
+          {/* Center FAB cell — explicitly centered (not via abspos static position) */}
+          <div className="relative">
+            <Link
+              href={fab.href}
+              aria-label={fab.label}
+              className="absolute left-1/2 -top-5 -translate-x-1/2 w-14 h-14 rounded-full bg-aurora shadow-glow grid place-items-center text-white no-underline hover:no-underline active:scale-95 transition-transform"
+            >
+              <Plus size={26} strokeWidth={2.4} className="text-white" />
+            </Link>
+          </div>
+
+          {bottomRightNav.map(renderBottomItem)}
+
+          {/* Plain button with the same cell box-model as the nav links */}
+          <button
+            type="button"
+            onClick={() => setMoreOpen(true)}
+            aria-label="More options"
+            className="flex h-full items-center justify-center text-slate-500 dark:text-slate-400 active:scale-95 transition-colors"
           >
-            <Plus size={26} strokeWidth={2.4} className="text-white" />
-          </Link>
+            <MoreHorizontal size={24} strokeWidth={2.2} />
+          </button>
+
+          {Array.from({ length: rightSpacers }).map((_, i) => (
+            <div key={`spacer-${i}`} aria-hidden />
+          ))}
         </div>
-
-        {bottomRightNav.map(renderBottomItem)}
-
-        <Button
-          variant="ghost"
-          onClick={() => setMoreOpen(true)}
-          className="flex-1 flex items-center justify-center text-slate-500 dark:text-slate-400 min-h-[56px] rounded-none px-0 active:scale-95"
-          aria-label="More options"
-        >
-          <MoreHorizontal size={24} strokeWidth={2.2} />
-        </Button>
-
-        {Array.from({ length: rightSpacers }).map((_, i) => (
-          <div key={`spacer-${i}`} className="flex-1" aria-hidden />
-        ))}
       </nav>
 
       {/* Mobile more sheet */}
