@@ -48,7 +48,13 @@ export function PlanEditor({ open, onClose, buckets: initial, assignments: initi
   const assigned = planCats.filter((c) => !!assignments[c._id]);
 
   function patchBucket(id: string, patch: Partial<AllocationBucket>) {
-    setBuckets((bs) => bs.map((b) => (b.id === id ? { ...b, ...patch } : b)));
+    setBuckets((bs) => bs.map((b) => {
+      if (b.id !== id) return b;
+      const updated = { ...b, ...patch };
+      // Keep name in sync with kind so the view label stays meaningful.
+      if (patch.kind) updated.name = KIND_OPTIONS.find((k) => k.value === patch.kind)?.label ?? updated.name;
+      return updated;
+    }));
   }
 
   function addBucket() {
@@ -110,14 +116,6 @@ export function PlanEditor({ open, onClose, buckets: initial, assignments: initi
                     className="h-9 w-10 cursor-pointer rounded-lg border border-slate-200 dark:border-white/10 p-0.5 bg-white dark:bg-ink-800"
                   />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <Input
-                    label="Name"
-                    placeholder="e.g. Needs"
-                    value={b.name}
-                    onChange={(e) => patchBucket(b.id, { name: e.target.value })}
-                  />
-                </div>
                 <div className="w-20 shrink-0">
                   <Input
                     label="%"
@@ -128,7 +126,7 @@ export function PlanEditor({ open, onClose, buckets: initial, assignments: initi
                     onChange={(e) => patchBucket(b.id, { percent: e.target.valueAsNumber || 0 })}
                   />
                 </div>
-                <div className="w-28 shrink-0">
+                <div className="flex-1 min-w-0">
                   <Select
                     label="Kind"
                     options={KIND_OPTIONS}

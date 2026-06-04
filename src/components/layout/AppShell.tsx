@@ -301,7 +301,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     )}
                   >
                     <Icon size={22} strokeWidth={2.2} className={active ? 'text-brand-600 dark:text-brand-300' : 'text-slate-500 dark:text-slate-400'} />
-                    <Text as="span">{item.label}</Text>
+                    <Text as="span" className="text-center leading-tight">{item.label}</Text>
                   </Link>
                 );
               })}
