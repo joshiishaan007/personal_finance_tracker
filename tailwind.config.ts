@@ -6,11 +6,20 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Primary accent — steel blue
+        // Primary accent — mode-driven (steel blue in Finance, teal in Goals).
+        // Values come from CSS vars (see globals.css) so [data-mode] swaps them all.
         brand: {
-          50: '#EFF6FF', 100: '#DBEAFE', 200: '#BFDBFE', 300: '#93C5FD',
-          400: '#60A5FA', 500: '#3B82F6', 600: '#2563EB', 700: '#1D4ED8',
-          800: '#1E40AF', 900: '#1E3A8A', 950: '#172554',
+          50: 'rgb(var(--brand-50) / <alpha-value>)',
+          100: 'rgb(var(--brand-100) / <alpha-value>)',
+          200: 'rgb(var(--brand-200) / <alpha-value>)',
+          300: 'rgb(var(--brand-300) / <alpha-value>)',
+          400: 'rgb(var(--brand-400) / <alpha-value>)',
+          500: 'rgb(var(--brand-500) / <alpha-value>)',
+          600: 'rgb(var(--brand-600) / <alpha-value>)',
+          700: 'rgb(var(--brand-700) / <alpha-value>)',
+          800: 'rgb(var(--brand-800) / <alpha-value>)',
+          900: 'rgb(var(--brand-900) / <alpha-value>)',
+          950: 'rgb(var(--brand-950) / <alpha-value>)',
         },
         // Secondary accent — neutral slate-steel
         accent: {
@@ -46,17 +55,17 @@ export default {
         },
       },
       backgroundImage: {
-        'aurora': 'linear-gradient(135deg, #334155 0%, #2563EB 60%, #0EA5E9 100%)',
-        'aurora-soft': 'linear-gradient(135deg, rgba(51,65,85,0.12), rgba(37,99,235,0.12), rgba(14,165,233,0.10))',
-        'brand-grad': 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+        'aurora': 'linear-gradient(135deg, rgb(var(--grad-a)) 0%, rgb(var(--grad-b)) 60%, rgb(var(--grad-c)) 100%)',
+        'aurora-soft': 'linear-gradient(135deg, rgb(var(--grad-a) / 0.12), rgb(var(--grad-b) / 0.12), rgb(var(--grad-c) / 0.10))',
+        'brand-grad': 'linear-gradient(135deg, rgb(var(--brand-500)) 0%, rgb(var(--brand-600)) 100%)',
         'mint-grad': 'linear-gradient(135deg, #34D9A4 0%, #06B6D4 100%)',
         'flame-grad': 'linear-gradient(135deg, #FBBF24 0%, #FB5C6B 100%)',
-        'glow-radial': 'radial-gradient(60% 60% at 50% 0%, rgba(37,99,235,0.22), transparent 70%)',
+        'glow-radial': 'radial-gradient(60% 60% at 50% 0%, rgb(var(--glow) / 0.22), transparent 70%)',
       },
       boxShadow: {
         'card': '0 1px 2px rgba(2,6,23,0.04), 0 6px 16px -4px rgba(2,6,23,0.08)',
         'card-lg': '0 12px 40px -8px rgba(2,6,23,0.18)',
-        'glow': '0 0 0 1px rgba(37,99,235,0.22), 0 10px 34px -8px rgba(37,99,235,0.45)',
+        'glow': '0 0 0 1px rgb(var(--glow) / 0.22), 0 10px 34px -8px rgb(var(--glow) / 0.45)',
         'glow-mint': '0 10px 34px -8px rgba(34,211,167,0.5)',
         'glow-danger': '0 10px 34px -8px rgba(251,92,107,0.5)',
       },

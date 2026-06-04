@@ -5,6 +5,14 @@
 @layer base {
   :root {
     color-scheme: light;
+    /* Accent (brand) scale as RGB channels so [data-mode] can swap the entire
+       accent (Finance steel-blue → Goals teal) with zero per-component change. */
+    --brand-50: 239 246 255; --brand-100: 219 234 254; --brand-200: 191 219 254;
+    --brand-300: 147 197 253; --brand-400: 96 165 250; --brand-500: 59 130 246;
+    --brand-600: 37 99 235; --brand-700: 29 78 216; --brand-800: 30 64 175;
+    --brand-900: 30 58 138; --brand-950: 23 37 84;
+    /* aurora gradient stops (a→b→c) + glow — also mode-driven */
+    --grad-a: 51 65 85; --grad-b: 37 99 235; --grad-c: 14 165 233; --glow: 37 99 235;
     /* Steel chart palette (light) */
     --chart-1: #2563EB; /* steel blue */
     --chart-2: #0EA5E9; /* sky */
@@ -39,6 +47,15 @@
     --border: #262636;
   }
 
+  /* Goals mode accent — teal/emerald (independent of light/dark). */
+  html[data-mode='goals'] {
+    --brand-50: 240 253 250; --brand-100: 204 251 241; --brand-200: 153 246 228;
+    --brand-300: 94 234 212; --brand-400: 45 212 191; --brand-500: 20 184 166;
+    --brand-600: 13 148 136; --brand-700: 15 118 110; --brand-800: 17 94 89;
+    --brand-900: 19 78 74; --brand-950: 4 47 46;
+    --grad-b: 13 148 136; --grad-c: 45 212 191; --glow: 13 148 136;
+  }
+
   html {
     -webkit-text-size-adjust: 100%;
   }
@@ -46,7 +63,7 @@
   body {
     @apply bg-slate-50 text-slate-900 dark:bg-ink-950 dark:text-slate-100 antialiased;
     /* subtle steel ambience anchored top of the viewport */
-    background-image: radial-gradient(70% 50% at 50% -10%, rgba(37, 99, 235, 0.08), transparent 60%);
+    background-image: radial-gradient(70% 50% at 50% -10%, rgb(var(--glow) / 0.08), transparent 60%);
     background-attachment: fixed;
   }
 
@@ -76,7 +93,8 @@
   /* Safe-area helpers for the app shell (mobile) */
   .pt-safe { padding-top: env(safe-area-inset-top); }
   .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-  .pb-safe-nav { padding-bottom: calc(env(safe-area-inset-bottom) + 4.5rem); }
+  /* 5rem (80px) > nav bar (56px + border) + comfortable 24px buffer. */
+  .pb-safe-nav { padding-bottom: calc(env(safe-area-inset-bottom) + 5rem); }
   .bottom-safe { bottom: env(safe-area-inset-bottom); }
 
   /* Frosted glass surface used by the shell + glass cards */
