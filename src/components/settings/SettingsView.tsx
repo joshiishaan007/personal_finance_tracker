@@ -121,55 +121,30 @@ export function SettingsView() {
       {/* Display preferences */}
       <Card variant="glass">
         <SectionHeader icon={LayoutDashboard} tone="accent" title="Display" />
-        <div className="space-y-5">
-          <Label className="flex items-center justify-between cursor-pointer gap-3">
-            <div>
-              <Text className="font-medium">Compact mode</Text>
-              <Text variant="small">Reduce padding and spacing</Text>
-            </div>
-            <Button
-              role="switch"
-              aria-checked={user.preferences.compactMode}
-              onClick={() => updatePref.mutate({ compactMode: !user.preferences.compactMode })}
-              className={cn(
-                'relative w-12 h-7 rounded-full transition-colors p-0 min-h-0 shrink-0',
-                user.preferences.compactMode ? 'bg-aurora' : 'bg-slate-300 dark:bg-ink-700',
-              )}
-            >
-              <Text as="span" className={cn(
-                'absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform',
-                user.preferences.compactMode ? 'translate-x-[1.375rem]' : 'translate-x-0.5',
-              )} />
-            </Button>
-          </Label>
-
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <CalendarRange size={15} strokeWidth={2.2} className="text-slate-500 dark:text-slate-400" />
-              <Label>Week starts on</Label>
-            </div>
-            <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-ink-800">
-              {WEEK_START_OPTIONS.map((opt) => {
-                const active = weekStart === opt.value;
-                return (
-                  <Button
-                    key={opt.value}
-                    variant="ghost"
-                    onClick={() => updatePref.mutate({ weekStartsOn: opt.value })}
-                    aria-pressed={active}
-                    className={cn(
-                      'rounded-xl text-sm font-semibold min-h-0 py-2.5 transition-all',
-                      active
-                        ? 'bg-white dark:bg-ink-700 text-brand-600 dark:text-brand-300 shadow-card'
-                        : 'text-slate-500 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-ink-700/50',
-                    )}
-                  >
-                    {opt.label}
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
+        <div className="flex items-center gap-2 mb-2">
+          <CalendarRange size={15} strokeWidth={2.2} className="text-slate-500 dark:text-slate-400" />
+          <Label>Week starts on</Label>
+        </div>
+        <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-ink-800">
+          {WEEK_START_OPTIONS.map((opt) => {
+            const active = weekStart === opt.value;
+            return (
+              <Button
+                key={opt.value}
+                variant="ghost"
+                onClick={() => updatePref.mutate({ weekStartsOn: opt.value })}
+                aria-pressed={active}
+                className={cn(
+                  'rounded-xl text-sm font-semibold min-h-0 py-2.5 transition-all',
+                  active
+                    ? 'bg-white dark:bg-ink-700 text-brand-600 dark:text-brand-300 shadow-card'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-ink-700/50',
+                )}
+              >
+                {opt.label}
+              </Button>
+            );
+          })}
         </div>
       </Card>
 

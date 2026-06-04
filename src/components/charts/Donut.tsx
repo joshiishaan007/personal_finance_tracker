@@ -1,8 +1,8 @@
 'use client';
 
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { useState, useCallback } from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { CHART_SERIES } from './chartTheme';
-import { ChartTooltip } from './ChartTooltip';
 import { Text } from '@/components/ui/Text';
 
 interface Props {
@@ -14,6 +14,20 @@ interface Props {
 }
 
 export function Donut({ data, height = 240, centerLabel, centerValue, formatValue }: Props) {
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
+
+  // recharts onMouseEnter passes (data, index) — we only need the index.
+  const onEnter = useCallback((_: unknown, idx: number) => setActiveIdx(idx), []);
+  const onLeave = useCallback(() => setActiveIdx(null), []);
+
+  const active = activeIdx != null ? data[activeIdx] : null;
+
+  // While a segment is hovered, swap the center to show that segment's info.
+  const displayLabel = active ? active.name : centerLabel;
+  const displayValue = active
+    ? (formatValue ? formatValue(active.value) : String(active.value))
+    : centerValue;
+
   return (
     <div className="relative" style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
@@ -29,21 +43,43 @@ export function Donut({ data, height = 240, centerLabel, centerValue, formatValu
             paddingAngle={2}
             stroke="none"
             animationDuration={850}
+            onMouseEnter={onEnter}
+            onMouseLeave={onLeave}
           >
             {data.map((_, i) => (
-              <Cell key={i} fill={CHART_SERIES[i % CHART_SERIES.length]} />
+              <Cell
+                key={i}
+                fill={CHART_SERIES[i % CHART_SERIES.length]}
+                // Dim non-active segments so the hovered one pops visually.
+                opacity={activeIdx == null || activeIdx === i ? 1 : 0.35}
+                style={{ transition: 'opacity 150ms ease, transform 150ms ease' }}
+              />
             ))}
           </Pie>
-          <Tooltip content={<ChartTooltip formatValue={formatValue} />} />
         </PieChart>
       </ResponsiveContainer>
-      {(centerLabel || centerValue) && (
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-          {centerLabel && (
-            <Text as="span" variant="small" className="uppercase tracking-wide text-[10px]">{centerLabel}</Text>
+
+      {(displayLabel || displayValue) && (
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-0.5 text-center px-4">
+          {displayLabel && (
+            <Text
+              as="span"
+              className={`block leading-tight transition-all duration-150 ${
+                active
+                  ? 'text-[11px] font-semibold text-slate-700 dark:text-slate-200 uppercase tracking-wide'
+                  : 'text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              {displayLabel}
+            </Text>
           )}
-          {centerValue && (
-            <Text as="span" className="font-display font-bold text-xl text-slate-900 dark:text-slate-50 tabular-nums">{centerValue}</Text>
+          {displayValue && (
+            <Text
+              as="span"
+              className="block font-bold tabular-nums text-slate-900 dark:text-slate-50 transition-all duration-150 text-xl leading-tight"
+            >
+              {displayValue}
+            </Text>
           )}
         </div>
       )}
