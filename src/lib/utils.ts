@@ -1,8 +1,11 @@
 import { type Currency, formatAmount, CurrencySymbols } from '@/shared';
 import { format, parseISO } from 'date-fns';
 
+const CURRENCY_LOCALE: Record<string, string> = { INR: 'en-IN', USD: 'en-US' };
+
 export function fmt(minorUnits: number, currency: string = 'INR'): string {
-  return formatAmount(minorUnits, currency as Currency);
+  const locale = CURRENCY_LOCALE[currency] ?? 'en-US';
+  return formatAmount(minorUnits, currency as Currency, locale);
 }
 
 export function currencySymbol(currency: string): string {

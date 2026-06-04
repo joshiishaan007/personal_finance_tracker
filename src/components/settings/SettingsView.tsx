@@ -17,6 +17,11 @@ import { Text } from '@/components/ui/Text';
 import { IconBadge } from '@/components/ui/IconBadge';
 import { cn } from '@/lib/utils';
 
+const CURRENCY_OPTIONS = [
+  { value: 'INR', label: '₹ Indian Rupee (INR)' },
+  { value: 'USD', label: '$ US Dollar (USD)' },
+];
+
 const TIMEZONE_OPTIONS = [
   'Asia/Kolkata', 'America/New_York', 'America/Chicago', 'America/Los_Angeles',
   'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Asia/Tokyo', 'Asia/Singapore',
@@ -104,14 +109,12 @@ export function SettingsView() {
             onChange={(e) => updatePref.mutate({ timezone: e.target.value })}
             options={TIMEZONE_OPTIONS}
           />
-          <div>
-            <Label className="mb-1">Currency</Label>
-            <div className="bg-slate-50 dark:bg-ink-800 px-3 py-2.5 rounded-xl">
-              <Text variant="muted">
-                {user.currency} — <Text as="span" className="text-slate-400 dark:text-slate-500">Locked after first transaction. Contact support to change.</Text>
-              </Text>
-            </div>
-          </div>
+          <Select
+            label="Currency"
+            value={user.currency}
+            onChange={(e) => updatePref.mutate({ currency: e.target.value as 'INR' | 'USD' })}
+            options={CURRENCY_OPTIONS}
+          />
         </div>
       </Card>
 
