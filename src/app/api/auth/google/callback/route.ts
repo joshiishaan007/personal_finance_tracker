@@ -1,13 +1,16 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { catchRoute } from '@/server/http';
+import { catchAuthCallback } from '@/server/http/catchAuthCallback';
 import { getEnv } from '@/server/env';
 import { authService } from '@/server/auth/auth.service';
 
 export const runtime = 'nodejs';
-// Per-request OAuth handler — never prerender/cache (no cookies() at entry to mark it dynamic).
 export const dynamic = 'force-dynamic';
+// Cold start (connectDB) + two Google API round-trips + one DB query can reach
+// 8-9s on Vercel Hobby. Give the function 30s so a slow Atlas day or cold start
+// never kills the OAuth flow mid-flight.
+export const maxDuration = 30;
 
-export const GET = catchRoute(async (req: NextRequest) => {
+export const GET = catchAuthCallback(async (req: NextRequest) => {
   const env = getEnv();
   const appUrl = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, '');
   const failed = NextResponse.redirect(`${appUrl}/login?error=auth_failed`);

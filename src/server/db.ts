@@ -44,10 +44,10 @@ export async function connectDB(): Promise<typeof mongoose> {
       .connect(getEnv().MONGODB_URI, {
         dbName: "personal",
         bufferCommands: false,
-        // Fail fast on cold start so the first failed request returns quickly
-        // rather than hanging. AuthContext retries on 5xx, so the user stays
-        // logged in through a transient Atlas connection hiccup.
-        serverSelectionTimeoutMS: 5000,
+        // 10s gives Atlas enough time to respond on a cold Vercel start.
+        // Routes that need it set maxDuration >= 15s so the function budget
+        // comfortably covers this plus the actual operation.
+        serverSelectionTimeoutMS: 10000,
         // Cap per-operation socket time so a slow Atlas query can't hang a
         // Vercel serverless invocation past its maxDuration limit.
         socketTimeoutMS: 30000,
