@@ -84,8 +84,15 @@
   }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
 
-  /* Kill the browser focus-outline on recharts SVG paths (click causes a white box). */
-  .recharts-sector { outline: none; }
+  /* The global * rule applies focus-visible:ring-2 (a box-shadow) to every element.
+     recharts SVG paths receive :focus/:focus-visible on click, making the brand ring
+     appear as a coloured box around the clicked chart element. Override both
+     outline and box-shadow for every child of a recharts wrapper to suppress it. */
+  .recharts-wrapper :focus,
+  .recharts-wrapper :focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+  }
 
   /* Thin, brand-tinted scrollbar — apply wherever overflow-y-auto is used */
   .scrollbar-thin {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -128,6 +128,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { mode } = useMode();
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
+
+  useEffect(() => { setMoreOpen(false); }, [pathname]);
 
   const { primary, more, fab } = NAV[mode];
   const allNav = [...primary, ...more];
