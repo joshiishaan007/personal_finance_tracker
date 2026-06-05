@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState, useCallback } from 'react';
-import { PieChart, Pie, Cell, Sector, ResponsiveContainer } from 'recharts';
-import { CHART_SERIES } from './chartTheme';
-import { Text } from '@/components/ui/Text';
+import { useState, useCallback } from "react";
+import { PieChart, Pie, Cell, Sector, ResponsiveContainer } from "recharts";
+import { CHART_SERIES } from "./chartTheme";
+import { Text } from "@/components/ui/Text";
 
 interface Props {
   data: Array<{ name: string; value: number }>;
@@ -16,36 +16,55 @@ interface Props {
 // Render the active sector identically to a normal one — no expansion, no border.
 // This suppresses the default recharts white-box / stroke that appears on hover/click.
 function renderActiveShape(props: unknown) {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props as {
-    cx: number; cy: number;
-    innerRadius: number; outerRadius: number;
-    startAngle: number; endAngle: number;
-    fill: string;
-  };
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } =
+    props as {
+      cx: number;
+      cy: number;
+      innerRadius: number;
+      outerRadius: number;
+      startAngle: number;
+      endAngle: number;
+      fill: string;
+    };
   return (
     <Sector
-      cx={cx} cy={cy}
-      innerRadius={innerRadius} outerRadius={outerRadius}
-      startAngle={startAngle} endAngle={endAngle}
+      cx={cx}
+      cy={cy}
+      innerRadius={innerRadius}
+      outerRadius={outerRadius}
+      startAngle={startAngle}
+      endAngle={endAngle}
       fill={fill}
+      stroke="none"
     />
   );
 }
 
-export function Donut({ data, height = 240, centerLabel, centerValue, formatValue }: Props) {
+export function Donut({
+  data,
+  height = 240,
+  centerLabel,
+  centerValue,
+  formatValue,
+}: Props) {
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
 
-  const onEnter = useCallback((_: unknown, idx: number) => setActiveIdx(idx), []);
+  const onEnter = useCallback(
+    (_: unknown, idx: number) => setActiveIdx(idx),
+    [],
+  );
   const onLeave = useCallback(() => setActiveIdx(null), []);
 
   const active = activeIdx != null ? data[activeIdx] : null;
   const displayLabel = active ? active.name : centerLabel;
   const displayValue = active
-    ? (formatValue ? formatValue(active.value) : String(active.value))
+    ? formatValue
+      ? formatValue(active.value)
+      : String(active.value)
     : centerValue;
 
   return (
-    <div className="relative" style={{ height }}>
+    <div className="relative [&_.recharts-sector:focus]:outline-none [&_.recharts-sector:focus-visible]:outline-none" style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
@@ -68,6 +87,7 @@ export function Donut({ data, height = 240, centerLabel, centerValue, formatValu
                 key={i}
                 fill={CHART_SERIES[i % CHART_SERIES.length]}
                 opacity={activeIdx == null || activeIdx === i ? 1 : 0.35}
+                stroke="none"
               />
             ))}
           </Pie>
@@ -81,8 +101,8 @@ export function Donut({ data, height = 240, centerLabel, centerValue, formatValu
               as="span"
               className={`block leading-tight transition-all duration-150 ${
                 active
-                  ? 'text-[11px] font-semibold text-slate-700 dark:text-slate-200 uppercase tracking-wide'
-                  : 'text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400'
+                  ? "text-[11px] font-semibold text-slate-700 dark:text-slate-200 uppercase tracking-wide"
+                  : "text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400"
               }`}
             >
               {displayLabel}
