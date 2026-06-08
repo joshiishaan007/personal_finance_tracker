@@ -7,7 +7,7 @@ import {
   useDebtSummary, useFriendDebts, useSettledDebts, useUpdateDebt, useDeleteDebt,
   type DebtView, type DebtSummaryItem,
 } from '@/hooks/useDebts';
-import { useCreateTransaction } from '@/hooks/useTransactions';
+import { useCreateTransaction, useDeleteTransaction } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
 import { Modal } from '@/components/ui/Modal';
 import { Card } from '@/components/ui/Card';
@@ -35,6 +35,7 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
   const updateDebt = useUpdateDebt();
   const deleteDebt = useDeleteDebt();
   const createTx   = useCreateTransaction();
+  const deleteTx   = useDeleteTransaction();
 
   const [editingId, setEditingId]     = useState<string | null>(null);
   const [editAmount, setEditAmount]   = useState('');
@@ -67,23 +68,22 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
     setEditingId(null);
   }
 
-  function createReimbursementTx(d: DebtView) {
-    if (!incomeCat) return;
-    createTx.mutate({
-      amount:        d.amount,
-      type:          'income',
-      categoryId:    incomeCat._id,
-      date:          new Date().toISOString(),
-      note:          `Reimbursement from ${friendName ?? ''}`,
-      paymentMethod: 'upi',
-      tags:          ['reimbursement'],
-      isRecurring:   false,
-    });
-  }
-
   async function settle(d: DebtView) {
     await updateDebt.mutateAsync({ id: d._id, data: { status: 'settled' } });
-    createReimbursementTx(d);
+    if (incomeCat) {
+      const txId = await createTx.mutateAsync({
+        amount:        d.amount,
+        type:          'income',
+        categoryId:    incomeCat._id,
+        date:          new Date().toISOString(),
+        note:          `Reimbursement from ${friendName ?? ''}`,
+        paymentMethod: 'upi',
+        tags:          ['reimbursement'],
+        isRecurring:   false,
+      });
+      // Link the income tx to this debt so it can be deleted on revert.
+      await updateDebt.mutateAsync({ id: d._id, data: { transactionId: txId } });
+    }
     setSettledIds((prev) => new Set(prev).add(d._id));
   }
 
@@ -244,8 +244,11 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
                     className="p-1.5 min-h-0 hover:text-warn-500 shrink-0"
                     aria-label="Revert to pending"
                     title="Revert to pending"
-                    onClick={() => updateDebt.mutate({ id: d._id, data: { status: 'pending' } })}
-                    loading={updateDebt.isPending}
+                    onClick={() => {
+                      if (d.transactionId) void deleteTx.mutateAsync(d.transactionId);
+                      updateDebt.mutate({ id: d._id, data: { status: 'pending' } });
+                    }}
+                    loading={updateDebt.isPending || deleteTx.isPending}
                   >
                     <RotateCcw size={12} strokeWidth={2.2} />
                   </Button>

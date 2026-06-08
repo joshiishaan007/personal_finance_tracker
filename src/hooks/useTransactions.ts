@@ -64,7 +64,7 @@ export function useTransactions(filters: Partial<TransactionFilter> = {}) {
 export function useCreateTransaction() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: CreateTransaction): Promise<void> => {
+    mutationFn: async (data: CreateTransaction): Promise<string> => {
       const clientId = data.clientId ?? newClientId();
       const body = { ...data, clientId };
 
@@ -86,10 +86,12 @@ export function useCreateTransaction() {
           }
           return old;
         });
-        return;
+        // Offline: clientId will become the server _id on replay.
+        return clientId;
       }
 
-      await api.post(ENDPOINTS.transactions.create, body);
+      const resp = await api.post<{ data: { _id: string } }>(ENDPOINTS.transactions.create, body);
+      return resp.data.data._id;
     },
     onSuccess: () => {
       // Offline: keep the optimistic cache and skip refetches that would just fail.

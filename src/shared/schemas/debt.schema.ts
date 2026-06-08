@@ -8,8 +8,9 @@ export const CreateDebtSchema = z.object({
 });
 
 export const UpdateDebtSchema = z.object({
-  amount: z.number().int().positive().optional(),
-  status: z.enum(['pending', 'settled']).optional(),
+  amount:        z.number().int().positive().optional(),
+  status:        z.enum(['pending', 'settled']).optional(),
+  transactionId: z.string().optional(),
 });
 
 export const DebtFilterSchema = z.object({
