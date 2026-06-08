@@ -98,6 +98,11 @@ export const ENDPOINTS = {
     create: '/api/tasks',
     detail: (id: string) => `/api/tasks/${id}`,
   },
+  instantCards: {
+    list:   '/api/instant-cards',
+    create: '/api/instant-cards',
+    detail: (id: string) => `/api/instant-cards/${id}`,
+  },
   export: {
     json: '/api/export/json',
     transactionsCsv: '/api/export/transactions/csv',

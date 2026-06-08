@@ -23,7 +23,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { TransactionForm } from '@/components/transaction/TransactionForm';
 import { QuickAddBar } from '@/components/transaction/QuickAddBar';
-import { QuickAddChips } from '@/components/transaction/QuickAddChips';
+import { InstantCards } from '@/components/transaction/InstantCards';
 
 type TxType = 'income' | 'expense' | 'transfer' | 'investment';
 type Tone = 'success' | 'danger' | 'aqua' | 'brand';
@@ -126,7 +126,7 @@ export function TransactionsView() {
 
       <div className="space-y-3">
         <QuickAddBar />
-        <QuickAddChips />
+        <InstantCards />
       </div>
 
       {items.length > 0 && (

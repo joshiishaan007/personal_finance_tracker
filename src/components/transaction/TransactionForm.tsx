@@ -1,20 +1,24 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Zap } from 'lucide-react';
 import { toMinorUnits, type Currency } from '@/shared';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreateTransaction, useUpdateTransaction } from '@/hooks/useTransactions';
+import { useCreateInstantCard } from '@/hooks/useInstantCards';
 import { useInvestments } from '@/hooks/useInvestments';
 import type { CreateTransaction } from '@/shared';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
+import { Text } from '@/components/ui/Text';
 import { Modal } from '@/components/ui/Modal';
 import { DatePicker } from '@/components/ui/DatePicker';
+import { cn } from '@/lib/utils';
 
 const FormSchema = z.object({
   amount: z.coerce.number().positive('Amount must be positive'),
@@ -59,9 +63,12 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
   const { user } = useAuth();
   const currency = user?.currency ?? 'INR';
 
-  const createTx = useCreateTransaction();
-  const updateTx = useUpdateTransaction(editTx?._id ?? '');
-  const isPending = editTx ? updateTx.isPending : createTx.isPending;
+  const [saveAsCard, setSaveAsCard] = useState(false);
+
+  const createTx  = useCreateTransaction();
+  const updateTx  = useUpdateTransaction(editTx?._id ?? '');
+  const createCard = useCreateInstantCard();
+  const isPending  = editTx ? updateTx.isPending : createTx.isPending;
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
@@ -115,7 +122,22 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
     if (editTx) {
       updateTx.mutate(payload, { onSuccess: onClose });
     } else {
-      createTx.mutate(payload, { onSuccess: onClose });
+      createTx.mutate(payload, {
+        onSuccess: () => {
+          if (saveAsCard) {
+            createCard.mutate({
+              amount:        payload.amount,
+              type:          payload.type,
+              categoryId:    payload.categoryId,
+              paymentMethod: payload.paymentMethod,
+              note:          payload.note,
+              tags:          payload.tags ?? [],
+            });
+          }
+          setSaveAsCard(false);
+          onClose();
+        },
+      });
     }
   }
 
@@ -193,6 +215,34 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
           placeholder="food, family, work…"
           {...register('tags')}
         />
+
+        {/* Instant card toggle — only for new transactions */}
+        {!editTx && (
+          <div className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/60 dark:bg-ink-800/40 px-3 py-2.5">
+            <Zap size={15} className="shrink-0 text-brand-500" />
+            <div className="flex-1">
+              <Text className="text-sm font-medium">Save as instant card</Text>
+              <Text variant="small" className="text-slate-500">Pin for one-tap repeat with today&apos;s date</Text>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={saveAsCard}
+              onClick={() => setSaveAsCard((v) => !v)}
+              className={cn(
+                'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500',
+                saveAsCard ? 'bg-brand-500' : 'bg-slate-300 dark:bg-ink-600',
+              )}
+            >
+              <span
+                className={cn(
+                  'block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform',
+                  saveAsCard ? 'translate-x-4' : 'translate-x-0.5',
+                )}
+              />
+            </button>
+          </div>
+        )}
 
         <div className="flex gap-3 pt-2">
           <Button type="button" variant="secondary" onClick={onClose} className="flex-1">Cancel</Button>
