@@ -43,8 +43,10 @@ export function GoalDetailView({ goalId }: { goalId: string }) {
   const deleteTask = useDeleteTask();
   const deleteGoal = useDeleteLifeGoal();
 
-  const [editOpen,      setEditOpen]      = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editOpen,           setEditOpen]           = useState(false);
+  const [confirmDelete,      setConfirmDelete]      = useState(false);
+  const [deleteContribId,    setDeleteContribId]    = useState<string | null>(null);
+  const [deleteTaskId,       setDeleteTaskId]       = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'calendar' | 'chart'>('calendar');
 
   // Log progress form state
@@ -288,7 +290,7 @@ export function GoalDetailView({ goalId }: { goalId: string }) {
                   variant="ghost"
                   size="sm"
                   className="min-h-0 p-1 hover:text-danger-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => delContribution.mutate(c._id)}
+                  onClick={() => setDeleteContribId(c._id)}
                   aria-label="Delete entry"
                 >
                   <Trash2 size={13} />
@@ -351,7 +353,7 @@ export function GoalDetailView({ goalId }: { goalId: string }) {
                 key={task._id}
                 task={task}
                 onToggle={() => updateTask.mutate({ id: task._id, data: { done: !task.done } })}
-                onDelete={() => deleteTask.mutate(task._id)}
+                onDelete={() => setDeleteTaskId(task._id)}
               />
             ))
           )}
@@ -367,6 +369,22 @@ export function GoalDetailView({ goalId }: { goalId: string }) {
         title="Delete this goal?"
         description="All progress logs and tasks for this goal will be permanently deleted. This cannot be undone."
         loading={deleteGoal.isPending}
+      />
+      <ConfirmDialog
+        open={!!deleteContribId}
+        onClose={() => setDeleteContribId(null)}
+        onConfirm={() => delContribution.mutate(deleteContribId!)}
+        title="Delete progress entry?"
+        description="This log entry will be removed from your progress history."
+        loading={delContribution.isPending}
+      />
+      <ConfirmDialog
+        open={!!deleteTaskId}
+        onClose={() => setDeleteTaskId(null)}
+        onConfirm={() => deleteTask.mutate(deleteTaskId!)}
+        title="Delete task?"
+        description="This task will be permanently removed."
+        loading={deleteTask.isPending}
       />
     </div>
   );

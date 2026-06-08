@@ -15,6 +15,7 @@ import { TimePicker } from '@/components/ui/TimePicker';
 import { Select } from '@/components/ui/Select';
 import { EmptyState } from '@/components/EmptyState';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { cn } from '@/lib/utils';
 
 const FILTERS: { key: string; label: string; query: Record<string, string> }[] = [
@@ -42,7 +43,8 @@ function buildDueIso(date: string, time: string): string | undefined {
 }
 
 export function TasksView() {
-  const [filterKey, setFilterKey] = useState('all');
+  const [filterKey,    setFilterKey]    = useState('all');
+  const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
   const [title, setTitle]         = useState('');
   const [priority, setPriority]   = useState<TaskPriority>('med');
   const [dueDate, setDueDate]     = useState('');
@@ -170,11 +172,19 @@ export function TasksView() {
               key={task._id}
               task={task}
               onToggle={() => updateTask.mutate({ id: task._id, data: { done: !task.done } })}
-              onDelete={() => deleteTask.mutate(task._id)}
+              onDelete={() => setDeleteTaskId(task._id)}
             />
           ))}
         </div>
       )}
+    <ConfirmDialog
+      open={!!deleteTaskId}
+      onClose={() => setDeleteTaskId(null)}
+      onConfirm={() => deleteTask.mutate(deleteTaskId!)}
+      title="Delete task?"
+      description="This task will be permanently removed."
+      loading={deleteTask.isPending}
+    />
     </div>
   );
 }

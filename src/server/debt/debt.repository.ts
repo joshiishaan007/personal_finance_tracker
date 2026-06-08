@@ -8,10 +8,11 @@ function escapeRegex(s: string): string {
 }
 
 export const debtRepository = {
-  list: (userId: string, filter: { status?: string; friendName?: string }) => {
+  list: (userId: string, filter: { status?: string; friendName?: string; sourceTxId?: string }) => {
     const q: Record<string, unknown> = { userId: new Types.ObjectId(userId) };
     if (filter.status && filter.status !== 'all') q.status = filter.status;
     if (filter.friendName) q.friendName = { $regex: `^${escapeRegex(filter.friendName)}$`, $options: 'i' };
+    if (filter.sourceTxId) q.sourceTxId = filter.sourceTxId;
     return DebtModel.find(q).sort({ createdAt: -1 }).lean().exec();
   },
 

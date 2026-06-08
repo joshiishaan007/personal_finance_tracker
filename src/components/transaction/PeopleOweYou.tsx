@@ -45,6 +45,7 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
   const [showSettled,    setShowSettled]    = useState(initialShowSettled);
   const [pendingSettle,  setPendingSettle]  = useState<DebtView | null>(null);
   const [pendingRevert,  setPendingRevert]  = useState<DebtView | null>(null);
+  const [pendingDelete,  setPendingDelete]  = useState<DebtView | null>(null);
   const [confirmAll,     setConfirmAll]     = useState(false);
 
   const { data: settledDebts = [] } = useFriendDebts(showSettled ? friendName : null, 'settled');
@@ -192,7 +193,7 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
                         size="sm"
                         className="p-1.5 min-h-0 hover:text-danger-500"
                         aria-label="Delete"
-                        onClick={() => deleteDebt.mutate(d._id)}
+                        onClick={() => setPendingDelete(d)}
                         loading={deleteDebt.isPending}
                       >
                         <Trash2 size={12} strokeWidth={2.2} />
@@ -264,6 +265,15 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
         </div>
       </div>
     </Modal>
+
+    <ConfirmDialog
+      open={!!pendingDelete}
+      onClose={() => setPendingDelete(null)}
+      onConfirm={() => deleteDebt.mutate(pendingDelete!._id)}
+      title="Remove this entry?"
+      description={pendingDelete ? `${pendingDelete.friendName}'s debt of ${fmt(pendingDelete.amount, currency)} will be permanently removed.` : undefined}
+      loading={deleteDebt.isPending}
+    />
 
     <ConfirmDialog
       open={!!pendingSettle}

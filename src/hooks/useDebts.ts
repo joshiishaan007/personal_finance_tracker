@@ -29,6 +29,17 @@ export function useFriendDebts(friendName: string | null, status: 'pending' | 's
   });
 }
 
+export function useTransactionDebts(txId: string | null | undefined) {
+  const qs = txId ? new URLSearchParams({ sourceTxId: txId, status: 'all' }).toString() : '';
+  return useQuery({
+    queryKey: ['debts', 'tx', txId],
+    queryFn: () =>
+      api.get<{ data: DebtView[] }>(ENDPOINTS.debts.list(qs)).then((r) => r.data.data),
+    enabled: !!txId,
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
 export function useSettledDebts() {
   const qs = new URLSearchParams({ status: 'settled' }).toString();
   return useQuery({

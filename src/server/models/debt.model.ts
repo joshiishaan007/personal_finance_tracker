@@ -5,6 +5,7 @@ export interface IDebt extends Document {
   friendName:    string;
   amount:        number;
   note?:         string;
+  sourceTxId?:    string;
   transactionId?: string;
   status:        'pending' | 'settled';
   settledAt?:    Date;
@@ -18,6 +19,7 @@ const debtSchema = new Schema<IDebt>(
     friendName:    { type: String, required: true, trim: true },
     amount:        { type: Number, required: true },
     note:          String,
+    sourceTxId:    String,
     transactionId: String,
     status:        { type: String, enum: ['pending', 'settled'], default: 'pending' },
     settledAt:     Date,
@@ -27,6 +29,7 @@ const debtSchema = new Schema<IDebt>(
 
 debtSchema.index({ userId: 1, status: 1 });
 debtSchema.index({ userId: 1, friendName: 1 });
+debtSchema.index({ userId: 1, sourceTxId: 1 });
 
 export const DebtModel =
   (models.Debt as Model<IDebt>) || model<IDebt>('Debt', debtSchema);

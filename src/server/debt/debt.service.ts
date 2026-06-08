@@ -4,13 +4,14 @@ import type { CreateDebt, UpdateDebt, DebtFilter, DebtView, DebtSummaryItem } fr
 
 function toView(d: {
   _id: unknown; friendName: string; amount: number; note?: string;
-  transactionId?: string; status: 'pending' | 'settled'; createdAt: Date;
+  sourceTxId?: string; transactionId?: string; status: 'pending' | 'settled'; createdAt: Date;
 }): DebtView {
   return {
     _id:           String(d._id),
     friendName:    d.friendName,
     amount:        d.amount,
     note:          d.note,
+    sourceTxId:    d.sourceTxId,
     transactionId: d.transactionId,
     status:        d.status,
     createdAt:     d.createdAt.toISOString(),
