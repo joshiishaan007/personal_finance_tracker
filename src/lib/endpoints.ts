@@ -98,6 +98,12 @@ export const ENDPOINTS = {
     create: '/api/tasks',
     detail: (id: string) => `/api/tasks/${id}`,
   },
+  debts: {
+    list:    (qs?: string) => `/api/debts${qs ? `?${qs}` : ''}`,
+    create:  '/api/debts',
+    summary: '/api/debts/summary',
+    detail:  (id: string) => `/api/debts/${id}`,
+  },
   instantCards: {
     list:   '/api/instant-cards',
     create: '/api/instant-cards',
