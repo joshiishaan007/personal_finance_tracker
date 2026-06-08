@@ -29,6 +29,16 @@ export function useFriendDebts(friendName: string | null, status: 'pending' | 's
   });
 }
 
+export function useSettledDebts() {
+  const qs = new URLSearchParams({ status: 'settled' }).toString();
+  return useQuery({
+    queryKey: ['debts', 'settled'],
+    queryFn: () =>
+      api.get<{ data: DebtView[] }>(ENDPOINTS.debts.list(qs)).then((r) => r.data.data),
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
 export function useCreateDebts() {
   const qc = useQueryClient();
   return useMutation({

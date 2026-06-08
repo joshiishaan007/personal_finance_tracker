@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Users, Check, Trash2, Pencil, X, ChevronDown, ArrowDownLeft, RotateCcw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  useDebtSummary, useFriendDebts, useUpdateDebt, useDeleteDebt,
+  useDebtSummary, useFriendDebts, useSettledDebts, useUpdateDebt, useDeleteDebt,
   type DebtView, type DebtSummaryItem,
 } from '@/hooks/useDebts';
 import { useCreateTransaction } from '@/hooks/useTransactions';
@@ -24,9 +24,10 @@ import type { Currency } from '@/shared';
 interface FriendModalProps {
   friendName: string | null;
   onClose: () => void;
+  initialShowSettled?: boolean;
 }
 
-function FriendDebtsModal({ friendName, onClose }: FriendModalProps) {
+function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: FriendModalProps) {
   const { user } = useAuth();
   const currency = (user?.currency ?? 'INR') as Currency;
   const { data: debts = [], isLoading } = useFriendDebts(friendName);
@@ -39,7 +40,7 @@ function FriendDebtsModal({ friendName, onClose }: FriendModalProps) {
   const [editAmount, setEditAmount]   = useState('');
   // Track which entries have had an income tx auto-created for them.
   const [settledIds, setSettledIds]   = useState<Set<string>>(new Set());
-  const [showSettled, setShowSettled] = useState(false);
+  const [showSettled, setShowSettled] = useState(initialShowSettled);
 
   const { data: settledDebts = [] } = useFriendDebts(showSettled ? friendName : null, 'settled');
 
@@ -267,10 +268,28 @@ export function PeopleOweYou() {
   const { user } = useAuth();
   const currency = user?.currency ?? 'INR';
   const { data: summary = [] } = useDebtSummary();
-  const [selectedFriend, setSelectedFriend] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState(true);
+  const { data: allSettled = [] } = useSettledDebts();
+  const [selectedFriend, setSelectedFriend]         = useState<string | null>(null);
+  const [openSettledFor, setOpenSettledFor]         = useState<string | null>(null);
+  const [expanded, setExpanded]                     = useState(true);
+  const [settledExpanded, setSettledExpanded]       = useState(false);
 
-  if (summary.length === 0) return null;
+  // Group settled debts by friendName for the summary row.
+  const settledByFriend = allSettled.reduce<Record<string, { total: number; count: number }>>(
+    (acc, d) => {
+      const key = d.friendName.toLowerCase();
+      const existing = acc[key] ?? { total: 0, count: 0 };
+      acc[key] = { total: existing.total + d.amount, count: existing.count + 1 };
+      return acc;
+    },
+    {},
+  );
+  // Unique friend names with at least one settled entry (preserving display casing).
+  const settledFriends = [
+    ...new Map(allSettled.map((d) => [d.friendName.toLowerCase(), d.friendName])).values(),
+  ];
+
+  if (summary.length === 0 && settledFriends.length === 0) return null;
 
   const grandTotal = summary.reduce((s, f) => s + f.total, 0);
 
@@ -333,9 +352,73 @@ export function PeopleOweYou() {
         )}
       </Card>
 
+      {/* Settled friends section */}
+      {settledFriends.length > 0 && (
+        <Card variant="glass" padding="sm">
+          <Button
+            type="button"
+            variant="ghost"
+            className="flex items-center justify-between w-full -mx-1 px-1 min-h-0 h-auto"
+            onClick={() => setSettledExpanded((v) => !v)}
+          >
+            <div className="flex items-center gap-2">
+              <Check size={14} strokeWidth={2.4} className="text-success-500" />
+              <Text className="text-sm font-semibold text-slate-500 dark:text-slate-400">Settled</Text>
+            </div>
+            <ChevronDown
+              size={14}
+              strokeWidth={2.4}
+              className={cn('text-slate-400 transition-transform', settledExpanded && 'rotate-180')}
+            />
+          </Button>
+          {settledExpanded && (
+            <div className="space-y-1.5 mt-3">
+              {settledFriends.map((name) => {
+                const key = name.toLowerCase();
+                const info = settledByFriend[key] ?? { total: 0, count: 0 };
+                return (
+                  <div
+                    key={key}
+                    className="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-slate-50/80 dark:hover:bg-ink-800/50 transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-ink-700 flex items-center justify-center shrink-0">
+                      <Text as="span" className="text-xs font-bold text-slate-500 uppercase">
+                        {name.charAt(0)}
+                      </Text>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Text className="text-sm font-medium truncate text-slate-500">{name}</Text>
+                      <Text variant="small" className="text-slate-400">{info.count} settled</Text>
+                    </div>
+                    <Text as="span" className="text-sm tabular-nums text-slate-400 line-through shrink-0">
+                      {fmt(info.total, currency)}
+                    </Text>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="shrink-0 px-2.5 text-xs"
+                      onClick={() => setOpenSettledFor(name)}
+                    >
+                      Revert
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+      )}
+
       <FriendDebtsModal
         friendName={selectedFriend}
         onClose={() => setSelectedFriend(null)}
+      />
+
+      {/* Modal opened from the settled section — pre-opens settled entries */}
+      <FriendDebtsModal
+        friendName={openSettledFor}
+        onClose={() => setOpenSettledFor(null)}
+        initialShowSettled
       />
     </>
   );
