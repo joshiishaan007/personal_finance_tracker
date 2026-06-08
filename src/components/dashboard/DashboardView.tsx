@@ -1,17 +1,16 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   TrendingUp, TrendingDown, Wallet, PiggyBank, Target, CalendarClock,
-  Sparkles, Sunrise, Sun, Moon, Sprout, ArrowRight, Repeat,
+  Sunrise, Sun, Moon, Sprout, Repeat, LineChart,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboard } from '@/hooks/useAnalytics';
 import { useRecurring } from '@/hooks/useRecurring';
 import { useGoals } from '@/hooks/useGoals';
 import { useBalance } from '@/hooks/useBalance';
-import { useAIInsight, useGenerateInsight } from '@/hooks/useAIInsight';
+import { useInvestments } from '@/hooks/useInvestments';
 import { fmt, fmtDate } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
 import { Heading } from '@/components/ui/Heading';
@@ -20,13 +19,12 @@ import { Button } from '@/components/ui/Button';
 import { Link } from '@/components/ui/Link';
 import { GradientText } from '@/components/ui/GradientText';
 import { IconBadge } from '@/components/ui/IconBadge';
-import { AIInsightCard } from '@/components/AIInsightCard';
 import { ProgressRing } from '@/components/ProgressRing';
 import { EmptyState } from '@/components/EmptyState';
 import { SectionHeader } from '@/components/SectionHeader';
 import { StatCard } from '@/components/StatCard';
 import { QuickAddBar } from '@/components/transaction/QuickAddBar';
-import { QuickAddChips } from '@/components/transaction/QuickAddChips';
+import { InstantCards } from '@/components/transaction/InstantCards';
 import { StreakBadge } from '@/components/engagement/StreakBadge';
 import { EndOfDayCard } from '@/components/engagement/EndOfDayCard';
 import { ChartCard } from '@/components/charts/ChartCard';
@@ -116,14 +114,12 @@ export function DashboardView() {
   const { data: goals, isLoading: goalsLoading } = useGoals();
   const { data: recurring, isLoading: recurringLoading } = useRecurring();
   const { data: balance, isLoading: balanceLoading } = useBalance();
-  const { data: aiData } = useAIInsight();
+  const { data: investments } = useInvestments();
 
   // Gate the whole data region on the three queries that feed it, so the user
   // never sees half-filled cards (zeros, "No goals yet") flash before the real
   // values arrive. On a cached return visit all three are false -> instant render.
   const loading = dashLoading || goalsLoading || recurringLoading || balanceLoading;
-  const generateInsight = useGenerateInsight();
-  const [aiError, setAiError] = useState<string | null>(null);
 
   const currency = dash?.currency ?? user?.currency ?? 'INR';
   const income = dash?.summary.income ?? 0;
@@ -156,7 +152,12 @@ export function DashboardView() {
   const activeGoals = (goals ?? []).filter((g) => g.status === 'active');
 
   const fmtCur = (n: number) => fmt(n, currency);
-  const greeting = user ? getGreeting(user.name) : { text: 'Welcome!', icon: Sparkles };
+  const greeting = user ? getGreeting(user.name) : { text: 'Welcome!', icon: Sunrise };
+
+  const invList = investments ?? [];
+  const totalInvested  = invList.reduce((s, i) => s + i.investedAmount,  0);
+  const totalProjected = invList.reduce((s, i) => s + i.projectedValue,  0);
+  const totalReturn    = invList.reduce((s, i) => s + i.expectedReturn,  0);
 
   return (
     <div className="p-4 lg:p-6 space-y-6 max-w-7xl mx-auto">
@@ -179,7 +180,7 @@ export function DashboardView() {
 
       <div className="space-y-3">
         <QuickAddBar />
-        <QuickAddChips />
+        <InstantCards />
       </div>
 
       {loading ? (
@@ -264,6 +265,28 @@ export function DashboardView() {
         </ChartCard>
       </div>
 
+      {/* Investment stats — only when user has investments */}
+      {invList.length > 0 && (
+        <div>
+          <SectionHeader
+            title="Investments"
+            icon={LineChart}
+            action={<Link href="/investments" className="text-xs">View all</Link>}
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+            <StatCard label="Total Invested"  value={totalInvested}  format={fmtCur} icon={Wallet}    tone="brand"   />
+            <StatCard label="Projected Value" value={totalProjected} format={fmtCur} icon={TrendingUp} tone="success" />
+            <StatCard
+              label="Expected Return"
+              value={Math.abs(totalReturn)}
+              format={(n) => `${totalReturn >= 0 ? '+' : '-'}${fmtCur(n)}`}
+              icon={PiggyBank}
+              tone={totalReturn >= 0 ? 'aqua' : 'danger'}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-3 gap-6">
         <Card>
           <SectionHeader
@@ -337,36 +360,6 @@ export function DashboardView() {
       </div>
 
       <EndOfDayCard />
-
-      <div>
-        {aiData?.insights && aiData.insights.length > 0 ? (
-          <AIInsightCard insights={aiData.insights} />
-        ) : (
-          <Card variant="glass">
-            <SectionHeader title="AI Insights" icon={Sparkles} />
-            <Text variant="small" className="mt-3">
-              Generate personalized insights from your spending. Runs only when you ask — so it never
-              uses your AI quota on its own.
-            </Text>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="mt-3"
-              loading={generateInsight.isPending}
-              rightIcon={<ArrowRight size={14} strokeWidth={2.4} />}
-              onClick={() => {
-                setAiError(null);
-                generateInsight.mutate(undefined, {
-                  onError: () => setAiError("AI is over its free limit right now — try again later."),
-                });
-              }}
-            >
-              Generate insights
-            </Button>
-            {aiError && <Text variant="small" className="mt-2 text-warn-600 dark:text-warn-400">{aiError}</Text>}
-          </Card>
-        )}
-      </div>
         </>
       )}
     </div>
