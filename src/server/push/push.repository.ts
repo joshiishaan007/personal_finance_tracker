@@ -18,4 +18,7 @@ export const pushRepository = {
       userId: new Types.ObjectId(userId),
       endpoint,
     }).lean().exec(),
+
+  // Used by the cron job — fetch every subscription across all users.
+  findAll: () => PushSubscriptionModel.find().lean().exec(),
 };
