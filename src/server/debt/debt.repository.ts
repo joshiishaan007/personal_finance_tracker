@@ -2,11 +2,16 @@ import { Types } from 'mongoose';
 import { DebtModel } from '../models/debt.model';
 import type { CreateDebt } from '@/shared';
 
+// Escape special regex chars so user-supplied names can't inject a pattern.
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export const debtRepository = {
   list: (userId: string, filter: { status?: string; friendName?: string }) => {
     const q: Record<string, unknown> = { userId: new Types.ObjectId(userId) };
     if (filter.status && filter.status !== 'all') q.status = filter.status;
-    if (filter.friendName) q.friendName = new RegExp(`^${filter.friendName}$`, 'i');
+    if (filter.friendName) q.friendName = { $regex: `^${escapeRegex(filter.friendName)}$`, $options: 'i' };
     return DebtModel.find(q).sort({ createdAt: -1 }).lean().exec();
   },
 

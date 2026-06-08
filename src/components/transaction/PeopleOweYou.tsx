@@ -71,20 +71,17 @@ function FriendDebtsModal({ friendName, onClose }: FriendModalProps) {
     });
   }
 
-  function settle(d: DebtView) {
-    updateDebt.mutate(
-      { id: d._id, data: { status: 'settled' } },
-      {
-        onSuccess: () => {
-          createReimbursementTx(d);
-          setSettledIds((prev) => new Set(prev).add(d._id));
-        },
-      },
-    );
+  async function settle(d: DebtView) {
+    await updateDebt.mutateAsync({ id: d._id, data: { status: 'settled' } });
+    createReimbursementTx(d);
+    setSettledIds((prev) => new Set(prev).add(d._id));
   }
 
-  function settleAll() {
-    for (const d of debts) settle(d);
+  // Settle entries one-by-one to avoid concurrent mutation state collisions.
+  async function settleAll() {
+    for (const d of [...debts]) {
+      await settle(d);
+    }
   }
 
   return (
@@ -170,7 +167,7 @@ function FriendDebtsModal({ friendName, onClose }: FriendModalProps) {
                         size="sm"
                         className="p-1.5 min-h-0 hover:text-success-600"
                         aria-label="Mark settled"
-                        onClick={() => settle(d)}
+                        onClick={() => void settle(d)}
                         loading={updateDebt.isPending}
                       >
                         <Check size={13} strokeWidth={2.5} />
@@ -195,7 +192,7 @@ function FriendDebtsModal({ friendName, onClose }: FriendModalProps) {
 
         {debts.length > 1 && (
           <div className="space-y-1.5">
-            <Button variant="gradient" size="sm" className="w-full" leftIcon={<Check size={14} strokeWidth={2.4} />} onClick={settleAll}>
+            <Button variant="gradient" size="sm" className="w-full" leftIcon={<Check size={14} strokeWidth={2.4} />} onClick={() => void settleAll()}>
               Settle all
             </Button>
             {incomeCat && (
@@ -226,9 +223,10 @@ export function PeopleOweYou() {
   return (
     <>
       <Card variant="glass" padding="sm">
-        <button
+        <Button
           type="button"
-          className="flex items-center justify-between w-full mb-3"
+          variant="ghost"
+          className="flex items-center justify-between w-full mb-3 -mx-1 px-1 min-h-0 h-auto"
           onClick={() => setExpanded((v) => !v)}
         >
           <div className="flex items-center gap-2">
@@ -245,7 +243,7 @@ export function PeopleOweYou() {
               className={cn('text-slate-400 transition-transform', expanded && 'rotate-180')}
             />
           </div>
-        </button>
+        </Button>
 
         {expanded && (
           <div className="space-y-1.5">

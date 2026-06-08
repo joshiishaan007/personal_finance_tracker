@@ -2,17 +2,12 @@ import { debtService as svc } from './debt.service';
 import { requireAuth } from '../http/requireAuth';
 import { validateBody, validateQuery } from '../http/validate';
 import { ok, created, fail } from '../http/respond';
-import { CreateDebtSchema, DebtFilterSchema } from '@/shared';
+import { CreateDebtSchema, UpdateDebtSchema, DebtFilterSchema } from '@/shared';
 import { z } from 'zod';
 import type { NextRequest } from 'next/server';
 import type { RouteCtx } from '../http/catchRoute';
 
 const CreateDebtsSchema = z.array(CreateDebtSchema).min(1).max(20);
-
-const UpdateSchema = z.object({
-  amount: z.number().int().positive().optional(),
-  status: z.enum(['pending', 'settled']).optional(),
-});
 
 export const debtController = {
   async list(req: NextRequest) {
@@ -35,7 +30,7 @@ export const debtController = {
 
   async update(req: NextRequest, ctx: RouteCtx) {
     const { userId } = requireAuth();
-    const data = validateBody(UpdateSchema, await req.json());
+    const data = validateBody(UpdateDebtSchema, await req.json());
     const result = await svc.update(userId, String(ctx.params.id), data);
     return result.state === 'ok' ? ok(result.data) : fail(result.reason);
   },

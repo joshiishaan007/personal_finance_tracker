@@ -17,8 +17,8 @@ import { Modal } from '@/components/ui/Modal';
 import { IconPicker } from '@/components/ui/IconPicker';
 import { DatePicker } from '@/components/ui/DatePicker';
 
-// Deterministic accent per investment kind so cards look visually distinct
-// without asking the user to pick a color.
+// Stored as the `color` field on the investment document — not a CSS utility.
+// Raw hex is intentional here: these are data values, not Tailwind classes.
 const KIND_COLORS: Record<string, string> = {
   fd: '#0EA5E9',
   rd: '#10B981',
