@@ -63,7 +63,7 @@ export function useCreateDebts() {
 export function useUpdateDebt() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { amount?: number; status?: 'pending' | 'settled'; transactionId?: string } }) =>
+    mutationFn: ({ id, data }: { id: string; data: { amount?: number; status?: 'pending' | 'settled'; note?: string; transactionId?: string } }) =>
       api.patch(ENDPOINTS.debts.detail(id), data),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['debts'] });

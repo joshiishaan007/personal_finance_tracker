@@ -40,6 +40,7 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
 
   const [editingId,      setEditingId]      = useState<string | null>(null);
   const [editAmount,     setEditAmount]     = useState('');
+  const [editNote,       setEditNote]       = useState('');
   // Track which entries have had an income tx auto-created for them.
   const [settledIds,     setSettledIds]     = useState<Set<string>>(new Set());
   const [showSettled,    setShowSettled]    = useState(initialShowSettled);
@@ -64,12 +65,13 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
   function startEdit(d: DebtView) {
     setEditingId(d._id);
     setEditAmount(String(d.amount / 100));
+    setEditNote(d.note ?? '');
   }
 
   function saveEdit(id: string) {
     const v = parseFloat(editAmount);
     if (isNaN(v) || v <= 0) { setEditingId(null); return; }
-    updateDebt.mutate({ id, data: { amount: toMinorUnits(v, currency) } });
+    updateDebt.mutate({ id, data: { amount: toMinorUnits(v, currency), note: editNote.trim() || undefined } });
     setEditingId(null);
   }
 
@@ -137,23 +139,32 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
                 </div>
 
                 {editingId === d._id ? (
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex-1 space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={editAmount}
+                        onChange={(e) => setEditAmount(e.target.value)}
+                        className="w-28 h-7 text-sm px-2"
+                        autoFocus
+                        onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(d._id); if (e.key === 'Escape') setEditingId(null); }}
+                      />
+                      <Button variant="ghost" size="sm" className="p-1 min-h-0 text-success-600" onClick={() => saveEdit(d._id)}>
+                        <Check size={13} strokeWidth={2.5} />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="p-1 min-h-0" onClick={() => setEditingId(null)}>
+                        <X size={13} strokeWidth={2.5} />
+                      </Button>
+                    </div>
                     <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={editAmount}
-                      onChange={(e) => setEditAmount(e.target.value)}
-                      className="w-24 h-7 text-sm px-2"
-                      autoFocus
+                      placeholder="Add a note (e.g. dinner, groceries…)"
+                      value={editNote}
+                      onChange={(e) => setEditNote(e.target.value)}
+                      className="h-7 text-sm px-2 w-full"
                       onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(d._id); if (e.key === 'Escape') setEditingId(null); }}
                     />
-                    <Button variant="ghost" size="sm" className="p-1 min-h-0 text-success-600" onClick={() => saveEdit(d._id)}>
-                      <Check size={13} strokeWidth={2.5} />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="p-1 min-h-0" onClick={() => setEditingId(null)}>
-                      <X size={13} strokeWidth={2.5} />
-                    </Button>
                   </div>
                 ) : (
                   <>

@@ -13,6 +13,7 @@ export const CreateDebtSchema = z.object({
 export const UpdateDebtSchema = z.object({
   amount:        z.number().int().positive().optional(),
   status:        z.enum(['pending', 'settled']).optional(),
+  note:          z.string().max(300).optional(),
   transactionId: z.string().optional(),
 });
 

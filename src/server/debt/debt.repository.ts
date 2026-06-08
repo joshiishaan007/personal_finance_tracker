@@ -46,4 +46,7 @@ export const debtRepository = {
 
   remove: (userId: string, id: string) =>
     DebtModel.findOneAndDelete({ _id: id, userId: new Types.ObjectId(userId) }).lean().exec(),
+
+  deleteBySourceTx: (userId: string, sourceTxId: string) =>
+    DebtModel.deleteMany({ userId: new Types.ObjectId(userId), sourceTxId }).exec(),
 };

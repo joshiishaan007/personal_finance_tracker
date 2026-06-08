@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 import { transactionRepository as repo } from './transaction.repository';
+import { debtRepository } from '../debt/debt.repository';
 import { Ok, Err, type Result } from '../http/result';
 import type { CreateTransaction, UpdateTransaction, TransactionFilter } from '@/shared';
 
@@ -35,7 +36,10 @@ export const transactionService = {
 
   async remove(userId: string, id: string): Promise<Result<{ deleted: true }, 'not_found'>> {
     const tx = await repo.remove(userId, id);
-    return tx ? Ok({ deleted: true }) : Err('not_found');
+    if (!tx) return Err('not_found');
+    // Cascade: remove any split debts that were linked to this transaction.
+    await debtRepository.deleteBySourceTx(userId, id);
+    return Ok({ deleted: true });
   },
 
   previewImport(records: Record<string, string>[], mapping: CsvMapping) {
