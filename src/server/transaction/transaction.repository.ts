@@ -71,6 +71,20 @@ export const transactionRepository = {
   deleteBatch: (userId: string, batchId: string) =>
     TransactionModel.deleteMany({ userId, importBatchId: batchId }),
 
+  // Total expense amount for a category in a date window — used for budget alerts.
+  sumByCategoryPeriod: (userId: string, categoryId: string, from: Date, to: Date) =>
+    TransactionModel.aggregate([
+      {
+        $match: {
+          userId: new Types.ObjectId(userId),
+          categoryId,
+          type: 'expense',
+          date: { $gte: from, $lte: to },
+        },
+      },
+      { $group: { _id: null, total: { $sum: '$amount' } } },
+    ]).then((rows) => Number(rows[0]?.total ?? 0)),
+
   // Most-repeated expense templates (same category + amount + payment method) since
   // `since` — the basis for one-tap "repeat" chips. count>=2 keeps it to real habits.
   frequentTemplates: (userId: string, since: Date, limit: number): Promise<FrequentTemplateRow[]> =>

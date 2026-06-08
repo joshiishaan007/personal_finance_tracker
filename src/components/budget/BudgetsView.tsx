@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/Label';
 import { IconBadge } from '@/components/ui/IconBadge';
 import { StatCard } from '@/components/StatCard';
 import { EmptyState } from '@/components/EmptyState';
+import { BudgetAlertBanner } from '@/components/budget/BudgetAlertBanner';
 
 const FormSchema = z.object({
   categoryId: z.string().min(1, 'Select a category'),
@@ -94,6 +95,8 @@ export function BudgetsView() {
           Add Budget
         </Button>
       </div>
+
+      <BudgetAlertBanner />
 
       {list.length > 0 && (
         <div className="grid grid-cols-2 gap-4">

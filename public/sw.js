@@ -61,3 +61,38 @@ self.addEventListener('fetch', (event) => {
     );
   }
 });
+
+// ── Push notifications ─────────────────────────────────────────────────────
+
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+  let data = {};
+  try { data = event.data.json(); } catch (_) { return; }
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'Budget Alert', {
+      body:             data.body  || '',
+      icon:             data.icon  || '/icon',
+      badge:            '/icon',
+      tag:              data.tag   || 'budget-alert',
+      data:             { url: data.url || '/budgets' },
+      requireInteraction: false,
+    }),
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/budgets';
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        // Focus an existing window if one is already open.
+        for (const client of clientList) {
+          if ('focus' in client) return client.focus();
+        }
+        if (self.clients.openWindow) return self.clients.openWindow(url);
+      }),
+  );
+});

@@ -12,4 +12,8 @@ export const categoryRepository = {
 
   remove: (userId: string, id: string) =>
     CategoryModel.findOneAndDelete({ _id: id, userId }).lean(),
+
+  // Name-only lookup for notifications — works for user and default categories.
+  findById: (id: string) =>
+    CategoryModel.findById(id).select('name').lean().exec(),
 };

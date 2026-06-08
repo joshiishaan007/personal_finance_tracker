@@ -11,6 +11,7 @@ import {
 } from '@/shared';
 import type { RouteCtx } from '../http/catchRoute';
 import { transactionService as svc } from './transaction.service';
+import { budgetAlertService } from '../push/budgetAlert.service';
 
 async function parseUpload(req: NextRequest): Promise<{ records: Record<string, string>[]; mapping: Record<string, string> }> {
   const form = await req.formData();
@@ -43,6 +44,11 @@ export const transactionController = {
     const { userId } = requireAuth();
     const data = validateBody(CreateTransactionSchema, await req.json());
     const tx = await svc.create(userId, data);
+    // Fire-and-forget: check budget thresholds for expense transactions without
+    // blocking the API response. Errors inside are swallowed by catchRoute's scope.
+    if (data.type === 'expense') {
+      void budgetAlertService.checkAfterTransaction(userId, data.categoryId, new Date(data.date));
+    }
     return created(tx);
   },
 

@@ -98,6 +98,11 @@ export const ENDPOINTS = {
     create: '/api/tasks',
     detail: (id: string) => `/api/tasks/${id}`,
   },
+  push: {
+    vapidPublicKey: '/api/push/vapid-public-key',
+    subscribe:      '/api/push/subscribe',
+    unsubscribe:    '/api/push/unsubscribe',
+  },
   debts: {
     list:    (qs?: string) => `/api/debts${qs ? `?${qs}` : ''}`,
     create:  '/api/debts',
