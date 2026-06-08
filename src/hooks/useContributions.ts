@@ -13,6 +13,11 @@ export interface Contribution {
   note?: string;
 }
 
+export interface HeatmapDay {
+  date: string; // 'YYYY-MM-DD'
+  value: number;
+}
+
 export function useContributions(goalId: string) {
   return useQuery({
     queryKey: ['contributions', goalId],
@@ -22,10 +27,24 @@ export function useContributions(goalId: string) {
   });
 }
 
+export function useContributionHeatmap(from: string, to: string, goalId?: string) {
+  return useQuery({
+    queryKey: ['contributionHeatmap', from, to, goalId ?? 'all'],
+    queryFn: () => {
+      const qs = new URLSearchParams({ from, to, ...(goalId ? { goalId } : {}) }).toString();
+      return api
+        .get<{ data: { days: HeatmapDay[]; peak: number } }>(ENDPOINTS.contributions.heatmap(qs))
+        .then((r) => r.data.data);
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 function invalidate(qc: ReturnType<typeof useQueryClient>, goalId: string) {
   void qc.invalidateQueries({ queryKey: ['contributions', goalId] });
-  void qc.invalidateQueries({ queryKey: ['lifeGoals'] }); // currentValue changed
+  void qc.invalidateQueries({ queryKey: ['lifeGoals'] });
   void qc.invalidateQueries({ queryKey: ['goalsSummary'] });
+  void qc.invalidateQueries({ queryKey: ['contributionHeatmap'] });
 }
 
 export function useAddContribution(goalId: string) {

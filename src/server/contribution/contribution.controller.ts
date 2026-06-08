@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server';
 import { requireAuth } from '../http/requireAuth';
 import { validateBody, validateQuery } from '../http/validate';
 import { ok, created, fail } from '../http/respond';
-import { CreateContributionSchema, ContributionFilterSchema } from '@/shared';
+import { CreateContributionSchema, ContributionFilterSchema, ContributionHeatmapQuerySchema } from '@/shared';
 import type { RouteCtx } from '../http/catchRoute';
 import { contributionService as svc } from './contribution.service';
 
@@ -12,6 +12,14 @@ export const contributionController = {
     const { goalId } = validateQuery(ContributionFilterSchema, req);
     if (!goalId) return ok([]); // contributions are always viewed per goal
     return ok(await svc.listByGoal(userId, goalId));
+  },
+
+  async heatmap(req: NextRequest) {
+    const { userId } = requireAuth();
+    const { goalId, from, to } = validateQuery(ContributionHeatmapQuerySchema, req);
+    const days = await svc.heatmap(userId, new Date(from), new Date(to), goalId);
+    const peak = days.length > 0 ? Math.max(...days.map((d) => d.value)) : 1;
+    return ok({ days, peak });
   },
 
   async create(req: NextRequest) {

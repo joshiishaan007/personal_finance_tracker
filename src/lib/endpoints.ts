@@ -91,6 +91,7 @@ export const ENDPOINTS = {
     list: (qs?: string) => `/api/contributions${qs ? `?${qs}` : ''}`,
     create: '/api/contributions',
     detail: (id: string) => `/api/contributions/${id}`,
+    heatmap: (qs: string) => `/api/contributions/heatmap?${qs}`,
   },
   tasks: {
     list: (qs?: string) => `/api/tasks${qs ? `?${qs}` : ''}`,

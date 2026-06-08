@@ -13,5 +13,12 @@ export const ContributionFilterSchema = z.object({
   goalId: z.string().optional(),
 });
 
+export const ContributionHeatmapQuerySchema = z.object({
+  goalId: z.string().optional(),
+  from: z.string().min(1),
+  to: z.string().min(1),
+});
+
 export type CreateContribution = z.infer<typeof CreateContributionSchema>;
 export type ContributionFilter = z.infer<typeof ContributionFilterSchema>;
+export type ContributionHeatmapQuery = z.infer<typeof ContributionHeatmapQuerySchema>;
