@@ -64,7 +64,10 @@ export function Donut({
     : centerValue;
 
   return (
-    <div className="relative [&_.recharts-sector:focus]:outline-none [&_.recharts-sector:focus-visible]:outline-none" style={{ height }}>
+    <div
+      className="relative [&_.recharts-sector:focus]:outline-none [&_.recharts-sector:focus-visible]:outline-none"
+      style={{ height }}
+    >
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie

@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Pencil, Trash2, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, TrendingUp, Tag } from 'lucide-react';
+import { Pencil, Trash2, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, TrendingUp, Tag, Users } from 'lucide-react';
 import { fmt, fmtDate, cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInvestments } from '@/hooks/useInvestments';
 import { useCategories } from '@/hooks/useCategories';
 import { useDeleteTransaction, type Transaction } from '@/hooks/useTransactions';
+import { useTransactionDebts } from '@/hooks/useDebts';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
@@ -38,6 +39,7 @@ export function TransactionDetailModal({ open, onClose, tx, onEdit }: Props) {
   const { data: categories } = useCategories();
   const { data: investments } = useInvestments();
   const deleteTx = useDeleteTransaction();
+  const { data: txDebts = [] } = useTransactionDebts(tx?._id);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (!tx) return null;
@@ -109,6 +111,44 @@ export function TransactionDetailModal({ open, onClose, tx, onEdit }: Props) {
               {t.tags.map((tag) => (
                 <Badge key={tag} variant="default" className="text-[11px]">{tag}</Badge>
               ))}
+            </div>
+          )}
+
+          {/* People owe you — debts linked to this transaction */}
+          {txDebts.length > 0 && (
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <Users size={13} strokeWidth={2.2} className="text-brand-500" />
+                <Text variant="small" className="font-semibold uppercase tracking-wide text-[11px] text-slate-500">
+                  People owe you
+                </Text>
+              </div>
+              <div className="space-y-1">
+                {txDebts.map((d) => (
+                  <div
+                    key={d._id}
+                    className="flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 bg-slate-50 dark:bg-ink-800/60 border border-slate-100 dark:border-white/[0.05]"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <Text className="text-sm font-medium truncate">{d.friendName}</Text>
+                      {d.note && (
+                        <Text variant="small" className="text-slate-400 truncate">{d.note}</Text>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Text as="span" className="text-sm font-bold tabular-nums text-brand-600 dark:text-brand-400">
+                        {fmt(d.amount, currency)}
+                      </Text>
+                      <Badge
+                        variant={d.status === 'settled' ? 'success' : 'warn'}
+                        className="text-[10px]"
+                      >
+                        {d.status === 'settled' ? 'Settled' : 'Pending'}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

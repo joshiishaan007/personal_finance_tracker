@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { ENDPOINTS } from '@/lib/endpoints';
 import type { CreateBudget } from '@/shared';
@@ -32,6 +32,7 @@ export function useMonthlyActuals(year: number, month: number) {
     queryKey: ['analytics', 'monthly', year, month],
     queryFn: () =>
       api.get<{ data: MonthlyActuals }>(ENDPOINTS.analytics.monthly(qs)).then((r) => r.data.data),
+    placeholderData: keepPreviousData,
   });
 }
 

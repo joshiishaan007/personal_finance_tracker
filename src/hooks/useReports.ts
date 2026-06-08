@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { ENDPOINTS } from '@/lib/endpoints';
 
@@ -30,6 +30,7 @@ export function useMonthlyReport(year: number, month: number) {
       api
         .get<{ data: MonthlyReport }>(ENDPOINTS.reports.monthly(`year=${year}&month=${month}`))
         .then((r) => r.data.data),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -38,5 +39,6 @@ export function useYearlyReport(year: number) {
     queryKey: ['reports', 'yearly', year],
     queryFn: () =>
       api.get<{ data: YearlyReport }>(ENDPOINTS.reports.yearly(`year=${year}`)).then((r) => r.data.data),
+    placeholderData: keepPreviousData,
   });
 }

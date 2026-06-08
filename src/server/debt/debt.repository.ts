@@ -8,12 +8,16 @@ function escapeRegex(s: string): string {
 }
 
 export const debtRepository = {
-  list: (userId: string, filter: { status?: string; friendName?: string; sourceTxId?: string }) => {
+  list: async (userId: string, filter: { status?: string; friendName?: string; sourceTxId?: string; page: number; limit: number }) => {
     const q: Record<string, unknown> = { userId: new Types.ObjectId(userId) };
     if (filter.status && filter.status !== 'all') q.status = filter.status;
     if (filter.friendName) q.friendName = { $regex: `^${escapeRegex(filter.friendName)}$`, $options: 'i' };
     if (filter.sourceTxId) q.sourceTxId = filter.sourceTxId;
-    return DebtModel.find(q).sort({ createdAt: -1 }).lean().exec();
+    const [items, total] = await Promise.all([
+      DebtModel.find(q).sort({ createdAt: -1 }).skip((filter.page - 1) * filter.limit).limit(filter.limit).lean().exec(),
+      DebtModel.countDocuments(q),
+    ]);
+    return { items, total };
   },
 
   createMany: (userId: string, debts: CreateDebt[]) =>
@@ -49,4 +53,16 @@ export const debtRepository = {
 
   deleteBySourceTx: (userId: string, sourceTxId: string) =>
     DebtModel.deleteMany({ userId: new Types.ObjectId(userId), sourceTxId }).exec(),
+
+  // Delete settled entries older than `before`.
+  // Falls back to createdAt for entries that pre-date the settledAt field.
+  deleteOldSettled: (userId: string, before: Date) =>
+    DebtModel.deleteMany({
+      userId: new Types.ObjectId(userId),
+      status: 'settled',
+      $or: [
+        { settledAt: { $lt: before } },
+        { settledAt: { $exists: false }, createdAt: { $lt: before } },
+      ],
+    }).exec(),
 };

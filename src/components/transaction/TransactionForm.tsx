@@ -67,7 +67,7 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
   const currency = user?.currency ?? 'INR';
 
   const [saveAsCard, setSaveAsCard] = useState(false);
-  const [splits, setSplits] = useState<{ name: string; amount: string }[]>([]);
+  const [splits, setSplits] = useState<{ name: string; amount: string; note: string }[]>([]);
 
   const createTx    = useCreateTransaction();
   const updateTx    = useUpdateTransaction(editTx?._id ?? '');
@@ -129,20 +129,13 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
     const v = parseFloat(sp.amount);
     return s + (isNaN(v) ? 0 : toMinorUnits(v, currency as Currency));
   }, 0);
-  // In edit mode, deduct amounts for splits that will aggregate into existing entries.
-  const aggregateDeduction = editTx
-    ? splits.reduce((s, sp) => {
-        const match = txDebts.find(
-          (d) => d.status === 'pending' && d.friendName.toLowerCase() === sp.name.trim().toLowerCase(),
-        );
-        return s + (match ? match.amount : 0);
-      }, 0)
-    : 0;
-  const projectedTotal = existingPendingTotal - aggregateDeduction + newSplitsTotal;
+  // Projected = existing pending + whatever fireDebts will add (same-name splits ADD on top,
+  // so no deduction is correct — any new amount pushes the total higher regardless of name match).
+  const projectedTotal = existingPendingTotal + newSplitsTotal;
   const splitOverflow = txAmountMinor > 0 && projectedTotal > txAmountMinor;
 
   // ── Debt helpers ───────────────────────────────────────────────────────────
-  async function fireDebts(note?: string, sourceTxId?: string) {
+  async function fireDebts(sourceTxId?: string) {
     const validSplits = splits.filter((s) => s.name.trim() && parseFloat(s.amount) > 0);
     if (validSplits.length === 0) return;
 
@@ -158,9 +151,13 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
         : undefined;
 
       if (existing) {
-        updateDebt.mutate({ id: existing._id, data: { amount: existing.amount + newAmt } });
+        // Aggregate amount; preserve existing note unless user supplied a new one.
+        updateDebt.mutate({ id: existing._id, data: {
+          amount: existing.amount + newAmt,
+          ...(s.note.trim() ? { note: s.note.trim() } : {}),
+        }});
       } else {
-        toCreate.push({ friendName: s.name.trim(), amount: newAmt, note: note?.trim() || undefined, sourceTxId });
+        toCreate.push({ friendName: s.name.trim(), amount: newAmt, note: s.note.trim() || undefined, sourceTxId });
       }
     }
 
@@ -186,7 +183,7 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
     if (editTx) {
       updateTx.mutate(payload, {
         onSuccess: () => {
-          void fireDebts(values.note, editTx._id);
+          void fireDebts(editTx._id);
           setSplits([]);
           onClose();
         },
@@ -204,7 +201,7 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
               tags:          payload.tags ?? [],
             });
           }
-          void fireDebts(values.note, txId);
+          void fireDebts(txId);
           setSaveAsCard(false);
           setSplits([]);
           onClose();
@@ -304,7 +301,7 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
                 size="sm"
                 className="h-6 px-2 text-xs"
                 leftIcon={<Plus size={11} strokeWidth={2.6} />}
-                onClick={() => setSplits((s) => [...s, { name: '', amount: '' }])}
+                onClick={() => setSplits((s) => [...s, { name: '', amount: '', note: '' }])}
               >
                 Add
               </Button>
@@ -338,37 +335,45 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
 
             {/* New split inputs */}
             {splits.map((sp, i) => (
-              <div key={i} className="flex items-center gap-2">
+              <div key={i} className="space-y-1.5 rounded-lg border border-slate-200/70 dark:border-white/[0.08] bg-white/60 dark:bg-ink-900/30 px-2.5 py-2">
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder={
+                      editTx && txDebts.some(
+                        (d) => d.status === 'pending' && d.friendName.toLowerCase() === sp.name.trim().toLowerCase(),
+                      )
+                        ? `${sp.name} (will add to existing)`
+                        : 'Friend\'s name'
+                    }
+                    value={sp.name}
+                    onChange={(e) => setSplits((s) => s.map((r, j) => j === i ? { ...r, name: e.target.value } : r))}
+                    className="flex-1"
+                  />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Amount"
+                    value={sp.amount}
+                    onChange={(e) => setSplits((s) => s.map((r, j) => j === i ? { ...r, amount: e.target.value } : r))}
+                    className="w-24 sm:w-28"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="p-1 min-h-0 text-slate-400 hover:text-danger-500 shrink-0"
+                    onClick={() => setSplits((s) => s.filter((_, j) => j !== i))}
+                  >
+                    <X size={14} strokeWidth={2.4} />
+                  </Button>
+                </div>
                 <Input
-                  placeholder={
-                    editTx && txDebts.some(
-                      (d) => d.status === 'pending' && d.friendName.toLowerCase() === sp.name.trim().toLowerCase(),
-                    )
-                      ? `${sp.name} (will add to existing)`
-                      : 'Friend\'s name'
-                  }
-                  value={sp.name}
-                  onChange={(e) => setSplits((s) => s.map((r, j) => j === i ? { ...r, name: e.target.value } : r))}
-                  className="flex-1"
+                  placeholder="What's this for? (e.g. dinner, groceries…)"
+                  value={sp.note}
+                  onChange={(e) => setSplits((s) => s.map((r, j) => j === i ? { ...r, note: e.target.value } : r))}
+                  className="text-sm"
                 />
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="Amount"
-                  value={sp.amount}
-                  onChange={(e) => setSplits((s) => s.map((r, j) => j === i ? { ...r, amount: e.target.value } : r))}
-                  className="w-28"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="p-1 min-h-0 text-slate-400 hover:text-danger-500"
-                  onClick={() => setSplits((s) => s.filter((_, j) => j !== i))}
-                >
-                  <X size={14} strokeWidth={2.4} />
-                </Button>
               </div>
             ))}
 
@@ -407,11 +412,11 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
 
         {/* Instant card toggle — only for new transactions */}
         {!editTx && (
-          <div className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/60 dark:bg-ink-800/40 px-3 py-2.5">
-            <Zap size={15} className="shrink-0 text-brand-500" />
-            <div className="flex-1">
-              <Text className="text-sm font-medium">Save as instant card</Text>
-              <Text variant="small" className="text-slate-500">Pin for one-tap repeat with today&apos;s date</Text>
+          <div className="flex items-start gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/60 dark:bg-ink-800/40 px-3 py-2.5">
+            <Zap size={15} className="shrink-0 text-brand-500 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <Text className="text-sm font-medium leading-tight">Save as instant card</Text>
+              <Text variant="small" className="text-slate-500 leading-tight">One-tap repeat with today&apos;s date</Text>
             </div>
             <Button
               type="button"
@@ -421,7 +426,7 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
               variant="ghost"
               size="sm"
               className={cn(
-                'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500 p-0 min-h-0',
+                'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500 p-0 min-h-0 mt-0.5 hover:bg-transparent',
                 saveAsCard ? 'bg-brand-500' : 'bg-slate-300 dark:bg-ink-600',
               )}
             >

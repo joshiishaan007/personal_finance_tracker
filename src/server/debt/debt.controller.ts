@@ -40,4 +40,9 @@ export const debtController = {
     const result = await svc.remove(userId, String(ctx.params.id));
     return result.state === 'ok' ? ok(result.data) : fail(result.reason);
   },
+
+  async cleanup(_req: NextRequest) {
+    const { userId } = requireAuth();
+    return ok(await svc.cleanupOldSettled(userId));
+  },
 };

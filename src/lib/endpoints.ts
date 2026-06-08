@@ -107,6 +107,7 @@ export const ENDPOINTS = {
     list:    (qs?: string) => `/api/debts${qs ? `?${qs}` : ''}`,
     create:  '/api/debts',
     summary: '/api/debts/summary',
+    cleanup: '/api/debts/cleanup',
     detail:  (id: string) => `/api/debts/${id}`,
   },
   instantCards: {

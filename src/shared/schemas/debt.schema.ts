@@ -21,6 +21,8 @@ export const DebtFilterSchema = z.object({
   status:     z.enum(['pending', 'settled', 'all']).default('pending'),
   friendName: z.string().optional(),
   sourceTxId: z.string().optional(),
+  page:       z.coerce.number().int().min(1).default(1),
+  limit:      z.coerce.number().int().min(1).max(100).default(20),
 });
 
 export type CreateDebt = z.infer<typeof CreateDebtSchema>;
@@ -42,4 +44,10 @@ export interface DebtSummaryItem {
   friendName: string;
   total:      number;
   count:      number;
+}
+
+export interface DebtListResult {
+  items:   DebtView[];
+  total:   number;
+  hasMore: boolean;
 }

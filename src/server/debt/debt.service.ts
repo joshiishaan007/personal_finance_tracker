@@ -1,6 +1,6 @@
 import { debtRepository as repo } from './debt.repository';
 import { Ok, Err, type Result } from '../http/result';
-import type { CreateDebt, UpdateDebt, DebtFilter, DebtView, DebtSummaryItem } from '@/shared';
+import type { CreateDebt, UpdateDebt, DebtFilter, DebtView, DebtSummaryItem, DebtListResult } from '@/shared';
 
 function toView(d: {
   _id: unknown; friendName: string; amount: number; note?: string;
@@ -19,9 +19,13 @@ function toView(d: {
 }
 
 export const debtService = {
-  async list(userId: string, filter: DebtFilter): Promise<DebtView[]> {
-    const rows = await repo.list(userId, filter);
-    return rows.map(toView);
+  async list(userId: string, filter: DebtFilter): Promise<DebtListResult> {
+    const { items, total } = await repo.list(userId, filter);
+    return {
+      items:   items.map(toView),
+      total,
+      hasMore: filter.page * filter.limit < total,
+    };
   },
 
   async summary(userId: string): Promise<DebtSummaryItem[]> {
@@ -46,5 +50,11 @@ export const debtService = {
   async remove(userId: string, id: string): Promise<Result<{ deleted: true }, 'not_found'>> {
     const doc = await repo.remove(userId, id);
     return doc ? Ok({ deleted: true }) : Err('not_found');
+  },
+
+  async cleanupOldSettled(userId: string): Promise<{ deleted: number }> {
+    const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const result = await repo.deleteOldSettled(userId, cutoff);
+    return { deleted: result.deletedCount };
   },
 };

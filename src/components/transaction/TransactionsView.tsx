@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Search, Plus, Pencil, Trash2, Receipt,
@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { fmt, fmtDate, cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTransactions, useDeleteTransaction, type Transaction } from '@/hooks/useTransactions';
+import { useInfiniteTransactions, useDeleteTransaction, type Transaction } from '@/hooks/useTransactions';
 import { useCategories, type Category } from '@/hooks/useCategories';
 import type { TransactionFilter } from '@/shared';
 import { Card } from '@/components/ui/Card';
@@ -67,8 +67,9 @@ export function TransactionsView() {
   const [editTx,      setEditTx]      = useState<Transaction | null>(null);
   const [detailTx,    setDetailTx]    = useState<Transaction | null>(null);
   const [detailOpen,  setDetailOpen]  = useState(false);
-  const [filters,     setFilters]     = useState({ type: '', search: '', page: 1 });
+  const [filters,     setFilters]     = useState({ type: '', search: '' });
   const [deleteId,    setDeleteId]    = useState<string | null>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // The shell FAB links to /transactions?new=1 — open the add modal, then strip
   // the param so a refresh (or back nav) doesn't reopen it.
@@ -85,20 +86,36 @@ export function TransactionsView() {
     setEditTx(null);
   }
 
-  const query: Partial<TransactionFilter> = {
-    page: filters.page,
-    limit: 50,
+  const infiniteFilters = {
+    limit: 20,
     ...(filters.type ? { type: filters.type as TransactionFilter['type'] } : {}),
     ...(filters.search ? { search: filters.search } : {}),
   };
-  const { data, isLoading } = useTransactions(query);
+  const { data, isLoading, isFetching, isPlaceholderData, hasNextPage, fetchNextPage, isFetchingNextPage } =
+    useInfiniteTransactions(infiniteFilters);
   const { data: categories } = useCategories();
   const deleteTx = useDeleteTransaction();
+
+  // Auto-fetch next page when sentinel enters the viewport.
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { threshold: 0.1 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   const currency = user?.currency ?? 'INR';
   const catMap = Object.fromEntries((categories ?? []).map((c) => [c._id, c])) as Record<string, Category>;
 
-  const items = data?.items ?? [];
+  const items = data?.pages.flatMap((p) => p.items) ?? [];
 
   // Group by date (server-paginated page only — no client filter/sort/slice).
   const grouped: Record<string, Transaction[]> = {};
@@ -167,7 +184,7 @@ export function TransactionsView() {
             <Input
               placeholder="Search notes, tags…"
               value={filters.search}
-              onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value, page: 1 }))}
+              onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
               className="pl-9"
             />
           </div>
@@ -180,7 +197,7 @@ export function TransactionsView() {
                   size="sm"
                   variant={active ? 'primary' : 'secondary'}
                   className={cn('shrink-0 px-3', !active && 'bg-white/60 dark:bg-ink-800/60')}
-                  onClick={() => setFilters((f) => ({ ...f, type: pill.value, page: 1 }))}
+                  onClick={() => setFilters((f) => ({ ...f, type: pill.value }))}
                 >
                   {pill.label}
                 </Button>
@@ -200,7 +217,8 @@ export function TransactionsView() {
           action={{ label: 'Add transaction', onClick: () => { setEditTx(null); setFormOpen(true); } }}
         />
       ) : (
-        <div className="space-y-6">
+        // Dim slightly while a filter change refetches so users see activity without losing content.
+        <div className={cn('space-y-6 transition-opacity duration-150', isFetching && isPlaceholderData && 'opacity-50')}>
           {Object.entries(grouped).sort(([a], [b]) => b.localeCompare(a)).map(([dateKey, txs]) => (
             <div key={dateKey} className="space-y-1.5">
               <div className="flex items-center gap-3 px-1">
@@ -268,12 +286,10 @@ export function TransactionsView() {
             </div>
           ))}
 
-          {data?.hasMore && (
-            <div className="text-center">
-              <Button variant="secondary" onClick={() => setFilters((f) => ({ ...f, page: f.page + 1 }))}>
-                Load more
-              </Button>
-            </div>
+          {/* Sentinel — IntersectionObserver triggers fetchNextPage */}
+          <div ref={sentinelRef} className="h-2" />
+          {isFetchingNextPage && (
+            <SkeletonLoader rows={3} />
           )}
         </div>
       )}

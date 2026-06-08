@@ -1,0 +1,7 @@
+import { catchRoute } from '@/server/http/catchRoute';
+import { debtController as c } from '@/server/debt/debt.controller';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+export const DELETE = catchRoute(c.cleanup);
