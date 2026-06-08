@@ -8,7 +8,7 @@ import type { RouteCtx } from '../http/catchRoute';
 
 export const instantCardController = {
   async list(_req: NextRequest) {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const cards = await svc.list(userId);
     return ok(
       cards.map((c) => ({
@@ -24,7 +24,7 @@ export const instantCardController = {
   },
 
   async create(req: NextRequest) {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const body = validateBody(CreateInstantCardSchema, await req.json());
     const card = await svc.create(userId, body);
     return created({
@@ -39,7 +39,7 @@ export const instantCardController = {
   },
 
   async remove(_req: NextRequest, ctx: RouteCtx) {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const result = await svc.remove(userId, String(ctx.params.id));
     return result.state === 'ok' ? ok(result.data) : fail(result.reason);
   },

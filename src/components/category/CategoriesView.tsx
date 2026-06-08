@@ -114,7 +114,7 @@ function CategoryFormModal({ open, onClose, edit }: FormModalProps) {
     if (edit) {
       updateCat.mutate(values, { onSuccess: onClose });
     } else {
-      createCat.mutate({ ...values, isDefault: false }, { onSuccess: onClose });
+      createCat.mutate(values, { onSuccess: onClose });
     }
   }
 

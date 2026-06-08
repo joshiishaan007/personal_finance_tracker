@@ -23,14 +23,14 @@ export const pushController = {
   },
 
   async subscribe(req: NextRequest) {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const { endpoint, subscription } = validateBody(SubscribeSchema, await req.json());
     await repo.save(userId, endpoint, subscription);
     return ok({ subscribed: true });
   },
 
   async unsubscribe(req: NextRequest) {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const { endpoint } = validateBody(UnsubscribeSchema, await req.json());
     await repo.removeByEndpoint(userId, endpoint);
     return ok({ unsubscribed: true });

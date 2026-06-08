@@ -4,7 +4,7 @@ import { exportService as svc } from './export.service';
 
 export const exportController = {
   async json() {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const payload = await svc.buildJson(userId);
     return new NextResponse(JSON.stringify(payload), {
       status: 200,
@@ -16,7 +16,7 @@ export const exportController = {
   },
 
   async transactionsCsv() {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const csv = await svc.buildTransactionsCsv(userId);
     return new NextResponse(csv, {
       status: 200,

@@ -1,5 +1,6 @@
 import { Types } from 'mongoose';
 import { TransactionModel } from '../models/transaction.model';
+import { escapeRegex } from '../util/escapeRegex';
 import type { TransactionFilter } from '@/shared';
 
 export interface FrequentTemplateRow {
@@ -27,9 +28,10 @@ function buildQuery(userId: string, f: Partial<TransactionFilter>): Record<strin
   }
   if (f.paymentMethod) query.paymentMethod = f.paymentMethod;
   if (f.search) {
+    const safe = escapeRegex(f.search);
     query.$or = [
-      { note: { $regex: f.search, $options: 'i' } },
-      { tags: { $regex: f.search, $options: 'i' } },
+      { note: { $regex: safe, $options: 'i' } },
+      { tags: { $regex: safe, $options: 'i' } },
     ];
   }
   return query;
@@ -65,6 +67,16 @@ export const transactionRepository = {
 
   findByHash: (userId: string, hash: string) =>
     TransactionModel.findOne({ userId, hash }).lean(),
+
+  // One query for a whole import batch — returns the subset of hashes that already
+  // exist for this user (replaces a per-row findByHash loop). Uses the (userId, hash) index.
+  findExistingHashes: async (userId: string, hashes: string[]): Promise<Set<string>> => {
+    const rows = await TransactionModel.find(
+      { userId, hash: { $in: hashes } },
+      { hash: 1 },
+    ).lean<{ hash: string }[]>();
+    return new Set(rows.map((r) => r.hash));
+  },
 
   insertMany: (docs: Record<string, unknown>[]) => TransactionModel.insertMany(docs),
 

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { moneySignedMinor } from './money';
 
 // A manually-entered monthly profit/loss figure that accumulates into a running
 // gross total (e.g. May +3000, Jun -200 => cumulative +2800). One entry per month.
@@ -6,7 +7,7 @@ export const CreateGrossPLSchema = z.object({
   // First instant of the month this entry applies to (ISO). Unique per (user, month).
   month: z.string().datetime(),
   // Signed minor units: positive = profit, negative = loss.
-  amount: z.number().int(),
+  amount: moneySignedMinor,
   note: z.string().max(200).optional(),
 });
 

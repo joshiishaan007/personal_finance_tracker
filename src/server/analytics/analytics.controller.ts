@@ -21,30 +21,30 @@ const DateRangeSchema = z.object({
 
 export const analyticsController = {
   async dashboard() {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     return ok(await svc.dashboard(userId));
   },
 
   async monthly(req: NextRequest) {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const { year, month } = validateQuery(YearMonthSchema, req);
     return ok(await svc.monthly(userId, year, month));
   },
 
   async yearly(req: NextRequest) {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const { year } = validateQuery(YearSchema, req);
     return ok(await svc.yearly(userId, year));
   },
 
   async custom(req: NextRequest) {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const { startDate, endDate } = validateQuery(DateRangeSchema, req);
     return ok(await svc.custom(userId, startDate, endDate));
   },
 
   async monthlyPL() {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     return ok(await svc.monthlyPL(userId));
   },
 };

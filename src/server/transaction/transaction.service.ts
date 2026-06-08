@@ -54,9 +54,10 @@ export const transactionService = {
 
   async commitImport(userId: string, records: Record<string, string>[], mapping: CsvMapping) {
     const importBatchId = createHash('sha256').update(`${userId}${Date.now()}`).digest('hex').slice(0, 16);
-    const seenHashes = new Set<string>();
-    const toInsert: Record<string, unknown>[] = [];
 
+    // Build candidate rows + dedup within the file in one pass (no DB I/O yet).
+    const seenHashes = new Set<string>();
+    const candidates: Array<{ hash: string; doc: Record<string, unknown> }> = [];
     for (const row of records) {
       const rawAmount = parseFloat(row[mapping.amountColumn] ?? '0');
       // amountIsMinorUnits: values already in paise/cents; else convert major→minor.
@@ -66,23 +67,28 @@ export const transactionService = {
       const hash = makeHash(dateStr, amount, note);
       if (seenHashes.has(hash)) continue;
       seenHashes.add(hash);
-      const exists = await repo.findByHash(userId, hash);
-      if (exists) continue;
-      toInsert.push({
-        userId,
-        amount,
-        date: new Date(dateStr),
-        note,
-        type: mapping.defaultType ?? 'expense',
-        categoryId: mapping.defaultCategoryId,
-        paymentMethod: 'other',
-        tags: [],
-        isRecurring: false,
-        importBatchId,
+      candidates.push({
         hash,
-        schemaVersion: 1,
+        doc: {
+          userId,
+          amount,
+          date: new Date(dateStr),
+          note,
+          type: mapping.defaultType ?? 'expense',
+          categoryId: mapping.defaultCategoryId,
+          paymentMethod: 'other',
+          tags: [],
+          isRecurring: false,
+          importBatchId,
+          hash,
+          schemaVersion: 1,
+        },
       });
     }
+
+    // Single batched existence check instead of one findByHash per row.
+    const existing = await repo.findExistingHashes(userId, [...seenHashes]);
+    const toInsert = candidates.filter((c) => !existing.has(c.hash)).map((c) => c.doc);
 
     if (toInsert.length) await repo.insertMany(toInsert);
     return { imported: toInsert.length, skipped: records.length - toInsert.length, batchId: importBatchId };

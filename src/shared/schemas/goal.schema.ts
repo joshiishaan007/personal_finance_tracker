@@ -1,9 +1,10 @@
 import { z } from 'zod';
+import { moneyMinor, moneyMinorPositive } from './money';
 
 export const CreateGoalSchema = z.object({
   title: z.string().min(1).max(100),
-  targetAmount: z.number().int().positive(),
-  savedAmount: z.number().int().min(0).default(0),
+  targetAmount: moneyMinorPositive,
+  savedAmount: moneyMinor.default(0),
   deadline: z.string().datetime().optional(),
   icon: z.string().max(10).default('🎯'),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).default('#6366F1'),

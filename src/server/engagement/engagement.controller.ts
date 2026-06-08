@@ -5,7 +5,7 @@ import { engagementService as svc } from './engagement.service';
 
 export const engagementController = {
   async daily(_req: NextRequest) {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     return ok(await svc.daily(userId));
   },
 };

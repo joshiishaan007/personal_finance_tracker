@@ -2,8 +2,10 @@ import jwt from 'jsonwebtoken';
 import { authRepository as repo } from './auth.repository';
 import type { IUser } from '@/server/models/user.model';
 
-export function signJWT(userId: string, secret: string): string {
-  return jwt.sign({ sub: userId }, secret, { expiresIn: '7d' });
+// `tv` (token version) lets logout/forced-signout invalidate outstanding tokens:
+// requireAuth rejects any token whose tv no longer matches the user's.
+export function signJWT(userId: string, secret: string, tokenVersion = 0): string {
+  return jwt.sign({ sub: userId, tv: tokenVersion }, secret, { expiresIn: '7d', algorithm: 'HS256' });
 }
 
 export const authService = {
@@ -26,4 +28,7 @@ export const authService = {
   },
 
   getById: (userId: string) => repo.findById(userId),
+
+  // Invalidate every outstanding token for a user (logout / forced sign-out).
+  bumpTokenVersion: (userId: string) => repo.bumpTokenVersion(userId),
 };

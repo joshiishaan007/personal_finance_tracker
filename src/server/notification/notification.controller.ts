@@ -6,19 +6,19 @@ import { notificationService as svc } from './notification.service';
 
 export const notificationController = {
   async list() {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const data = await svc.list(userId);
     return ok(data);
   },
 
   async readAll() {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     await svc.markAllRead(userId);
     return ok(undefined);
   },
 
   async read(_req: NextRequest, ctx: RouteCtx) {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     await svc.markRead(userId, String(ctx.params.id));
     return ok(undefined);
   },

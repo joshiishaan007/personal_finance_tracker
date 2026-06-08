@@ -7,19 +7,19 @@ import { netWorthService as svc } from './netWorth.service';
 
 export const netWorthController = {
   async list() {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const snapshots = await svc.list(userId);
     return ok(snapshots);
   },
 
   async latest() {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const snapshot = await svc.latest(userId);
     return ok(snapshot);
   },
 
   async upsert(req: NextRequest) {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const data = validateBody(UpsertNetWorthSchema, await req.json());
     const snapshot = await svc.upsert(userId, data);
     return ok(snapshot);

@@ -14,14 +14,14 @@ const YearlyReportQuerySchema = z.object({
 
 export const reportsController = {
   async monthly(req: NextRequest) {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const { year, month } = validateQuery(MonthlyReportQuerySchema, req);
     const data = await svc.monthly(userId, year, month);
     return ok(data);
   },
 
   async yearly(req: NextRequest) {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const { year } = validateQuery(YearlyReportQuerySchema, req);
     const data = await svc.yearly(userId, year);
     return ok(data);
