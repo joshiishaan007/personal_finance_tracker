@@ -16,12 +16,12 @@ export function useDebtSummary() {
   });
 }
 
-export function useFriendDebts(friendName: string | null) {
+export function useFriendDebts(friendName: string | null, status: 'pending' | 'settled' = 'pending') {
   const qs = friendName
-    ? new URLSearchParams({ friendName, status: 'pending' }).toString()
+    ? new URLSearchParams({ friendName, status }).toString()
     : '';
   return useQuery({
-    queryKey: ['debts', 'friend', friendName],
+    queryKey: ['debts', 'friend', friendName, status],
     queryFn: () =>
       api.get<{ data: DebtView[] }>(ENDPOINTS.debts.list(qs)).then((r) => r.data.data),
     enabled: !!friendName,

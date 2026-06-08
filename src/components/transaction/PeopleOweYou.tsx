@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, Check, Trash2, Pencil, X, ChevronDown, ArrowDownLeft } from 'lucide-react';
+import { Users, Check, Trash2, Pencil, X, ChevronDown, ArrowDownLeft, RotateCcw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   useDebtSummary, useFriendDebts, useUpdateDebt, useDeleteDebt,
@@ -39,15 +39,19 @@ function FriendDebtsModal({ friendName, onClose }: FriendModalProps) {
   const [editAmount, setEditAmount]   = useState('');
   // Track which entries have had an income tx auto-created for them.
   const [settledIds, setSettledIds]   = useState<Set<string>>(new Set());
+  const [showSettled, setShowSettled] = useState(false);
+
+  const { data: settledDebts = [] } = useFriendDebts(showSettled ? friendName : null, 'settled');
 
   const total = debts.reduce((s, d) => s + d.amount, 0);
 
-  // Prefer a category whose name suggests reimbursements; fall back to first income category.
+  // Search by keyword priority so 'Reimbursement' beats 'Other Income'.
   const incomeList = (categories ?? []).filter((c) => c.type === 'income');
-  const REIMBURSE_KEYWORDS = ['reimburse', 'friend', 'other', 'misc', 'receive', 'collect'];
+  const PRIORITY_KEYWORDS = ['reimburse', 'friend', 'receive', 'collect', 'misc', 'other'];
   const incomeCat =
-    incomeList.find((c) =>
-      REIMBURSE_KEYWORDS.some((k) => c.name.toLowerCase().includes(k)),
+    PRIORITY_KEYWORDS.reduce<(typeof incomeList)[number] | undefined>(
+      (found, k) => found ?? incomeList.find((c) => c.name.toLowerCase().includes(k)),
+      undefined,
     ) ?? incomeList[0];
 
   function startEdit(d: DebtView) {
@@ -207,6 +211,51 @@ function FriendDebtsModal({ friendName, onClose }: FriendModalProps) {
             )}
           </div>
         )}
+
+        {/* Settled entries with revert option */}
+        <div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="w-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-xs"
+            onClick={() => setShowSettled((v) => !v)}
+          >
+            {showSettled ? 'Hide settled' : 'Show settled entries'}
+          </Button>
+          {showSettled && settledDebts.length > 0 && (
+            <div className="mt-2 space-y-2">
+              {settledDebts.map((d) => (
+                <div
+                  key={d._id}
+                  className="flex items-center gap-2 rounded-xl border border-slate-200/60 dark:border-white/[0.05] bg-slate-50/60 dark:bg-ink-900/40 px-3 py-2.5 opacity-70"
+                >
+                  <div className="flex-1 min-w-0">
+                    {d.note && <Text className="text-sm truncate">{d.note}</Text>}
+                    <Text variant="small" className="text-slate-400">{fmtDate(d.createdAt)}</Text>
+                  </div>
+                  <Text className="text-sm font-bold tabular-nums text-slate-500 dark:text-slate-400 shrink-0">
+                    {fmt(d.amount, currency)}
+                  </Text>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-1.5 min-h-0 hover:text-warn-500 shrink-0"
+                    aria-label="Revert to pending"
+                    title="Revert to pending"
+                    onClick={() => updateDebt.mutate({ id: d._id, data: { status: 'pending' } })}
+                    loading={updateDebt.isPending}
+                  >
+                    <RotateCcw size={12} strokeWidth={2.2} />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+          {showSettled && settledDebts.length === 0 && (
+            <Text variant="small" className="text-center text-slate-400 py-2">No settled entries</Text>
+          )}
+        </div>
       </div>
     </Modal>
   );
