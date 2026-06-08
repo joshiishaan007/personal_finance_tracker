@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { ENDPOINTS } from '@/lib/endpoints';
 import { enqueue } from '@/lib/offlineQueue';
@@ -58,6 +58,31 @@ export function useTransactions(filters: Partial<TransactionFilter> = {}) {
       api.get<{ data: { items: Transaction[]; total: number; hasMore: boolean } }>(
         ENDPOINTS.transactions.list(params.toString())
       ).then((r) => r.data.data),
+    placeholderData: keepPreviousData,
+  });
+}
+
+// Infinite-scroll variant — accumulates pages client-side.
+export function useInfiniteTransactions(filters: Omit<Partial<TransactionFilter>, 'page'> = {}) {
+  return useInfiniteQuery({
+    queryKey: ['transactions', 'infinite', filters],
+    queryFn: ({ pageParam }: { pageParam: number }) => {
+      const params = new URLSearchParams();
+      for (const [k, v] of Object.entries(filters)) {
+        if (v !== undefined && v !== '') params.set(k, String(v));
+      }
+      params.set('page', String(pageParam));
+      if (!params.has('limit')) params.set('limit', '20');
+      return api
+        .get<{ data: { items: Transaction[]; total: number; hasMore: boolean } }>(
+          ENDPOINTS.transactions.list(params.toString()),
+        )
+        .then((r) => r.data.data);
+    },
+    getNextPageParam: (lastPage, _allPages, lastPageParam) =>
+      lastPage.hasMore ? lastPageParam + 1 : undefined,
+    initialPageParam: 1,
+    placeholderData: keepPreviousData,
   });
 }
 

@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { Users, Check, Trash2, Pencil, X, ChevronDown, ArrowDownLeft, RotateCcw } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Users, Check, Trash2, Pencil, X, ChevronDown, ArrowDownLeft, RotateCcw, Eye } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  useDebtSummary, useFriendDebts, useSettledDebts, useUpdateDebt, useDeleteDebt,
-  type DebtView, type DebtSummaryItem,
+  useDebtSummary, useInfiniteFriendDebts, useSettledDebts, useUpdateDebt, useDeleteDebt,
+  useCleanupSettledDebts, type DebtView, type DebtSummaryItem,
 } from '@/hooks/useDebts';
 import { useCreateTransaction, useDeleteTransaction } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
@@ -31,7 +31,6 @@ interface FriendModalProps {
 function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: FriendModalProps) {
   const { user } = useAuth();
   const currency = (user?.currency ?? 'INR') as Currency;
-  const { data: debts = [], isLoading } = useFriendDebts(friendName);
   const { data: categories } = useCategories();
   const updateDebt = useUpdateDebt();
   const deleteDebt = useDeleteDebt();
@@ -40,15 +39,70 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
 
   const [editingId,      setEditingId]      = useState<string | null>(null);
   const [editAmount,     setEditAmount]     = useState('');
-  // Track which entries have had an income tx auto-created for them.
+  const [editNote,       setEditNote]       = useState('');
   const [settledIds,     setSettledIds]     = useState<Set<string>>(new Set());
+  // Per-entry settle loading — shared mutation.isPending would light up all rows at once.
+  const [settlingIds,    setSettlingIds]    = useState<Set<string>>(new Set());
   const [showSettled,    setShowSettled]    = useState(initialShowSettled);
   const [pendingSettle,  setPendingSettle]  = useState<DebtView | null>(null);
   const [pendingRevert,  setPendingRevert]  = useState<DebtView | null>(null);
   const [pendingDelete,  setPendingDelete]  = useState<DebtView | null>(null);
   const [confirmAll,     setConfirmAll]     = useState(false);
 
-  const { data: settledDebts = [] } = useFriendDebts(showSettled ? friendName : null, 'settled');
+  // Pending debts — infinite scroll
+  const {
+    data: pendingPages,
+    isLoading,
+    hasNextPage: hasMorePending,
+    fetchNextPage: fetchMorePending,
+    isFetchingNextPage: isFetchingMorePending,
+  } = useInfiniteFriendDebts(friendName, 'pending');
+  const debts = pendingPages?.pages.flatMap((p) => p.items) ?? [];
+  const pendingTotal = pendingPages?.pages[0]?.total ?? 0;
+
+  // Settled debts — infinite scroll (loaded on demand)
+  const {
+    data: settledPages,
+    hasNextPage: hasMoreSettled,
+    fetchNextPage: fetchMoreSettled,
+    isFetchingNextPage: isFetchingMoreSettled,
+  } = useInfiniteFriendDebts(showSettled ? friendName : null, 'settled');
+  const settledDebts = settledPages?.pages.flatMap((p) => p.items) ?? [];
+  const settledTotal = settledPages?.pages[0]?.total ?? 0;
+
+  // Sentinel refs for IntersectionObserver-driven infinite scroll
+  const pendingSentinelRef = useRef<HTMLDivElement>(null);
+  const settledSentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = pendingSentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting && hasMorePending && !isFetchingMorePending) void fetchMorePending();
+      },
+      { threshold: 0.5 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [fetchMorePending, hasMorePending, isFetchingMorePending]);
+
+  useEffect(() => {
+    const el = settledSentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting && hasMoreSettled && !isFetchingMoreSettled) void fetchMoreSettled();
+      },
+      { threshold: 0.5 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [fetchMoreSettled, hasMoreSettled, isFetchingMoreSettled]);
+
+  // >5 total → fixed-height scrollable container; ≤5 → natural height
+  const pendingNeedsScroll = pendingTotal > 5;
+  const settledNeedsScroll = settledTotal > 5;
 
   const total = debts.reduce((s, d) => s + d.amount, 0);
 
@@ -64,32 +118,38 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
   function startEdit(d: DebtView) {
     setEditingId(d._id);
     setEditAmount(String(d.amount / 100));
+    setEditNote(d.note ?? '');
   }
 
   function saveEdit(id: string) {
     const v = parseFloat(editAmount);
     if (isNaN(v) || v <= 0) { setEditingId(null); return; }
-    updateDebt.mutate({ id, data: { amount: toMinorUnits(v, currency) } });
+    updateDebt.mutate({ id, data: { amount: toMinorUnits(v, currency), note: editNote.trim() || undefined } });
     setEditingId(null);
   }
 
   async function settle(d: DebtView) {
-    await updateDebt.mutateAsync({ id: d._id, data: { status: 'settled' } });
-    if (incomeCat) {
-      const txId = await createTx.mutateAsync({
-        amount:        d.amount,
-        type:          'income',
-        categoryId:    incomeCat._id,
-        date:          new Date().toISOString(),
-        note:          `Reimbursement from ${friendName ?? ''}`,
-        paymentMethod: 'upi',
-        tags:          ['reimbursement'],
-        isRecurring:   false,
-      });
-      // Link the income tx to this debt so it can be deleted on revert.
-      await updateDebt.mutateAsync({ id: d._id, data: { transactionId: txId } });
+    setSettlingIds((prev) => new Set(prev).add(d._id));
+    try {
+      await updateDebt.mutateAsync({ id: d._id, data: { status: 'settled' } });
+      if (incomeCat) {
+        const txId = await createTx.mutateAsync({
+          amount:        d.amount,
+          type:          'income',
+          categoryId:    incomeCat._id,
+          date:          new Date().toISOString(),
+          note:          `Reimbursement from ${friendName ?? ''}`,
+          paymentMethod: 'upi',
+          tags:          ['reimbursement'],
+          isRecurring:   false,
+        });
+        // Link the income tx to this debt so it can be deleted on revert.
+        await updateDebt.mutateAsync({ id: d._id, data: { transactionId: txId } });
+      }
+      setSettledIds((prev) => new Set(prev).add(d._id));
+    } finally {
+      setSettlingIds((prev) => { const next = new Set(prev); next.delete(d._id); return next; });
     }
-    setSettledIds((prev) => new Set(prev).add(d._id));
   }
 
   // Settle entries one-by-one to avoid concurrent mutation state collisions.
@@ -123,7 +183,7 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
         ) : debts.length === 0 ? (
           <Text variant="small" className="text-slate-400 text-center py-4">All settled up!</Text>
         ) : (
-          <div className="space-y-2">
+          <div className={cn('space-y-2', pendingNeedsScroll && 'max-h-[300px] overflow-y-auto pr-0.5')}>
             {debts.map((d) => (
               <div
                 key={d._id}
@@ -137,23 +197,32 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
                 </div>
 
                 {editingId === d._id ? (
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex-1 space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={editAmount}
+                        onChange={(e) => setEditAmount(e.target.value)}
+                        className="w-28 h-7 text-sm px-2"
+                        autoFocus
+                        onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(d._id); if (e.key === 'Escape') setEditingId(null); }}
+                      />
+                      <Button variant="ghost" size="sm" className="p-1 min-h-0 text-success-600" onClick={() => saveEdit(d._id)}>
+                        <Check size={13} strokeWidth={2.5} />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="p-1 min-h-0" onClick={() => setEditingId(null)}>
+                        <X size={13} strokeWidth={2.5} />
+                      </Button>
+                    </div>
                     <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={editAmount}
-                      onChange={(e) => setEditAmount(e.target.value)}
-                      className="w-24 h-7 text-sm px-2"
-                      autoFocus
+                      placeholder="Add a note (e.g. dinner, groceries…)"
+                      value={editNote}
+                      onChange={(e) => setEditNote(e.target.value)}
+                      className="h-7 text-sm px-2 w-full"
                       onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(d._id); if (e.key === 'Escape') setEditingId(null); }}
                     />
-                    <Button variant="ghost" size="sm" className="p-1 min-h-0 text-success-600" onClick={() => saveEdit(d._id)}>
-                      <Check size={13} strokeWidth={2.5} />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="p-1 min-h-0" onClick={() => setEditingId(null)}>
-                      <X size={13} strokeWidth={2.5} />
-                    </Button>
                   </div>
                 ) : (
                   <>
@@ -184,7 +253,7 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
                         className="p-1.5 min-h-0 hover:text-success-600"
                         aria-label="Mark settled"
                         onClick={() => setPendingSettle(d)}
-                        loading={updateDebt.isPending}
+                        loading={settlingIds.has(d._id)}
                       >
                         <Check size={13} strokeWidth={2.5} />
                       </Button>
@@ -203,6 +272,13 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
                 )}
               </div>
             ))}
+            {/* Pending infinite-scroll sentinel */}
+            <div ref={pendingSentinelRef} className="h-1" />
+            {isFetchingMorePending && (
+              <div className="py-1 text-center">
+                <span className="inline-block w-4 h-4 border-2 border-brand-400 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
           </div>
         )}
 
@@ -231,7 +307,7 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
             {showSettled ? 'Hide settled' : 'Show settled entries'}
           </Button>
           {showSettled && settledDebts.length > 0 && (
-            <div className="mt-2 space-y-2">
+            <div className={cn('mt-2 space-y-2', settledNeedsScroll && 'max-h-[300px] overflow-y-auto pr-0.5')}>
               {settledDebts.map((d) => (
                 <div
                   key={d._id}
@@ -257,6 +333,13 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
                   </Button>
                 </div>
               ))}
+              {/* Settled infinite-scroll sentinel */}
+              <div ref={settledSentinelRef} className="h-1" />
+              {isFetchingMoreSettled && (
+                <div className="py-1 text-center">
+                  <span className="inline-block w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
             </div>
           )}
           {showSettled && settledDebts.length === 0 && (
@@ -278,12 +361,17 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
     <ConfirmDialog
       open={!!pendingSettle}
       onClose={() => setPendingSettle(null)}
-      onConfirm={() => { if (pendingSettle) void settle(pendingSettle); }}
+      onConfirm={() => {
+        if (pendingSettle) {
+          void settle(pendingSettle);
+          setPendingSettle(null); // close immediately; per-entry spinner tracks progress
+        }
+      }}
       title="Mark as settled?"
       description={pendingSettle ? `This will record a reimbursement income of ${fmt(pendingSettle.amount, currency)} from ${friendName ?? ''}.` : undefined}
       confirmLabel="Mark settled"
       variant="danger"
-      loading={updateDebt.isPending || createTx.isPending}
+      loading={pendingSettle ? settlingIds.has(pendingSettle._id) : false}
     />
 
     <ConfirmDialog
@@ -304,6 +392,8 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
         if (!pendingRevert) return;
         if (pendingRevert.transactionId) void deleteTx.mutateAsync(pendingRevert.transactionId);
         updateDebt.mutate({ id: pendingRevert._id, data: { status: 'pending' } });
+        // Remove from session-settled set so the "income recorded" badge disappears.
+        setSettledIds((prev) => { const next = new Set(prev); next.delete(pendingRevert._id); return next; });
       }}
       title="Revert to pending?"
       description={pendingRevert?.transactionId ? 'The linked income transaction will also be deleted.' : 'This entry will be moved back to pending.'}
@@ -326,6 +416,8 @@ export function PeopleOweYou() {
   const [openSettledFor, setOpenSettledFor]         = useState<string | null>(null);
   const [expanded, setExpanded]                     = useState(true);
   const [settledExpanded, setSettledExpanded]       = useState(false);
+  const [confirmCleanup, setConfirmCleanup]         = useState(false);
+  const cleanup = useCleanupSettledDebts();
 
   // Group settled debts by friendName for the summary row.
   const settledByFriend = allSettled.reduce<Record<string, { total: number; count: number }>>(
@@ -393,11 +485,12 @@ export function PeopleOweYou() {
                 </Text>
                 <Button
                   size="sm"
-                  variant="secondary"
-                  className="shrink-0 px-2.5 text-xs"
+                  variant="ghost"
+                  className="shrink-0 p-1.5 min-h-0 text-slate-400 hover:text-brand-500"
+                  aria-label={`View ${f.friendName}'s entries`}
                   onClick={() => setSelectedFriend(f.friendName)}
                 >
-                  View
+                  <Eye size={15} strokeWidth={2.2} />
                 </Button>
               </div>
             ))}
@@ -408,22 +501,37 @@ export function PeopleOweYou() {
       {/* Settled friends section */}
       {settledFriends.length > 0 && (
         <Card variant="glass" padding="sm">
-          <Button
-            type="button"
-            variant="ghost"
-            className="flex items-center justify-between w-full -mx-1 px-1 min-h-0 h-auto"
-            onClick={() => setSettledExpanded((v) => !v)}
-          >
-            <div className="flex items-center gap-2">
-              <Check size={14} strokeWidth={2.4} className="text-success-500" />
-              <Text className="text-sm font-semibold text-slate-500 dark:text-slate-400">Settled</Text>
-            </div>
-            <ChevronDown
-              size={14}
-              strokeWidth={2.4}
-              className={cn('text-slate-400 transition-transform', settledExpanded && 'rotate-180')}
-            />
-          </Button>
+          <div className="flex items-center -mx-1 px-1">
+            <Button
+              type="button"
+              variant="ghost"
+              className="flex-1 flex items-center justify-between min-h-0 h-auto"
+              onClick={() => setSettledExpanded((v) => !v)}
+            >
+              <div className="flex items-center gap-2">
+                <Check size={14} strokeWidth={2.4} className="text-success-500" />
+                <Text className="text-sm font-semibold text-slate-500 dark:text-slate-400">Settled</Text>
+              </div>
+              <ChevronDown
+                size={14}
+                strokeWidth={2.4}
+                className={cn('text-slate-400 transition-transform mr-2', settledExpanded && 'rotate-180')}
+              />
+            </Button>
+            {/* Remove stale entries older than 7 days */}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="p-1.5 min-h-0 shrink-0 text-slate-400 hover:text-danger-500"
+              aria-label="Delete settled entries older than 7 days"
+              title="Clean up entries older than 7 days"
+              onClick={() => setConfirmCleanup(true)}
+              loading={cleanup.isPending}
+            >
+              <Trash2 size={13} strokeWidth={2.2} />
+            </Button>
+          </div>
           {settledExpanded && (
             <div className="space-y-1.5 mt-3">
               {settledFriends.map((name) => {
@@ -472,6 +580,17 @@ export function PeopleOweYou() {
         friendName={openSettledFor}
         onClose={() => setOpenSettledFor(null)}
         initialShowSettled
+      />
+
+      <ConfirmDialog
+        open={confirmCleanup}
+        onClose={() => setConfirmCleanup(false)}
+        onConfirm={() => cleanup.mutate(undefined, { onSuccess: () => setConfirmCleanup(false) })}
+        title="Clean up old settled entries?"
+        description="All settled entries older than 7 days will be permanently deleted. This frees up storage and cannot be undone."
+        confirmLabel="Clean up"
+        variant="danger"
+        loading={cleanup.isPending}
       />
     </>
   );

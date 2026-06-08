@@ -134,7 +134,7 @@
   }
 
   /* Safe-area helpers for the app shell (mobile) */
-  .pt-safe { padding-top: env(safe-area-inset-top); }
+  .pt-safe { padding-top: max(0.75rem, env(safe-area-inset-top)); }
   .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
   /* 5rem (80px) > nav bar (56px + border) + comfortable 24px buffer. */
   .pb-safe-nav { padding-bottom: calc(env(safe-area-inset-bottom) + 5rem); }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { ENDPOINTS } from '@/lib/endpoints';
 
@@ -44,6 +44,7 @@ export function useMonthlyAnalytics(year: number, month: number, enabled = true)
         .get<{ data: MonthlyAnalytics }>(ENDPOINTS.analytics.monthly(`year=${year}&month=${month}`))
         .then((r) => r.data.data),
     enabled,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -55,6 +56,7 @@ export function useYearlyAnalytics(year: number, enabled = true) {
         .get<{ data: YearlyAnalytics }>(ENDPOINTS.analytics.yearly(`year=${year}`))
         .then((r) => r.data.data),
     enabled,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -70,6 +72,7 @@ export function useCustomAnalytics(startDate: string, endDate: string, enabled =
         )
         .then((r) => r.data.data),
     enabled: enabled && !!startDate && !!endDate,
+    placeholderData: keepPreviousData,
   });
 }
 
