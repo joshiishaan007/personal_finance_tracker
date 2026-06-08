@@ -23,6 +23,7 @@ import { Link } from '@/components/ui/Link';
 import { Badge } from '@/components/ui/Badge';
 import { ProgressRing } from '@/components/ProgressRing';
 import { EmptyState } from '@/components/EmptyState';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { fmtDate } from '@/lib/utils';
 
@@ -42,7 +43,8 @@ export function GoalDetailView({ goalId }: { goalId: string }) {
   const deleteTask = useDeleteTask();
   const deleteGoal = useDeleteLifeGoal();
 
-  const [editOpen, setEditOpen] = useState(false);
+  const [editOpen,      setEditOpen]      = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [activeTab, setActiveTab] = useState<'calendar' | 'chart'>('calendar');
 
   // Log progress form state
@@ -119,7 +121,6 @@ export function GoalDetailView({ goalId }: { goalId: string }) {
   }
 
   function removeGoal() {
-    if (!confirm('Delete this goal and all its progress? This cannot be undone.')) return;
     deleteGoal.mutate(goalId, { onSuccess: () => router.push('/goals') });
   }
 
@@ -169,7 +170,7 @@ export function GoalDetailView({ goalId }: { goalId: string }) {
             <Button variant="ghost" size="sm" className="min-h-0 p-2" onClick={() => setEditOpen(true)} aria-label="Edit goal">
               <Pencil size={15} strokeWidth={2.2} />
             </Button>
-            <Button variant="ghost" size="sm" className="min-h-0 p-2 hover:text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-950/40" onClick={removeGoal} aria-label="Delete goal">
+            <Button variant="ghost" size="sm" className="min-h-0 p-2 hover:text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-950/40" onClick={() => setConfirmDelete(true)} aria-label="Delete goal">
               <Trash2 size={15} strokeWidth={2.2} />
             </Button>
           </div>
@@ -359,6 +360,14 @@ export function GoalDetailView({ goalId }: { goalId: string }) {
 
       <LifeGoalForm open={editOpen} onClose={() => setEditOpen(false)} editGoal={goal} />
       <ConfettiBurst trigger={celebrate} />
+      <ConfirmDialog
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={removeGoal}
+        title="Delete this goal?"
+        description="All progress logs and tasks for this goal will be permanently deleted. This cannot be undone."
+        loading={deleteGoal.isPending}
+      />
     </div>
   );
 }

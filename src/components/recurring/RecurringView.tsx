@@ -28,6 +28,7 @@ import { IconBadge } from '@/components/ui/IconBadge';
 import { StatCard } from '@/components/StatCard';
 import { EmptyState } from '@/components/EmptyState';
 import { SkeletonCard } from '@/components/SkeletonLoader';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 const FormSchema = z.object({
   note: z.string().max(500).optional(),
@@ -51,6 +52,7 @@ const FREQ_LABEL: Record<string, string> = {
 export function RecurringView() {
   const { user } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId,  setDeleteId]  = useState<string | null>(null);
   const currency = user?.currency ?? 'INR';
 
   const { data: rules, isLoading } = useRecurring();
@@ -175,7 +177,7 @@ export function RecurringView() {
                   <Button size="sm" variant="secondary" onClick={() => toggle.mutate({ id: rule._id, data: { isActive: !rule.isActive } })}>
                     {rule.isActive ? 'Pause' : 'Resume'}
                   </Button>
-                  <Button size="sm" variant="ghost" className="hover:text-danger-500" onClick={() => { if (confirm('Delete rule?')) deleteRule.mutate(rule._id); }}>
+                  <Button size="sm" variant="ghost" className="hover:text-danger-500" onClick={() => setDeleteId(rule._id)}>
                     Delete
                   </Button>
                 </div>
@@ -184,6 +186,15 @@ export function RecurringView() {
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={() => deleteRule.mutate(deleteId!)}
+        title="Delete recurring rule?"
+        description="Future automatic transactions from this rule will stop."
+        loading={deleteRule.isPending}
+      />
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="New Recurring Rule">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

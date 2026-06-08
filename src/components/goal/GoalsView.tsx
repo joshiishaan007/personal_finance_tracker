@@ -23,6 +23,7 @@ import { IconBadge } from '@/components/ui/IconBadge';
 import { ProgressRing } from '@/components/ProgressRing';
 import { ConfettiBurst } from '@/components/ConfettiBurst';
 import { EmptyState } from '@/components/EmptyState';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 const FormSchema = z.object({
   title: z.string().min(1).max(100),
@@ -42,8 +43,9 @@ const DEFAULT_COLOR = '#6366F1';
 export function GoalsView() {
   const { user } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
-  const [editGoal, setEditGoal] = useState<Goal | null>(null);
-  const [confetti, setConfetti] = useState(false);
+  const [editGoal,  setEditGoal]  = useState<Goal | null>(null);
+  const [confetti,  setConfetti]  = useState(false);
+  const [deleteId,  setDeleteId]  = useState<string | null>(null);
   const currency = user?.currency ?? 'INR';
 
   const { data: goals, isLoading } = useGoals();
@@ -187,13 +189,22 @@ export function GoalsView() {
                   {goal.status === 'active' && pct >= 100 && (
                     <Button size="sm" variant="gradient" leftIcon={<Trophy size={14} strokeWidth={2.4} />} onClick={() => onMarkAchieved(goal._id)}>Mark Achieved</Button>
                   )}
-                  <Button size="sm" variant="ghost" onClick={() => { if (confirm('Delete goal?')) deleteGoal.mutate(goal._id); }}>Delete</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setDeleteId(goal._id)}>Delete</Button>
                 </div>
               </Card>
             );
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={() => deleteGoal.mutate(deleteId!)}
+        title="Delete goal?"
+        description="All saved progress for this goal will be lost."
+        loading={deleteGoal.isPending}
+      />
 
       <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditGoal(null); }} title={editGoal ? 'Edit Goal' : 'New Goal'}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

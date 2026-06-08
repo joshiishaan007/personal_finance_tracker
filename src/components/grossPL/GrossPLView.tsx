@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/Badge';
 import { IconBadge } from '@/components/ui/IconBadge';
 import { StatCard } from '@/components/StatCard';
 import { EmptyState } from '@/components/EmptyState';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ChartCard } from '@/components/charts/ChartCard';
 import { PLBarChart } from '@/components/charts/lazy';
 import type { GrossPLEntryView } from '@/shared';
@@ -67,7 +68,8 @@ export function GrossPLView() {
   const remove = useDeleteGrossPL();
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<GrossPLEntryView | null>(null);
+  const [editing,   setEditing]   = useState<GrossPLEntryView | null>(null);
+  const [deleteId,  setDeleteId]  = useState<string | null>(null);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
@@ -251,7 +253,7 @@ export function GrossPLView() {
                         <Button variant="ghost" size="sm" onClick={() => openEdit(entry)} className="text-slate-400 hover:text-brand-500 p-1 sm:opacity-0 sm:group-hover:opacity-100" aria-label="Edit">
                           <Pencil size={16} />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => { if (confirm('Delete entry?')) remove.mutate(entry._id); }} className="text-slate-400 hover:text-danger-500 p-1 sm:opacity-0 sm:group-hover:opacity-100" aria-label="Delete">
+                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(entry._id)} className="text-slate-400 hover:text-danger-500 p-1 sm:opacity-0 sm:group-hover:opacity-100" aria-label="Delete">
                           <Trash2 size={16} />
                         </Button>
                       </div>
@@ -263,6 +265,15 @@ export function GrossPLView() {
           </>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={() => remove.mutate(deleteId!)}
+        title="Delete entry?"
+        description="This P&L adjustment will be permanently removed."
+        loading={remove.isPending}
+      />
 
       <Modal open={modalOpen} onClose={close} title={editing ? 'Edit Entry' : 'Add Adjustment'}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Pencil, Trash2, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, TrendingUp, Tag } from 'lucide-react';
 import { fmt, fmtDate, cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,6 +11,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
 import { Badge } from '@/components/ui/Badge';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 interface Props {
   open:    boolean;
@@ -36,6 +38,7 @@ export function TransactionDetailModal({ open, onClose, tx, onEdit }: Props) {
   const { data: categories } = useCategories();
   const { data: investments } = useInvestments();
   const deleteTx = useDeleteTransaction();
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (!tx) return null;
   // Capture into a const so TypeScript narrows correctly inside closures.
@@ -48,94 +51,100 @@ export function TransactionDetailModal({ open, onClose, tx, onEdit }: Props) {
   const meta    = TYPE_META[t.type as keyof typeof TYPE_META] ?? TYPE_META.expense;
   const Icon    = meta.icon;
 
-  function handleDelete() {
-    if (!confirm('Delete this transaction?')) return;
-    deleteTx.mutate(t._id, { onSuccess: onClose });
-  }
-
   return (
-    <Modal open={open} onClose={onClose} title="Transaction details">
-      <div className="space-y-4">
-        {/* Type + date header */}
-        <div className="flex items-center justify-between">
-          <span className={cn('inline-flex items-center gap-1.5 text-sm font-semibold px-2.5 py-1 rounded-full', meta.bg, meta.color)}>
-            <Icon size={14} strokeWidth={2.4} />
-            {meta.label}
-          </span>
-          <Text variant="small" className="text-slate-500">{fmtDate(t.date)}</Text>
-        </div>
-
-        {/* Amount — hero */}
-        <div className={cn('text-3xl font-bold tabular-nums tracking-tight', meta.color)}>
-          {meta.sign}{fmt(t.amount, currency)}
-        </div>
-
-        {/* Details grid */}
-        <div className="divide-y divide-slate-100 dark:divide-white/[0.06]">
-          {/* Category */}
-          <div className="flex items-center justify-between py-2.5">
-            <Text variant="small" className="text-slate-500">Category</Text>
-            <Text className="text-sm font-medium">
-              {cat ? `${cat.icon} ${cat.name}` : '—'}
-            </Text>
+    <>
+      <Modal open={open} onClose={onClose} title="Transaction details">
+        <div className="space-y-4">
+          {/* Type + date header */}
+          <div className="flex items-center justify-between">
+            <span className={cn('inline-flex items-center gap-1.5 text-sm font-semibold px-2.5 py-1 rounded-full', meta.bg, meta.color)}>
+              <Icon size={14} strokeWidth={2.4} />
+              {meta.label}
+            </span>
+            <Text variant="small" className="text-slate-500">{fmtDate(t.date)}</Text>
           </div>
 
-          {/* Payment method */}
-          <div className="flex items-center justify-between py-2.5">
-            <Text variant="small" className="text-slate-500">Payment</Text>
-            <Text className="text-sm font-medium">{PM_LABELS[t.paymentMethod] ?? t.paymentMethod}</Text>
+          {/* Amount — hero */}
+          <div className={cn('text-3xl font-bold tabular-nums tracking-tight', meta.color)}>
+            {meta.sign}{fmt(t.amount, currency)}
           </div>
 
-          {/* Note */}
-          {t.note && (
-            <div className="flex items-start justify-between gap-3 py-2.5">
-              <Text variant="small" className="text-slate-500 shrink-0">Note</Text>
-              <Text className="text-sm text-right">{t.note}</Text>
-            </div>
-          )}
-
-          {/* Linked investment */}
-          {inv && (
+          {/* Details grid */}
+          <div className="divide-y divide-slate-100 dark:divide-white/[0.06]">
+            {/* Category */}
             <div className="flex items-center justify-between py-2.5">
-              <Text variant="small" className="text-slate-500">Investment</Text>
-              <Text className="text-sm font-medium">{inv.icon} {inv.name}</Text>
+              <Text variant="small" className="text-slate-500">Category</Text>
+              <Text className="text-sm font-medium">
+                {cat ? `${cat.icon} ${cat.name}` : '—'}
+              </Text>
+            </div>
+
+            {/* Payment method */}
+            <div className="flex items-center justify-between py-2.5">
+              <Text variant="small" className="text-slate-500">Payment</Text>
+              <Text className="text-sm font-medium">{PM_LABELS[t.paymentMethod] ?? t.paymentMethod}</Text>
+            </div>
+
+            {/* Note */}
+            {t.note && (
+              <div className="flex items-start justify-between gap-3 py-2.5">
+                <Text variant="small" className="text-slate-500 shrink-0">Note</Text>
+                <Text className="text-sm text-right">{t.note}</Text>
+              </div>
+            )}
+
+            {/* Linked investment */}
+            {inv && (
+              <div className="flex items-center justify-between py-2.5">
+                <Text variant="small" className="text-slate-500">Investment</Text>
+                <Text className="text-sm font-medium">{inv.icon} {inv.name}</Text>
+              </div>
+            )}
+          </div>
+
+          {/* Tags */}
+          {t.tags.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Tag size={12} className="text-slate-400" />
+              {t.tags.map((tag) => (
+                <Badge key={tag} variant="default" className="text-[11px]">{tag}</Badge>
+              ))}
             </div>
           )}
-        </div>
 
-        {/* Tags */}
-        {t.tags.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Tag size={12} className="text-slate-400" />
-            {t.tags.map((tag) => (
-              <Badge key={tag} variant="default" className="text-[11px]">{tag}</Badge>
-            ))}
+          {/* Actions */}
+          <div className="flex gap-2 pt-1">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="flex-1"
+              leftIcon={<Pencil size={14} strokeWidth={2.2} />}
+              onClick={() => { onClose(); onEdit(t); }}
+            >
+              Edit
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-950/30"
+              leftIcon={<Trash2 size={14} strokeWidth={2.2} />}
+              loading={deleteTx.isPending}
+              onClick={() => setConfirmDelete(true)}
+            >
+              Delete
+            </Button>
           </div>
-        )}
-
-        {/* Actions */}
-        <div className="flex gap-2 pt-1">
-          <Button
-            variant="secondary"
-            size="sm"
-            className="flex-1"
-            leftIcon={<Pencil size={14} strokeWidth={2.2} />}
-            onClick={() => { onClose(); onEdit(t); }}
-          >
-            Edit
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex-1 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-950/30"
-            leftIcon={<Trash2 size={14} strokeWidth={2.2} />}
-            loading={deleteTx.isPending}
-            onClick={handleDelete}
-          >
-            Delete
-          </Button>
         </div>
-      </div>
-    </Modal>
+      </Modal>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={() => deleteTx.mutate(t._id, { onSuccess: onClose })}
+        title="Delete transaction?"
+        description="This transaction will be permanently removed from your records."
+        loading={deleteTx.isPending}
+      />
+    </>
   );
 }

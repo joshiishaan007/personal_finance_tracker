@@ -24,6 +24,7 @@ import { IconBadge } from '@/components/ui/IconBadge';
 import { StatCard } from '@/components/StatCard';
 import { EmptyState } from '@/components/EmptyState';
 import { BudgetAlertBanner } from '@/components/budget/BudgetAlertBanner';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 const FormSchema = z.object({
   categoryId: z.string().min(1, 'Select a category'),
@@ -43,7 +44,8 @@ const barClass: Record<string, string> = {
 
 export function BudgetsView() {
   const { user } = useAuth();
-  const [modalOpen, setModalOpen] = useState(false);
+  const [modalOpen, setModalOpen]     = useState(false);
+  const [deleteId,  setDeleteId]      = useState<string | null>(null);
   const currency = user?.currency ?? 'INR';
   const now = new Date();
 
@@ -147,7 +149,7 @@ export function BudgetsView() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => { if (confirm('Delete budget?')) deleteBudget.mutate(budget._id); }}
+                      onClick={() => setDeleteId(budget._id)}
                       className="text-slate-400 hover:text-danger-500 transition-opacity p-1 sm:opacity-0 sm:group-hover:opacity-100"
                       aria-label="Delete budget"
                     >
@@ -186,6 +188,15 @@ export function BudgetsView() {
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={() => deleteBudget.mutate(deleteId!)}
+        title="Delete budget?"
+        description="This will remove the budget limit. Your transactions won't be affected."
+        loading={deleteBudget.isPending}
+      />
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Set Budget">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

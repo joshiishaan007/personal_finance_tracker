@@ -15,6 +15,7 @@ import { StatCard } from '@/components/StatCard';
 import { ProgressRing } from '@/components/ProgressRing';
 import { EmptyState } from '@/components/EmptyState';
 import { InvestmentForm } from './InvestmentForm';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 const KIND_LABEL: Record<InvestmentKind, string> = {
   fd: 'Fixed Deposit',
@@ -28,7 +29,8 @@ export function InvestmentsView() {
   const { user } = useAuth();
   const currency = user?.currency ?? 'INR';
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<InvestmentView | null>(null);
+  const [editing,   setEditing]   = useState<InvestmentView | null>(null);
+  const [deleteId,  setDeleteId]  = useState<string | null>(null);
 
   const { data: investments, isLoading } = useInvestments();
   const deleteInv = useDeleteInvestment();
@@ -110,7 +112,7 @@ export function InvestmentsView() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => { if (confirm('Delete investment?')) deleteInv.mutate(inv._id); }}
+                      onClick={() => setDeleteId(inv._id)}
                       className="text-slate-400 hover:text-danger-500 p-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                       aria-label="Delete investment"
                     >
@@ -151,6 +153,15 @@ export function InvestmentsView() {
       )}
 
       <InvestmentForm open={modalOpen} onClose={() => setModalOpen(false)} editInvestment={editing} />
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={() => deleteInv.mutate(deleteId!)}
+        title="Delete investment?"
+        description="This investment record will be permanently removed."
+        loading={deleteInv.isPending}
+      />
     </div>
   );
 }

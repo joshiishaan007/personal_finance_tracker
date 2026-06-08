@@ -26,6 +26,7 @@ import { TransactionDetailModal } from '@/components/transaction/TransactionDeta
 import { PeopleOweYou } from '@/components/transaction/PeopleOweYou';
 import { QuickAddBar } from '@/components/transaction/QuickAddBar';
 import { InstantCards } from '@/components/transaction/InstantCards';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 type TxType = 'income' | 'expense' | 'transfer' | 'investment';
 type Tone = 'success' | 'danger' | 'aqua' | 'brand';
@@ -62,11 +63,12 @@ export function TransactionsView() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [formOpen, setFormOpen]     = useState(false);
-  const [editTx, setEditTx]         = useState<Transaction | null>(null);
-  const [detailTx, setDetailTx]     = useState<Transaction | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [filters, setFilters]       = useState({ type: '', search: '', page: 1 });
+  const [formOpen,    setFormOpen]    = useState(false);
+  const [editTx,      setEditTx]      = useState<Transaction | null>(null);
+  const [detailTx,    setDetailTx]    = useState<Transaction | null>(null);
+  const [detailOpen,  setDetailOpen]  = useState(false);
+  const [filters,     setFilters]     = useState({ type: '', search: '', page: 1 });
+  const [deleteId,    setDeleteId]    = useState<string | null>(null);
 
   // The shell FAB links to /transactions?new=1 — open the add modal, then strip
   // the param so a refresh (or back nav) doesn't reopen it.
@@ -252,7 +254,7 @@ export function TransactionsView() {
                           variant="ghost"
                           size="sm"
                           className="px-2 hover:text-danger-500"
-                          onClick={() => { if (confirm('Delete this transaction?')) deleteTx.mutate(tx._id); }}
+                          onClick={() => setDeleteId(tx._id)}
                           aria-label="Delete transaction"
                         >
                           <Trash2 size={15} strokeWidth={2.2} />
@@ -275,6 +277,15 @@ export function TransactionsView() {
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={() => deleteTx.mutate(deleteId!)}
+        title="Delete transaction?"
+        description="This transaction will be permanently removed from your records."
+        loading={deleteTx.isPending}
+      />
 
       <TransactionForm
         open={formOpen}
