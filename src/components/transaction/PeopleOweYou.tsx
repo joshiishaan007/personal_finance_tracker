@@ -10,6 +10,7 @@ import {
 import { useCreateTransaction, useDeleteTransaction } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
 import { Modal } from '@/components/ui/Modal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
@@ -37,11 +38,14 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
   const createTx   = useCreateTransaction();
   const deleteTx   = useDeleteTransaction();
 
-  const [editingId, setEditingId]     = useState<string | null>(null);
-  const [editAmount, setEditAmount]   = useState('');
+  const [editingId,      setEditingId]      = useState<string | null>(null);
+  const [editAmount,     setEditAmount]     = useState('');
   // Track which entries have had an income tx auto-created for them.
-  const [settledIds, setSettledIds]   = useState<Set<string>>(new Set());
-  const [showSettled, setShowSettled] = useState(initialShowSettled);
+  const [settledIds,     setSettledIds]     = useState<Set<string>>(new Set());
+  const [showSettled,    setShowSettled]    = useState(initialShowSettled);
+  const [pendingSettle,  setPendingSettle]  = useState<DebtView | null>(null);
+  const [pendingRevert,  setPendingRevert]  = useState<DebtView | null>(null);
+  const [confirmAll,     setConfirmAll]     = useState(false);
 
   const { data: settledDebts = [] } = useFriendDebts(showSettled ? friendName : null, 'settled');
 
@@ -95,6 +99,7 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
   }
 
   return (
+    <>
     <Modal
       open={!!friendName}
       onClose={onClose}
@@ -177,7 +182,7 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
                         size="sm"
                         className="p-1.5 min-h-0 hover:text-success-600"
                         aria-label="Mark settled"
-                        onClick={() => void settle(d)}
+                        onClick={() => setPendingSettle(d)}
                         loading={updateDebt.isPending}
                       >
                         <Check size={13} strokeWidth={2.5} />
@@ -202,7 +207,7 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
 
         {debts.length > 1 && (
           <div className="space-y-1.5">
-            <Button variant="gradient" size="sm" className="w-full" leftIcon={<Check size={14} strokeWidth={2.4} />} onClick={() => void settleAll()}>
+            <Button variant="gradient" size="sm" className="w-full" leftIcon={<Check size={14} strokeWidth={2.4} />} onClick={() => setConfirmAll(true)}>
               Settle all
             </Button>
             {incomeCat && (
@@ -244,10 +249,7 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
                     className="p-1.5 min-h-0 hover:text-warn-500 shrink-0"
                     aria-label="Revert to pending"
                     title="Revert to pending"
-                    onClick={() => {
-                      if (d.transactionId) void deleteTx.mutateAsync(d.transactionId);
-                      updateDebt.mutate({ id: d._id, data: { status: 'pending' } });
-                    }}
+                    onClick={() => setPendingRevert(d)}
                     loading={updateDebt.isPending || deleteTx.isPending}
                   >
                     <RotateCcw size={12} strokeWidth={2.2} />
@@ -262,6 +264,44 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
         </div>
       </div>
     </Modal>
+
+    <ConfirmDialog
+      open={!!pendingSettle}
+      onClose={() => setPendingSettle(null)}
+      onConfirm={() => { if (pendingSettle) void settle(pendingSettle); }}
+      title="Mark as settled?"
+      description={pendingSettle ? `This will record a reimbursement income of ${fmt(pendingSettle.amount, currency)} from ${friendName ?? ''}.` : undefined}
+      confirmLabel="Mark settled"
+      variant="danger"
+      loading={updateDebt.isPending || createTx.isPending}
+    />
+
+    <ConfirmDialog
+      open={confirmAll}
+      onClose={() => setConfirmAll(false)}
+      onConfirm={() => void settleAll()}
+      title="Settle all entries?"
+      description={`This will mark all ${debts.length} entries as settled and record income transactions for each.`}
+      confirmLabel="Settle all"
+      variant="danger"
+      loading={updateDebt.isPending || createTx.isPending}
+    />
+
+    <ConfirmDialog
+      open={!!pendingRevert}
+      onClose={() => setPendingRevert(null)}
+      onConfirm={() => {
+        if (!pendingRevert) return;
+        if (pendingRevert.transactionId) void deleteTx.mutateAsync(pendingRevert.transactionId);
+        updateDebt.mutate({ id: pendingRevert._id, data: { status: 'pending' } });
+      }}
+      title="Revert to pending?"
+      description={pendingRevert?.transactionId ? 'The linked income transaction will also be deleted.' : 'This entry will be moved back to pending.'}
+      confirmLabel="Revert"
+      variant="warn"
+      loading={updateDebt.isPending || deleteTx.isPending}
+    />
+    </>
   );
 }
 
