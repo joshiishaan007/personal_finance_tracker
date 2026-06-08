@@ -12,9 +12,9 @@ import { Badge } from '@/components/ui/Badge';
 import { Heading } from '@/components/ui/Heading';
 import { Text } from '@/components/ui/Text';
 import { StatCard } from '@/components/StatCard';
-import { ProgressRing } from '@/components/ProgressRing';
 import { EmptyState } from '@/components/EmptyState';
 import { InvestmentForm } from './InvestmentForm';
+import { InvestmentDetailModal } from './InvestmentDetailModal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 const KIND_LABEL: Record<InvestmentKind, string> = {
@@ -25,30 +25,51 @@ const KIND_LABEL: Record<InvestmentKind, string> = {
   equity: 'Equity',
 };
 
+function effectiveInvested(inv: InvestmentView): number {
+  return inv.kind === 'fd' || inv.kind === 'equity' ? inv.totalContribution : inv.investedAmount;
+}
+
+// Returns [left label, left value, right label, right value] for the card footer strip.
+function cardContext(
+  inv: InvestmentView,
+  currency: string,
+): [string, string, string, string] {
+  const rate = inv.ratePct != null ? `${inv.ratePct}% p.a.` : '—';
+  const maturity = inv.maturityDate ? fmtDate(inv.maturityDate) : 'No maturity';
+  const monthly = inv.monthlyAmount != null ? fmt(inv.monthlyAmount, currency) : '—';
+
+  switch (inv.kind) {
+    case 'fd':
+      return ['Rate', rate, 'Matures', maturity];
+    case 'rd':
+      return ['Monthly', monthly, 'Matures', maturity];
+    case 'sip':
+      return ['Monthly', monthly, inv.maturityDate ? 'Until' : 'Status', inv.maturityDate ? maturity : 'Ongoing'];
+    case 'ppf':
+      return ['Monthly', monthly, 'Matures', maturity];
+    case 'equity':
+      return ['Rate', rate, 'Current', inv.currentValue != null ? fmt(inv.currentValue, currency) : 'Market-linked'];
+  }
+}
+
 export function InvestmentsView() {
   const { user } = useAuth();
   const currency = user?.currency ?? 'INR';
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing,   setEditing]   = useState<InvestmentView | null>(null);
-  const [deleteId,  setDeleteId]  = useState<string | null>(null);
+  const [modalOpen,  setModalOpen]  = useState(false);
+  const [editing,    setEditing]    = useState<InvestmentView | null>(null);
+  const [detailInv,  setDetailInv]  = useState<InvestmentView | null>(null);
+  const [deleteId,   setDeleteId]   = useState<string | null>(null);
 
   const { data: investments, isLoading } = useInvestments();
   const deleteInv = useDeleteInvestment();
 
   const list = investments ?? [];
-  const totalInvested = list.reduce((s, i) => s + i.investedAmount, 0);
+  const totalInvested  = list.reduce((s, i) => s + effectiveInvested(i), 0);
   const totalProjected = list.reduce((s, i) => s + i.projectedValue, 0);
-  const totalReturn = list.reduce((s, i) => s + i.expectedReturn, 0);
+  const totalReturn    = list.reduce((s, i) => s + i.expectedReturn, 0);
 
-  function openCreate() {
-    setEditing(null);
-    setModalOpen(true);
-  }
-
-  function openEdit(inv: InvestmentView) {
-    setEditing(inv);
-    setModalOpen(true);
-  }
+  function openCreate() { setEditing(null); setModalOpen(true); }
+  function openEdit(inv: InvestmentView) { setEditing(inv); setModalOpen(true); }
 
   return (
     <div className="p-4 lg:p-6 max-w-4xl mx-auto space-y-6">
@@ -61,14 +82,14 @@ export function InvestmentsView() {
 
       {list.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <StatCard label="Total Invested" value={totalInvested} format={(n) => fmt(n, currency)} icon={Wallet} tone="brand" gradient />
+          <StatCard label="Total Invested"  value={totalInvested}  format={(n) => fmt(n, currency)} icon={Wallet}    tone="brand" gradient />
           <StatCard label="Projected Value" value={totalProjected} format={(n) => fmt(n, currency)} icon={LineChart} tone="aqua" />
-          <StatCard label="Expected Return" value={totalReturn} format={(n) => fmt(n, currency)} icon={TrendingUp} tone={totalReturn >= 0 ? 'success' : 'danger'} />
+          <StatCard label="Expected Return" value={totalReturn}    format={(n) => fmt(n, currency)} icon={TrendingUp} tone={totalReturn >= 0 ? 'success' : 'danger'} />
         </div>
       )}
 
       {isLoading ? (
-        <div className="space-y-3">{[1, 2, 3].map((i) => <div key={i} className="skeleton h-32 rounded-2xl" />)}</div>
+        <div className="space-y-3">{[1, 2, 3].map((i) => <div key={i} className="skeleton h-28 rounded-2xl" />)}</div>
       ) : list.length === 0 ? (
         <EmptyState
           icon={LineChart}
@@ -80,11 +101,18 @@ export function InvestmentsView() {
         <div className="grid sm:grid-cols-2 gap-4">
           {list.map((inv) => {
             const gainTone = inv.expectedReturn >= 0 ? 'success' : 'danger';
-            // Share of the way to the projected value the actual investment has reached.
-            const pct = inv.projectedValue > 0 ? Math.min((inv.investedAmount / inv.projectedValue) * 100, 100) : 0;
+            const invested = effectiveInvested(inv);
+            const [leftLabel, leftVal, rightLabel, rightVal] = cardContext(inv, currency);
 
             return (
-              <Card key={inv._id} variant="glass" interactive className="group">
+              <Card
+                key={inv._id}
+                variant="glass"
+                interactive
+                className="group cursor-pointer"
+                onClick={() => setDetailInv(inv)}
+              >
+                {/* Header */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 min-w-0">
                     <span
@@ -99,7 +127,11 @@ export function InvestmentsView() {
                       <Badge variant="brand" className="mt-0.5">{KIND_LABEL[inv.kind]}</Badge>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
+                  {/* Buttons stop propagation so they don't open the detail modal */}
+                  <div
+                    className="flex items-center gap-1 shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Button
                       variant="ghost"
                       size="sm"
@@ -121,36 +153,58 @@ export function InvestmentsView() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-3 mt-4">
-                  <div className="space-y-1.5 min-w-0">
-                    <div className="flex items-baseline gap-2">
-                      <Text as="span" variant="small">Invested</Text>
-                      <Text as="span" className="font-bold tabular-nums text-slate-900 dark:text-slate-50">{fmt(inv.investedAmount, currency)}</Text>
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                      <Text as="span" variant="small">Projected</Text>
-                      <Text as="span" className="font-semibold tabular-nums text-slate-700 dark:text-slate-300">{fmt(inv.projectedValue, currency)}</Text>
-                    </div>
-                    <Text as="span" variant="small" className={cn('font-semibold block', gainTone === 'success' ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400')}>
-                      {inv.expectedReturn >= 0 ? '+' : ''}{fmt(inv.expectedReturn, currency)} return
+                {/* Financial summary */}
+                <div className="mt-4 space-y-1.5">
+                  <div className="flex items-baseline justify-between">
+                    <Text as="span" variant="small">Invested</Text>
+                    <Text as="span" className="font-bold tabular-nums text-slate-900 dark:text-slate-50">
+                      {fmt(invested, currency)}
                     </Text>
                   </div>
-                  <ProgressRing pct={pct} size={64} label={`${Math.round(pct)}% of projected`} />
+                  <div className="flex items-baseline justify-between gap-2">
+                    <Text as="span" variant="small">Projected</Text>
+                    <div className="flex items-baseline gap-2 min-w-0">
+                      <Text as="span" className="font-semibold tabular-nums text-slate-700 dark:text-slate-300">
+                        {fmt(inv.projectedValue, currency)}
+                      </Text>
+                      <Text
+                        as="span"
+                        variant="small"
+                        className={cn(
+                          'font-semibold tabular-nums shrink-0',
+                          gainTone === 'success' ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400',
+                        )}
+                      >
+                        {inv.expectedReturn >= 0 ? '+' : ''}{fmt(inv.expectedReturn, currency)}
+                      </Text>
+                    </div>
+                  </div>
                 </div>
 
+                {/* Contextual footer strip */}
                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-200/60 dark:border-slate-700/60">
-                  <Text as="span" variant="small" className="tabular-nums">
-                    {inv.ratePct != null ? `${inv.ratePct}% p.a.` : '—'}
-                  </Text>
-                  <Text as="span" variant="small">
-                    {inv.maturityDate ? `Matures ${fmtDate(inv.maturityDate)}` : 'No maturity'}
-                  </Text>
+                  <div>
+                    <Text as="span" variant="small" className="block text-slate-400">{leftLabel}</Text>
+                    <Text as="span" variant="small" className="font-medium tabular-nums text-slate-700 dark:text-slate-300">{leftVal}</Text>
+                  </div>
+                  <div className="text-right">
+                    <Text as="span" variant="small" className="block text-slate-400">{rightLabel}</Text>
+                    <Text as="span" variant="small" className="font-medium text-slate-700 dark:text-slate-300">{rightVal}</Text>
+                  </div>
                 </div>
               </Card>
             );
           })}
         </div>
       )}
+
+      <InvestmentDetailModal
+        inv={detailInv}
+        currency={currency}
+        onClose={() => setDetailInv(null)}
+        onEdit={(inv) => { setDetailInv(null); openEdit(inv); }}
+        onDelete={(id) => { setDetailInv(null); setDeleteId(id); }}
+      />
 
       <InvestmentForm open={modalOpen} onClose={() => setModalOpen(false)} editInvestment={editing} />
 

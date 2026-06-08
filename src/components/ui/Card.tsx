@@ -8,6 +8,7 @@ interface Props {
   padding?: 'sm' | 'md' | 'lg' | 'none';
   variant?: Variant;
   interactive?: boolean;
+  onClick?: React.MouseEventHandler<HTMLDivElement>;
 }
 
 const paddingMap = { none: '', sm: 'p-3', md: 'p-4', lg: 'p-6' };
@@ -19,9 +20,10 @@ const variantMap: Record<Variant, string> = {
   plain: 'bg-white dark:bg-ink-900',
 };
 
-export function Card({ children, className, padding = 'md', variant = 'default', interactive = false }: Props) {
+export function Card({ children, className, padding = 'md', variant = 'default', interactive = false, onClick }: Props) {
   return (
     <div
+      onClick={onClick}
       className={cn(
         'rounded-2xl',
         variantMap[variant],

@@ -155,9 +155,9 @@ export function DashboardView() {
   const greeting = user ? getGreeting(user.name) : { text: 'Welcome!', icon: Sunrise };
 
   const invList = investments ?? [];
-  const totalInvested  = invList.reduce((s, i) => s + i.investedAmount,  0);
-  const totalProjected = invList.reduce((s, i) => s + i.projectedValue,  0);
-  const totalReturn    = invList.reduce((s, i) => s + i.expectedReturn,  0);
+  const totalInvested  = invList.reduce((s, i) => s + (i.kind === 'fd' || i.kind === 'equity' ? i.totalContribution : i.investedAmount), 0);
+  const totalProjected = invList.reduce((s, i) => s + i.projectedValue, 0);
+  const totalReturn    = invList.reduce((s, i) => s + i.expectedReturn, 0);
 
   return (
     <div className="p-4 lg:p-6 space-y-6 max-w-7xl mx-auto">
