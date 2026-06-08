@@ -9,7 +9,7 @@ import { toMinorUnits, type Currency } from '@/shared';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreateTransaction, useUpdateTransaction } from '@/hooks/useTransactions';
 import { useCreateInstantCard } from '@/hooks/useInstantCards';
-import { useCreateDebts, useUpdateDebt, useTransactionDebts } from '@/hooks/useDebts';
+import { useCreateDebts, useUpdateDebt, useTransactionDebts, useDebtSummary } from '@/hooks/useDebts';
 import { useInvestments } from '@/hooks/useInvestments';
 import type { CreateTransaction } from '@/shared';
 import { Button } from '@/components/ui/Button';
@@ -78,6 +78,8 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
 
   // Existing debts linked to the transaction being edited.
   const { data: txDebts = [] } = useTransactionDebts(editTx?._id);
+  // Global pending summary — used to warn about potential duplicates on pre-sourceTxId debts.
+  const { data: debtSummary = [] } = useDebtSummary();
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
@@ -369,6 +371,19 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
                 </Button>
               </div>
             ))}
+
+            {/* Duplicate risk warning for old transactions (no sourceTxId debts yet) */}
+            {editTx && txDebts.length === 0 && splits.some((sp) =>
+              sp.name.trim() &&
+              debtSummary.some((s) => s.friendName.toLowerCase() === sp.name.trim().toLowerCase()),
+            ) && (
+              <div className="flex items-start gap-1.5 rounded-lg bg-warn-50 dark:bg-warn-900/30 px-2.5 py-2">
+                <AlertTriangle size={13} strokeWidth={2.2} className="text-warn-500 shrink-0 mt-0.5" />
+                <Text variant="small" className="text-warn-700 dark:text-warn-300">
+                  This friend already has pending entries. This transaction pre-dates split tracking, so adding them here creates a new separate entry — not a duplicate of an earlier one.
+                </Text>
+              </div>
+            )}
 
             {/* Amount overflow warning */}
             {splitOverflow && (
