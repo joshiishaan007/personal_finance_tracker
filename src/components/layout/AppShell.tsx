@@ -151,7 +151,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         key={item.to}
         href={item.to}
         className={cn(
-          'relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 min-h-[44px] no-underline hover:no-underline active:scale-[0.98]',
+          'relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-[background-color,color,transform] duration-100 min-h-[44px] no-underline hover:no-underline active:scale-[0.98]',
           active
             ? 'bg-aurora-soft text-brand-700 dark:text-brand-200'
             : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100/70 dark:hover:bg-ink-800/70 hover:text-slate-800 dark:hover:text-slate-200',
@@ -175,7 +175,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         href={item.to}
         aria-label={item.label}
         className={cn(
-          'relative flex h-full items-center justify-center no-underline hover:no-underline active:scale-95 transition-colors',
+          'relative flex h-full items-center justify-center no-underline hover:no-underline active:scale-95 transition-[color,transform] duration-100',
           active ? 'text-brand-600 dark:text-brand-300' : 'text-slate-500 dark:text-slate-400',
         )}
       >
@@ -300,7 +300,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     href={item.to}
                     onClick={() => setMoreOpen(false)}
                     className={cn(
-                      'flex flex-col items-center gap-1.5 p-3 rounded-2xl text-sm font-medium no-underline hover:no-underline active:scale-95 transition-all',
+                      'flex flex-col items-center gap-1.5 p-3 rounded-2xl text-sm font-medium no-underline hover:no-underline active:scale-95 transition-[background-color,color,transform] duration-100',
                       active
                         ? 'bg-aurora-soft text-brand-700 dark:text-brand-200'
                         : 'bg-slate-50/80 dark:bg-ink-800/60 text-slate-700 dark:text-slate-300',
