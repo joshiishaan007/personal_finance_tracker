@@ -70,7 +70,7 @@ function FriendDebtsModal({ friendName, onClose }: FriendModalProps) {
       categoryId:    incomeCat._id,
       date:          new Date().toISOString(),
       note:          `Reimbursement from ${friendName ?? ''}`,
-      paymentMethod: 'cash',
+      paymentMethod: 'upi',
       tags:          ['reimbursement'],
       isRecurring:   false,
     });
