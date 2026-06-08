@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Zap } from 'lucide-react';
+import { Zap, Users, Plus, X } from 'lucide-react';
 import { toMinorUnits, type Currency } from '@/shared';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreateTransaction, useUpdateTransaction } from '@/hooks/useTransactions';
 import { useCreateInstantCard } from '@/hooks/useInstantCards';
+import { useCreateDebts } from '@/hooks/useDebts';
 import { useInvestments } from '@/hooks/useInvestments';
 import type { CreateTransaction } from '@/shared';
 import { Button } from '@/components/ui/Button';
@@ -64,11 +65,13 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
   const currency = user?.currency ?? 'INR';
 
   const [saveAsCard, setSaveAsCard] = useState(false);
+  const [splits, setSplits] = useState<{ name: string; amount: string }[]>([]);
 
-  const createTx  = useCreateTransaction();
-  const updateTx  = useUpdateTransaction(editTx?._id ?? '');
-  const createCard = useCreateInstantCard();
-  const isPending  = editTx ? updateTx.isPending : createTx.isPending;
+  const createTx   = useCreateTransaction();
+  const updateTx   = useUpdateTransaction(editTx?._id ?? '');
+  const createCard  = useCreateInstantCard();
+  const createDebts = useCreateDebts();
+  const isPending   = editTx ? updateTx.isPending : createTx.isPending;
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
@@ -104,6 +107,8 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
         ...prefill,
       });
     }
+    setSplits([]);
+    setSaveAsCard(false);
   }, [editTx, reset, open, prefill]);
 
   function onSubmit(values: FormValues) {
@@ -134,7 +139,18 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
               tags:          payload.tags ?? [],
             });
           }
+          const validSplits = splits.filter((s) => s.name.trim() && parseFloat(s.amount) > 0);
+          if (validSplits.length > 0) {
+            createDebts.mutate(
+              validSplits.map((s) => ({
+                friendName: s.name.trim(),
+                amount:     toMinorUnits(parseFloat(s.amount), currency as Currency),
+                note:       values.note?.trim() || undefined,
+              })),
+            );
+          }
           setSaveAsCard(false);
+          setSplits([]);
           onClose();
         },
       });
@@ -215,6 +231,59 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
           placeholder="food, family, work…"
           {...register('tags')}
         />
+
+        {/* Split — collect from friends (expense/transfer only, new tx only) */}
+        {!editTx && (selectedType === 'expense' || selectedType === 'transfer') && (
+          <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/60 dark:bg-ink-800/40 p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users size={14} className="text-brand-500" />
+                <Text className="text-sm font-medium">Collect from friends</Text>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                leftIcon={<Plus size={11} strokeWidth={2.6} />}
+                onClick={() => setSplits((s) => [...s, { name: '', amount: '' }])}
+              >
+                Add
+              </Button>
+            </div>
+            {splits.map((sp, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Input
+                  placeholder="Friend's name"
+                  value={sp.name}
+                  onChange={(e) => setSplits((s) => s.map((r, j) => j === i ? { ...r, name: e.target.value } : r))}
+                  className="flex-1"
+                />
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Amount"
+                  value={sp.amount}
+                  onChange={(e) => setSplits((s) => s.map((r, j) => j === i ? { ...r, amount: e.target.value } : r))}
+                  className="w-28"
+                />
+                <button
+                  type="button"
+                  onClick={() => setSplits((s) => s.filter((_, j) => j !== i))}
+                  className="p-1 text-slate-400 hover:text-danger-500 transition-colors"
+                >
+                  <X size={14} strokeWidth={2.4} />
+                </button>
+              </div>
+            ))}
+            {splits.length > 0 && (
+              <Text variant="small" className="text-slate-400">
+                These amounts will be tracked under &ldquo;People owe you&rdquo; on the transactions page.
+              </Text>
+            )}
+          </div>
+        )}
 
         {/* Instant card toggle — only for new transactions */}
         {!editTx && (

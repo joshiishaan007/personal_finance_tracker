@@ -26,6 +26,7 @@ export interface Transaction {
   tags: string[];
   paymentMethod: string;
   isRecurring: boolean;
+  investmentId?: string;
 }
 
 export interface FrequentTemplate {

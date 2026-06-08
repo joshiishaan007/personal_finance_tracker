@@ -22,6 +22,8 @@ import { StatCard } from '@/components/StatCard';
 import { EmptyState } from '@/components/EmptyState';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { TransactionForm } from '@/components/transaction/TransactionForm';
+import { TransactionDetailModal } from '@/components/transaction/TransactionDetailModal';
+import { PeopleOweYou } from '@/components/transaction/PeopleOweYou';
 import { QuickAddBar } from '@/components/transaction/QuickAddBar';
 import { InstantCards } from '@/components/transaction/InstantCards';
 
@@ -60,9 +62,11 @@ export function TransactionsView() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [formOpen, setFormOpen] = useState(false);
-  const [editTx, setEditTx] = useState<Transaction | null>(null);
-  const [filters, setFilters] = useState({ type: '', search: '', page: 1 });
+  const [formOpen, setFormOpen]     = useState(false);
+  const [editTx, setEditTx]         = useState<Transaction | null>(null);
+  const [detailTx, setDetailTx]     = useState<Transaction | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [filters, setFilters]       = useState({ type: '', search: '', page: 1 });
 
   // The shell FAB links to /transactions?new=1 — open the add modal, then strip
   // the param so a refresh (or back nav) doesn't reopen it.
@@ -127,6 +131,7 @@ export function TransactionsView() {
       <div className="space-y-3">
         <QuickAddBar />
         <InstantCards />
+        <PeopleOweYou />
       </div>
 
       {items.length > 0 && (
@@ -207,8 +212,12 @@ export function TransactionsView() {
                   const cat = catMap[tx.categoryId];
                   const meta = TYPE_META[tx.type as TxType] ?? TYPE_META.expense;
                   return (
-                    <Card
+                    <div
                       key={tx._id}
+                      className="cursor-pointer"
+                      onClick={() => { setDetailTx(tx); setDetailOpen(true); }}
+                    >
+                    <Card
                       variant="default"
                       interactive
                       padding="sm"
@@ -229,7 +238,7 @@ export function TransactionsView() {
                       >
                         {amountSign(tx.type)}{fmt(tx.amount, currency)}
                       </Text>
-                      <div className="flex gap-1 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+                      <div className="flex gap-1 transition-opacity sm:opacity-0 sm:group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -250,6 +259,7 @@ export function TransactionsView() {
                         </Button>
                       </div>
                     </Card>
+                    </div>
                   );
                 })}
               </div>
@@ -271,6 +281,13 @@ export function TransactionsView() {
         onClose={closeForm}
         editTx={editTx}
         categories={categories ?? []}
+      />
+
+      <TransactionDetailModal
+        open={detailOpen}
+        onClose={() => { setDetailOpen(false); setDetailTx(null); }}
+        tx={detailTx}
+        onEdit={(tx) => { setDetailOpen(false); setDetailTx(null); setEditTx(tx); setFormOpen(true); }}
       />
     </div>
   );
