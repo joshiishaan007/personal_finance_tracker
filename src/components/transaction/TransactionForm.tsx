@@ -124,8 +124,27 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
       // Only an investment-type tx may link an investment wallet.
       investmentId: values.type === 'investment' && values.investmentId ? values.investmentId : undefined,
     };
+    function fireDebts(note?: string) {
+      const validSplits = splits.filter((s) => s.name.trim() && parseFloat(s.amount) > 0);
+      if (validSplits.length > 0) {
+        createDebts.mutate(
+          validSplits.map((s) => ({
+            friendName: s.name.trim(),
+            amount:     toMinorUnits(parseFloat(s.amount), currency as Currency),
+            note:       note?.trim() || undefined,
+          })),
+        );
+      }
+    }
+
     if (editTx) {
-      updateTx.mutate(payload, { onSuccess: onClose });
+      updateTx.mutate(payload, {
+        onSuccess: () => {
+          fireDebts(values.note);
+          setSplits([]);
+          onClose();
+        },
+      });
     } else {
       createTx.mutate(payload, {
         onSuccess: () => {
@@ -139,16 +158,7 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
               tags:          payload.tags ?? [],
             });
           }
-          const validSplits = splits.filter((s) => s.name.trim() && parseFloat(s.amount) > 0);
-          if (validSplits.length > 0) {
-            createDebts.mutate(
-              validSplits.map((s) => ({
-                friendName: s.name.trim(),
-                amount:     toMinorUnits(parseFloat(s.amount), currency as Currency),
-                note:       values.note?.trim() || undefined,
-              })),
-            );
-          }
+          fireDebts(values.note);
           setSaveAsCard(false);
           setSplits([]);
           onClose();
@@ -232,8 +242,8 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
           {...register('tags')}
         />
 
-        {/* Split — collect from friends (expense/transfer only, new tx only) */}
-        {!editTx && (selectedType === 'expense' || selectedType === 'transfer') && (
+        {/* Split — collect from friends (expense/transfer only) */}
+        {(selectedType === 'expense' || selectedType === 'transfer') && (
           <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/60 dark:bg-ink-800/40 p-3 space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -279,7 +289,7 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
             ))}
             {splits.length > 0 && (
               <Text variant="small" className="text-slate-400">
-                These amounts will be tracked under &ldquo;People owe you&rdquo; on the transactions page.
+                Entries added here will appear under &ldquo;People owe you&rdquo; on the transactions page.
               </Text>
             )}
           </div>
