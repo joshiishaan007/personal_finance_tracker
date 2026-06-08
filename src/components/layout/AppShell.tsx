@@ -134,7 +134,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { primary, more, fab } = NAV[mode];
   const allNav = [...primary, ...more];
   const activeTo = bestActiveTo(pathname, allNav);
-  const pageTitle = allNav.find((i) => i.to === activeTo)?.label ?? 'Personal Finance Tracker';
+  const pageTitle = allNav.find((i) => i.to === activeTo)?.label ?? 'xpensr';
 
   // Mobile bottom bar: 5 equal columns with the FAB dead-center — 2 left, FAB,
   // then (right nav + More) padded with spacers so the FAB stays centered.
@@ -191,8 +191,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-ink-950">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col w-64 glass border-r p-4 gap-1.5 overflow-y-auto scrollbar-thin">
-        <Link href={fab.href.startsWith('/goals') ? '/goals' : '/dashboard'} className="flex items-center gap-2 px-2 py-3 no-underline hover:no-underline">
-          <GradientText className="text-lg leading-tight">Personal Finance Tracker</GradientText>
+        <Link href={fab.href.startsWith('/goals') ? '/goals' : '/dashboard'} className="flex items-center px-2 py-3 no-underline hover:no-underline">
+          <GradientText className="text-xl font-bold">xpensr</GradientText>
         </Link>
 
         <ModeSwitcher className="mb-2" />
@@ -227,7 +227,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <header className="sticky top-0 z-30 glass pt-safe flex items-center justify-between px-4 py-3 lg:px-6">
           <div className="flex items-center min-w-0">
             <Heading level={4} className="hidden lg:block truncate">{pageTitle}</Heading>
-            <GradientText className="lg:hidden text-lg">{mode === 'goals' ? 'Goals' : 'Finance'}</GradientText>
+            <GradientText className="lg:hidden text-base font-semibold capitalize">
+              {mode === 'goals' ? 'Goals' : 'Finance'}
+            </GradientText>
           </div>
           <div className="flex items-center gap-1.5">
             <NotificationBell />

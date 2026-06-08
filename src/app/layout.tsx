@@ -14,11 +14,10 @@ const display = Chakra_Petch({
 });
 
 export const metadata: Metadata = {
-  title: 'Personal Finance Tracker',
+  title: 'xpensr',
   description: 'Your lifetime personal finance companion',
-  applicationName: 'Personal Finance Tracker',
-  manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, title: 'Finance', statusBarStyle: 'default' },
+  applicationName: 'xpensr',
+  appleWebApp: { capable: true, title: 'xpensr', statusBarStyle: 'default' },
 };
 
 export const viewport: Viewport = {
