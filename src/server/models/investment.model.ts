@@ -10,6 +10,7 @@ export interface IInvestment extends Document {
   startDate: Date;
   ratePct?: number;
   tenureMonths?: number;
+  tenureDays?: number;
   compounding?: 'monthly' | 'quarterly' | 'halfyearly' | 'yearly';
   principal?: number;
   monthlyAmount?: number;
@@ -31,6 +32,7 @@ const investmentSchema = new Schema<IInvestment>(
     startDate: { type: Date, required: true },
     ratePct: Number,
     tenureMonths: Number,
+    tenureDays: Number,
     compounding: { type: String, enum: ['monthly', 'quarterly', 'halfyearly', 'yearly'] },
     principal: Number,
     monthlyAmount: Number,

@@ -14,8 +14,10 @@ export const CreateInvestmentSchema = z.object({
   startDate: z.string().datetime(),
   // Annual interest rate (FD/RD/PPF) or expected annual return % (SIP/equity).
   ratePct: z.number().min(0).max(100).optional(),
-  // Investment horizon in months (FD/RD/PPF/SIP). Drives the maturity date.
-  tenureMonths: z.number().int().positive().max(1200).optional(),
+  // Investment horizon in whole months (FD/RD/PPF/SIP). Drives the maturity date.
+  tenureMonths: z.number().int().min(0).max(1200).optional(),
+  // Extra days on top of tenureMonths (primarily FD — e.g. "1 year 2 months 14 days").
+  tenureDays: z.number().int().min(0).max(30).optional(),
   // Compounding frequency for FD/PPF.
   compounding: CompoundingEnum.optional(),
   // Lump-sum principal in minor units (FD / equity lump). Optional seed; the real
@@ -48,6 +50,7 @@ export interface InvestmentView {
   startDate: string;
   ratePct?: number;
   tenureMonths?: number;
+  tenureDays?: number;
   compounding?: Compounding;
   principal?: number;
   monthlyAmount?: number;
@@ -58,5 +61,5 @@ export interface InvestmentView {
   totalContribution: number; // planned total over the tenure (basis for return)
   projectedValue: number; // maturity / projected value
   expectedReturn: number; // projectedValue - totalContribution
-  maturityDate?: string; // startDate + tenureMonths
+  maturityDate?: string; // startDate + tenureMonths + tenureDays
 }

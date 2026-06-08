@@ -7,9 +7,16 @@ import type { InvestmentKind, Compounding } from '@/shared';
 const PERIODS: Record<Compounding, number> = { monthly: 12, quarterly: 4, halfyearly: 2, yearly: 1 };
 
 // FD / lump-sum compound maturity: P * (1 + r/(100n))^(n*t).
-function fdMaturity(principalMinor: number, ratePct: number, tenureMonths: number, compounding: Compounding): number {
+// tenureDays adds fractional-year precision: t = tenureMonths/12 + tenureDays/365.25.
+function fdMaturity(
+  principalMinor: number,
+  ratePct: number,
+  tenureMonths: number,
+  compounding: Compounding,
+  tenureDays = 0,
+): number {
   const n = PERIODS[compounding];
-  const t = tenureMonths / 12;
+  const t = tenureMonths / 12 + tenureDays / 365.25;
   const factor = Math.pow(1 + ratePct / (100 * n), n * t);
   return Math.round(principalMinor * factor);
 }
@@ -52,6 +59,7 @@ export interface ProjectionInput {
   monthlyAmount?: number;
   ratePct?: number;
   tenureMonths?: number;
+  tenureDays?: number;
   compounding?: Compounding;
   currentValue?: number;
   startDate: Date;
@@ -59,14 +67,15 @@ export interface ProjectionInput {
 
 export interface Projection {
   totalContribution: number; // planned basis for the return calc (minor units)
-  projectedValue: number; // maturity / projected value (minor units)
-  expectedReturn: number; // projectedValue - totalContribution
+  projectedValue: number;    // maturity / projected value (minor units)
+  expectedReturn: number;    // projectedValue - totalContribution
   maturityDate?: Date;
 }
 
 export function projectInvestment(inv: ProjectionInput): Projection {
   const rate = inv.ratePct ?? 0;
   const tenure = inv.tenureMonths ?? 0;
+  const days = inv.tenureDays ?? 0;
   const monthly = inv.monthlyAmount ?? 0;
   // Lump base: prefer actual contributions, fall back to the seed principal.
   const lumpBase = inv.investedAmount > 0 ? inv.investedAmount : inv.principal ?? 0;
@@ -77,7 +86,9 @@ export function projectInvestment(inv: ProjectionInput): Projection {
   switch (inv.kind) {
     case 'fd':
       totalContribution = lumpBase;
-      projectedValue = rate && tenure ? fdMaturity(lumpBase, rate, tenure, inv.compounding ?? 'quarterly') : lumpBase;
+      projectedValue = rate && tenure
+        ? fdMaturity(lumpBase, rate, tenure, inv.compounding ?? 'quarterly', days)
+        : lumpBase;
       break;
     case 'rd':
     case 'sip':
@@ -95,13 +106,15 @@ export function projectInvestment(inv: ProjectionInput): Projection {
       break;
   }
 
-  const maturityDate = tenure
-    ? (() => {
-        const d = new Date(inv.startDate);
-        d.setMonth(d.getMonth() + tenure);
-        return d;
-      })()
-    : undefined;
+  const maturityDate =
+    tenure || days
+      ? (() => {
+          const d = new Date(inv.startDate);
+          if (tenure) d.setMonth(d.getMonth() + tenure);
+          if (days) d.setDate(d.getDate() + days);
+          return d;
+        })()
+      : undefined;
 
   return {
     totalContribution,
