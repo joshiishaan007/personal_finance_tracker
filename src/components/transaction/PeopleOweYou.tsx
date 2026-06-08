@@ -42,8 +42,13 @@ function FriendDebtsModal({ friendName, onClose }: FriendModalProps) {
 
   const total = debts.reduce((s, d) => s + d.amount, 0);
 
-  // Find the user's first income-type category to use for reimbursements.
-  const incomeCat = (categories ?? []).find((c) => c.type === 'income');
+  // Prefer a category whose name suggests reimbursements; fall back to first income category.
+  const incomeList = (categories ?? []).filter((c) => c.type === 'income');
+  const REIMBURSE_KEYWORDS = ['reimburse', 'friend', 'other', 'misc', 'receive', 'collect'];
+  const incomeCat =
+    incomeList.find((c) =>
+      REIMBURSE_KEYWORDS.some((k) => c.name.toLowerCase().includes(k)),
+    ) ?? incomeList[0];
 
   function startEdit(d: DebtView) {
     setEditingId(d._id);
