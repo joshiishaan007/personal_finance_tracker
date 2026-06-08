@@ -71,11 +71,10 @@ self.addEventListener('push', (event) => {
 
   event.waitUntil(
     self.registration.showNotification(data.title || 'Budget Alert', {
-      body:             data.body  || '',
-      icon:             data.icon  || '/icon',
-      badge:            '/icon',
-      tag:              data.tag   || 'budget-alert',
-      data:             { url: data.url || '/budgets' },
+      body: data.body || '',
+      icon: data.icon || '/icon',
+      tag:  data.tag  || 'budget-alert',
+      data: { url: data.url || '/budgets' },
       requireInteraction: false,
     }),
   );
