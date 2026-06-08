@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Heading } from '@/components/ui/Heading';
 import { Text } from '@/components/ui/Text';
 import { Badge } from '@/components/ui/Badge';
@@ -194,7 +195,7 @@ export function RecurringView() {
           <Select label="Category" error={errors.categoryId?.message} options={[{ value: '', label: 'Select…' }, ...filteredCats.map((c) => ({ value: c._id, label: `${c.icon} ${c.name}` }))]} {...register('categoryId')} />
           <div className="grid grid-cols-2 gap-3">
             <Select label="Frequency" options={[{ value: 'daily', label: 'Daily' }, { value: 'weekly', label: 'Weekly' }, { value: 'monthly', label: 'Monthly' }, { value: 'yearly', label: 'Yearly' }]} {...register('frequency')} />
-            <Input label="First Due Date" type="date" {...register('nextDueDate')} />
+            <DatePicker label="First Due Date" value={watch('nextDueDate')} onChange={(v) => setValue('nextDueDate', v)} />
           </div>
           <Button
             type="button"

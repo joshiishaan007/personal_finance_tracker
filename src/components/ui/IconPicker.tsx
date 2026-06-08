@@ -30,20 +30,20 @@ export function IconPicker({ value, onChange, label, className }: Props) {
         <Label className="text-xs text-slate-500 dark:text-slate-400 mb-1.5 block">{label}</Label>
       )}
 
-      {/* Trigger */}
+      {/* Trigger — flex-col so it never overflows in a narrow grid column */}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          'flex items-center gap-2.5 h-10 w-full px-3 rounded-xl border transition-colors',
-          'bg-white dark:bg-ink-800 text-left',
+          'flex flex-col items-center justify-center gap-0.5 h-10 w-full px-2 rounded-xl border transition-colors',
+          'bg-white dark:bg-ink-800',
           open
             ? 'border-brand-400 ring-2 ring-brand-400/20'
             : 'border-slate-200 dark:border-white/10 hover:border-brand-300 dark:hover:border-brand-600',
         )}
       >
         <span className="text-xl leading-none select-none">{value || '❓'}</span>
-        <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">tap to change</span>
+        <span className="text-[9px] text-slate-400 dark:text-slate-500 font-medium leading-none">change</span>
       </button>
 
       {/* Dropdown */}

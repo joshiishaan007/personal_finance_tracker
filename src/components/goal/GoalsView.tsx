@@ -12,13 +12,13 @@ import { useGoals, useCreateGoal, useUpdateGoal, useDeleteGoal, type Goal } from
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { ColorInput } from '@/components/ui/ColorInput';
 import { IconPicker } from '@/components/ui/IconPicker';
 import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';
 import { Heading } from '@/components/ui/Heading';
 import { Text } from '@/components/ui/Text';
-import { Label } from '@/components/ui/Label';
+import { DatePicker } from '@/components/ui/DatePicker';
+import { ColorPicker } from '@/components/ui/ColorPicker';
 import { IconBadge } from '@/components/ui/IconBadge';
 import { ProgressRing } from '@/components/ProgressRing';
 import { ConfettiBurst } from '@/components/ConfettiBurst';
@@ -205,11 +205,8 @@ export function GoalsView() {
             <Input label="Target Amount" type="number" step="0.01" error={errors.targetAmount?.message} {...register('targetAmount')} />
             <Input label="Already Saved" type="number" step="0.01" {...register('savedAmount')} />
           </div>
-          <Input label="Deadline (optional)" type="date" {...register('deadline')} />
-          <div className="flex items-center gap-2">
-            <Label>Color</Label>
-            <ColorInput {...register('color')} />
-          </div>
+          <DatePicker label="Deadline (optional)" value={watch('deadline')} onChange={(v) => setValue('deadline', v)} />
+          <ColorPicker label="Colour" value={watch('color') ?? '#6366F1'} onChange={(v) => setValue('color', v)} />
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="secondary" onClick={() => { setModalOpen(false); setEditGoal(null); }} className="flex-1">Cancel</Button>
             <Button type="submit" loading={saving} className="flex-1">{editGoal ? 'Save Changes' : 'Create Goal'}</Button>

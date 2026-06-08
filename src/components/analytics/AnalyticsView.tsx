@@ -10,8 +10,8 @@ import { fmt, cn } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
 import { Heading } from '@/components/ui/Heading';
 import { Text } from '@/components/ui/Text';
-import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { StatCard } from '@/components/StatCard';
 import { ChartCard } from '@/components/charts/ChartCard';
 import { CalendarHeatmap } from '@/components/charts/CalendarHeatmap';
@@ -118,9 +118,9 @@ export function AnalyticsView() {
         <Card variant="glass" padding="sm">
           <div className="flex flex-wrap items-center gap-3">
             <CalendarRange size={18} className="text-brand-500" />
-            <Input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="w-auto" />
+            <DatePicker value={customStart} onChange={setCustomStart} placeholder="Start date" />
             <Text as="span" variant="muted" className="self-center">to</Text>
-            <Input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="w-auto" />
+            <DatePicker value={customEnd} onChange={setCustomEnd} placeholder="End date" />
           </div>
         </Card>
       )}

@@ -14,6 +14,7 @@ import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { Modal } from '@/components/ui/Modal';
 import { IconPicker } from '@/components/ui/IconPicker';
+import { DatePicker } from '@/components/ui/DatePicker';
 
 // Deterministic accent per investment kind so cards look visually distinct
 // without asking the user to pick a color.
@@ -220,7 +221,7 @@ export function InvestmentForm({ open, onClose, editInvestment }: Props) {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Input label="Start date" type="date" error={errors.startDate?.message} {...register('startDate')} />
+          <DatePicker label="Start date" value={watch('startDate')} onChange={(v) => setValue('startDate', v)} error={errors.startDate?.message} />
           <Select label="Status" options={STATUS_OPTIONS} {...register('status')} />
         </div>
 

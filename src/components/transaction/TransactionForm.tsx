@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { Modal } from '@/components/ui/Modal';
+import { DatePicker } from '@/components/ui/DatePicker';
 
 const FormSchema = z.object({
   amount: z.coerce.number().positive('Amount must be positive'),
@@ -62,7 +63,7 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
   const updateTx = useUpdateTransaction(editTx?._id ?? '');
   const isPending = editTx ? updateTx.isPending : createTx.isPending;
 
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       type: 'expense',
@@ -168,11 +169,11 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Input
+          <DatePicker
             label="Date"
-            type="date"
+            value={watch('date')}
+            onChange={(v) => setValue('date', v)}
             error={errors.date?.message}
-            {...register('date')}
           />
           <Select
             label="Payment Method"
