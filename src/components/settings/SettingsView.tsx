@@ -3,11 +3,12 @@
 import { useRouter } from 'next/navigation';
 import {
   Palette, Sun, Moon, Monitor, Globe2, Sparkles, LayoutDashboard,
-  CalendarRange, HardDriveDownload, RotateCcw, type LucideIcon,
+  CalendarRange, HardDriveDownload, RotateCcw, Bell, BellOff, type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUpdatePreferences } from '@/hooks/useUser';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { Card } from '@/components/ui/Card';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
@@ -61,6 +62,7 @@ export function SettingsView() {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const updatePref = useUpdatePreferences(refetchUser);
+  const { supported, subscribed, permission, loading: notifLoading, subscribe, unsubscribe } = usePushNotifications();
 
   if (!user) return null;
 
@@ -161,6 +163,37 @@ export function SettingsView() {
           Re-run Onboarding
         </Button>
       </Card>
+
+      {/* Notifications */}
+      {supported && (
+        <Card variant="glass">
+          <SectionHeader icon={Bell} tone="aqua" title="Notifications" />
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <Text className="font-medium">Daily transaction reminder</Text>
+              <Text variant="muted" className="mt-0.5">
+                Get a push notification every day at 9 PM reminding you to log your transactions.
+              </Text>
+              {permission === 'denied' && (
+                <Text variant="small" className="mt-1.5 text-danger-500">
+                  Notifications are blocked in your browser. Enable them in browser settings to use this feature.
+                </Text>
+              )}
+            </div>
+            <Button
+              variant={subscribed ? 'secondary' : 'primary'}
+              size="sm"
+              onClick={subscribed ? unsubscribe : subscribe}
+              loading={notifLoading}
+              disabled={permission === 'denied'}
+              leftIcon={subscribed ? <BellOff size={15} /> : <Bell size={15} />}
+              className="shrink-0"
+            >
+              {subscribed ? 'Turn off' : 'Turn on'}
+            </Button>
+          </div>
+        </Card>
+      )}
 
       {/* Backup reminder */}
       <Card variant="gradient">
