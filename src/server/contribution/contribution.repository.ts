@@ -22,4 +22,33 @@ export const contributionRepository = {
     ]);
     return rows.map((r) => String(r._id));
   },
+
+  // Day-by-day contribution totals for the heatmap.
+  // goalId present → sum values per day for that goal.
+  // goalId absent  → count contributions per day across all goals.
+  async heatmap(
+    userId: string,
+    from: Date,
+    to: Date,
+    goalId?: string,
+  ): Promise<{ date: string; value: number }[]> {
+    const match: Record<string, unknown> = {
+      userId: new Types.ObjectId(userId),
+      date: { $gte: from, $lte: to },
+    };
+    if (goalId) match.goalId = new Types.ObjectId(goalId);
+
+    const rows = await ContributionModel.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
+          value: goalId ? { $sum: '$value' } : { $sum: 1 },
+        },
+      },
+      { $project: { _id: 0, date: '$_id', value: 1 } },
+      { $sort: { date: 1 } },
+    ]);
+    return rows as { date: string; value: number }[];
+  },
 };

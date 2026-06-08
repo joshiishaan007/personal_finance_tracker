@@ -6,6 +6,9 @@ import type { CreateContribution } from '@/shared';
 export const contributionService = {
   listByGoal: (userId: string, goalId: string) => repo.listByGoal(userId, goalId),
 
+  heatmap: (userId: string, from: Date, to: Date, goalId?: string) =>
+    repo.heatmap(userId, from, to, goalId),
+
   async create(userId: string, data: CreateContribution) {
     const value = data.value ?? 1;
     const contribution = await repo.create({

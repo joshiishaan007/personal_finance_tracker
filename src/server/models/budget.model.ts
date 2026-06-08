@@ -8,6 +8,8 @@ export interface IBudget extends Document {
   startDate: Date;
   rollover: boolean;
   rolloverBalance: number;
+  // Tracks which threshold notifications have been sent this period.
+  alerts?: { month: string; pct85: boolean; pct90: boolean };
   schemaVersion: number;
   createdAt: Date;
   updatedAt: Date;
@@ -21,6 +23,11 @@ const budgetSchema = new Schema<IBudget>({
   startDate: { type: Date, required: true },
   rollover: { type: Boolean, default: false },
   rolloverBalance: { type: Number, default: 0 },
+  alerts: {
+    month: String,
+    pct85: { type: Boolean, default: false },
+    pct90: { type: Boolean, default: false },
+  },
   schemaVersion: { type: Number, default: 1 },
 }, { timestamps: true });
 

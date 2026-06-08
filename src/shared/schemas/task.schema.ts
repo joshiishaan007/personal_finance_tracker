@@ -16,7 +16,7 @@ export const UpdateTaskSchema = CreateTaskSchema.partial();
 export const TaskFilterSchema = z.object({
   goalId: z.string().optional(),
   done: z.enum(['true', 'false']).optional(),
-  scope: z.enum(['today', 'overdue', 'all']).optional(),
+  scope: z.enum(['today', 'week', 'overdue', 'all']).optional(),
 });
 
 export type CreateTask = z.infer<typeof CreateTaskSchema>;

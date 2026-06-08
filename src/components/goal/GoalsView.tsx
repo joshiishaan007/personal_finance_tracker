@@ -12,17 +12,18 @@ import { useGoals, useCreateGoal, useUpdateGoal, useDeleteGoal, type Goal } from
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { ColorInput } from '@/components/ui/ColorInput';
 import { IconPicker } from '@/components/ui/IconPicker';
 import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';
 import { Heading } from '@/components/ui/Heading';
 import { Text } from '@/components/ui/Text';
-import { Label } from '@/components/ui/Label';
+import { DatePicker } from '@/components/ui/DatePicker';
+import { ColorPicker } from '@/components/ui/ColorPicker';
 import { IconBadge } from '@/components/ui/IconBadge';
 import { ProgressRing } from '@/components/ProgressRing';
 import { ConfettiBurst } from '@/components/ConfettiBurst';
 import { EmptyState } from '@/components/EmptyState';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 const FormSchema = z.object({
   title: z.string().min(1).max(100),
@@ -42,8 +43,9 @@ const DEFAULT_COLOR = '#6366F1';
 export function GoalsView() {
   const { user } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
-  const [editGoal, setEditGoal] = useState<Goal | null>(null);
-  const [confetti, setConfetti] = useState(false);
+  const [editGoal,  setEditGoal]  = useState<Goal | null>(null);
+  const [confetti,  setConfetti]  = useState(false);
+  const [deleteId,  setDeleteId]  = useState<string | null>(null);
   const currency = user?.currency ?? 'INR';
 
   const { data: goals, isLoading } = useGoals();
@@ -187,13 +189,22 @@ export function GoalsView() {
                   {goal.status === 'active' && pct >= 100 && (
                     <Button size="sm" variant="gradient" leftIcon={<Trophy size={14} strokeWidth={2.4} />} onClick={() => onMarkAchieved(goal._id)}>Mark Achieved</Button>
                   )}
-                  <Button size="sm" variant="ghost" onClick={() => { if (confirm('Delete goal?')) deleteGoal.mutate(goal._id); }}>Delete</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setDeleteId(goal._id)}>Delete</Button>
                 </div>
               </Card>
             );
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={() => deleteGoal.mutate(deleteId!)}
+        title="Delete goal?"
+        description="All saved progress for this goal will be lost."
+        loading={deleteGoal.isPending}
+      />
 
       <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditGoal(null); }} title={editGoal ? 'Edit Goal' : 'New Goal'}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -205,11 +216,8 @@ export function GoalsView() {
             <Input label="Target Amount" type="number" step="0.01" error={errors.targetAmount?.message} {...register('targetAmount')} />
             <Input label="Already Saved" type="number" step="0.01" {...register('savedAmount')} />
           </div>
-          <Input label="Deadline (optional)" type="date" {...register('deadline')} />
-          <div className="flex items-center gap-2">
-            <Label>Color</Label>
-            <ColorInput {...register('color')} />
-          </div>
+          <DatePicker label="Deadline (optional)" value={watch('deadline')} onChange={(v) => setValue('deadline', v)} />
+          <ColorPicker label="Colour" value={watch('color') ?? '#6366F1'} onChange={(v) => setValue('color', v)} />
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="secondary" onClick={() => { setModalOpen(false); setEditGoal(null); }} className="flex-1">Cancel</Button>
             <Button type="submit" loading={saving} className="flex-1">{editGoal ? 'Save Changes' : 'Create Goal'}</Button>

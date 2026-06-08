@@ -91,11 +91,28 @@ export const ENDPOINTS = {
     list: (qs?: string) => `/api/contributions${qs ? `?${qs}` : ''}`,
     create: '/api/contributions',
     detail: (id: string) => `/api/contributions/${id}`,
+    heatmap: (qs: string) => `/api/contributions/heatmap?${qs}`,
   },
   tasks: {
     list: (qs?: string) => `/api/tasks${qs ? `?${qs}` : ''}`,
     create: '/api/tasks',
     detail: (id: string) => `/api/tasks/${id}`,
+  },
+  push: {
+    vapidPublicKey: '/api/push/vapid-public-key',
+    subscribe:      '/api/push/subscribe',
+    unsubscribe:    '/api/push/unsubscribe',
+  },
+  debts: {
+    list:    (qs?: string) => `/api/debts${qs ? `?${qs}` : ''}`,
+    create:  '/api/debts',
+    summary: '/api/debts/summary',
+    detail:  (id: string) => `/api/debts/${id}`,
+  },
+  instantCards: {
+    list:   '/api/instant-cards',
+    create: '/api/instant-cards',
+    detail: (id: string) => `/api/instant-cards/${id}`,
   },
   export: {
     json: '/api/export/json',
