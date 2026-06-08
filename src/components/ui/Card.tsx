@@ -28,7 +28,7 @@ export function Card({ children, className, padding = 'md', variant = 'default',
         'rounded-2xl',
         variantMap[variant],
         paddingMap[padding],
-        interactive && 'transition-all duration-200 active:scale-[0.98] hover:shadow-card-lg cursor-pointer',
+        interactive && 'transition-[transform,box-shadow] duration-100 will-change-transform active:scale-[0.98] hover:-translate-y-0.5 hover:shadow-card-lg cursor-pointer',
         className,
       )}
     >

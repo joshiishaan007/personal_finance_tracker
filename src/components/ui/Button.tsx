@@ -33,7 +33,7 @@ export function Button({ variant = 'primary', size = 'md', loading, leftIcon, ri
       {...rest}
       disabled={disabled || loading}
       className={cn(
-        'inline-flex items-center justify-center font-semibold transition-all duration-200 active:scale-[0.97] focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100',
+        'inline-flex items-center justify-center font-semibold transition-[background-color,color,opacity,transform] duration-100 active:scale-[0.97] focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100',
         variantClasses[variant],
         sizeClasses[size],
         className,
