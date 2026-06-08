@@ -5,9 +5,11 @@ import type { CreateTask, UpdateTask, TaskFilter } from '@/shared';
 export const taskService = {
   list: (userId: string, filter: TaskFilter) =>
     repo.list(userId, {
-      goalId: filter.goalId,
-      done: filter.done !== undefined ? filter.done === 'true' : undefined,
+      goalId:  filter.goalId,
+      done:    filter.done !== undefined ? filter.done === 'true' : undefined,
       overdue: filter.scope === 'overdue',
+      today:   filter.scope === 'today',
+      week:    filter.scope === 'week',
     }),
 
   create: (userId: string, data: CreateTask) =>

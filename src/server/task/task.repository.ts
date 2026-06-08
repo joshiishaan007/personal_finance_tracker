@@ -5,14 +5,32 @@ interface TaskListFilter {
   goalId?: string;
   done?: boolean;
   overdue?: boolean; // done=false AND dueDate < now
+  today?: boolean;   // done=false AND dueDate within today
+  week?: boolean;    // done=false AND dueDate within next 7 days
 }
 
 export const taskRepository = {
   list: (userId: string, filter: TaskListFilter) => {
     const q: Record<string, unknown> = {};
     if (filter.goalId !== undefined) q.goalId = filter.goalId;
-    if (filter.overdue) { q.done = false; q.dueDate = { $lt: new Date() }; }
-    else if (filter.done !== undefined) q.done = filter.done;
+
+    if (filter.overdue) {
+      q.done = false;
+      q.dueDate = { $lt: new Date() };
+    } else if (filter.today) {
+      const start = new Date(); start.setHours(0, 0, 0, 0);
+      const end   = new Date(); end.setHours(23, 59, 59, 999);
+      q.done = false;
+      q.dueDate = { $gte: start, $lte: end };
+    } else if (filter.week) {
+      const start = new Date(); start.setHours(0, 0, 0, 0);
+      const end   = new Date(start); end.setDate(end.getDate() + 6); end.setHours(23, 59, 59, 999);
+      q.done = false;
+      q.dueDate = { $gte: start, $lte: end };
+    } else if (filter.done !== undefined) {
+      q.done = filter.done;
+    }
+
     return TaskModel.find({ userId, ...q }).sort({ done: 1, dueDate: 1, order: 1, createdAt: -1 }).lean();
   },
 
