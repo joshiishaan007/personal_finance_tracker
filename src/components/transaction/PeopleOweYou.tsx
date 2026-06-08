@@ -1,18 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, Check, Trash2, Pencil, X, ChevronDown } from 'lucide-react';
+import { Users, Check, Trash2, Pencil, X, ChevronDown, ArrowDownLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   useDebtSummary, useFriendDebts, useUpdateDebt, useDeleteDebt,
   type DebtView, type DebtSummaryItem,
 } from '@/hooks/useDebts';
+import { useCreateTransaction } from '@/hooks/useTransactions';
+import { useCategories } from '@/hooks/useCategories';
 import { Modal } from '@/components/ui/Modal';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
-import { Heading } from '@/components/ui/Heading';
 import { Input } from '@/components/ui/Input';
+import { Badge } from '@/components/ui/Badge';
 import { fmt, fmtDate, cn } from '@/lib/utils';
 import { toMinorUnits } from '@/shared';
 import type { Currency } from '@/shared';
@@ -28,13 +30,20 @@ function FriendDebtsModal({ friendName, onClose }: FriendModalProps) {
   const { user } = useAuth();
   const currency = (user?.currency ?? 'INR') as Currency;
   const { data: debts = [], isLoading } = useFriendDebts(friendName);
+  const { data: categories } = useCategories();
   const updateDebt = useUpdateDebt();
   const deleteDebt = useDeleteDebt();
+  const createTx   = useCreateTransaction();
 
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editAmount, setEditAmount] = useState('');
+  const [editingId, setEditingId]     = useState<string | null>(null);
+  const [editAmount, setEditAmount]   = useState('');
+  // Track which entries have had an income tx auto-created for them.
+  const [settledIds, setSettledIds]   = useState<Set<string>>(new Set());
 
   const total = debts.reduce((s, d) => s + d.amount, 0);
+
+  // Find the user's first income-type category to use for reimbursements.
+  const incomeCat = (categories ?? []).find((c) => c.type === 'income');
 
   function startEdit(d: DebtView) {
     setEditingId(d._id);
@@ -48,12 +57,34 @@ function FriendDebtsModal({ friendName, onClose }: FriendModalProps) {
     setEditingId(null);
   }
 
-  function settle(id: string) {
-    updateDebt.mutate({ id, data: { status: 'settled' } });
+  function createReimbursementTx(d: DebtView) {
+    if (!incomeCat) return;
+    createTx.mutate({
+      amount:        d.amount,
+      type:          'income',
+      categoryId:    incomeCat._id,
+      date:          new Date().toISOString(),
+      note:          `Reimbursement from ${friendName ?? ''}`,
+      paymentMethod: 'cash',
+      tags:          ['reimbursement'],
+      isRecurring:   false,
+    });
+  }
+
+  function settle(d: DebtView) {
+    updateDebt.mutate(
+      { id: d._id, data: { status: 'settled' } },
+      {
+        onSuccess: () => {
+          createReimbursementTx(d);
+          setSettledIds((prev) => new Set(prev).add(d._id));
+        },
+      },
+    );
   }
 
   function settleAll() {
-    for (const d of debts) settle(d._id);
+    for (const d of debts) settle(d);
   }
 
   return (
@@ -113,9 +144,17 @@ function FriendDebtsModal({ friendName, onClose }: FriendModalProps) {
                   </div>
                 ) : (
                   <>
-                    <Text className={cn('text-sm font-bold tabular-nums', 'text-brand-600 dark:text-brand-400')}>
-                      {fmt(d.amount, currency)}
-                    </Text>
+                    <div className="flex flex-col items-end gap-0.5">
+                      <Text className={cn('text-sm font-bold tabular-nums', 'text-brand-600 dark:text-brand-400')}>
+                        {fmt(d.amount, currency)}
+                      </Text>
+                      {/* Shown after settling to confirm the income tx was recorded */}
+                      {settledIds.has(d._id) && incomeCat && (
+                        <Badge variant="success" className="text-[10px] flex items-center gap-0.5">
+                          <ArrowDownLeft size={9} strokeWidth={2.5} /> income recorded
+                        </Badge>
+                      )}
+                    </div>
                     <div className="flex items-center gap-0.5">
                       <Button
                         variant="ghost"
@@ -131,7 +170,7 @@ function FriendDebtsModal({ friendName, onClose }: FriendModalProps) {
                         size="sm"
                         className="p-1.5 min-h-0 hover:text-success-600"
                         aria-label="Mark settled"
-                        onClick={() => settle(d._id)}
+                        onClick={() => settle(d)}
                         loading={updateDebt.isPending}
                       >
                         <Check size={13} strokeWidth={2.5} />
@@ -155,9 +194,16 @@ function FriendDebtsModal({ friendName, onClose }: FriendModalProps) {
         )}
 
         {debts.length > 1 && (
-          <Button variant="gradient" size="sm" className="w-full" leftIcon={<Check size={14} strokeWidth={2.4} />} onClick={settleAll}>
-            Settle all
-          </Button>
+          <div className="space-y-1.5">
+            <Button variant="gradient" size="sm" className="w-full" leftIcon={<Check size={14} strokeWidth={2.4} />} onClick={settleAll}>
+              Settle all
+            </Button>
+            {incomeCat && (
+              <Text variant="small" className="text-center text-slate-400">
+                Each entry creates an income transaction automatically
+              </Text>
+            )}
+          </div>
         )}
       </div>
     </Modal>
