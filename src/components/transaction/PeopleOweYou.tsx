@@ -165,6 +165,8 @@ function FriendDebtsModal({ friendName, onClose, initialShowSettled = false }: F
       open={!!friendName}
       onClose={onClose}
       title={`${friendName ?? ''} owes you`}
+      placement="center"
+      className="max-w-md"
     >
       <div className="space-y-3">
         {/* Total banner */}

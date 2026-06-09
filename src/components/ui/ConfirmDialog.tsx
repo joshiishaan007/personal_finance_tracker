@@ -33,7 +33,7 @@ export function ConfirmDialog({
     <Modal
       open={open}
       onClose={onClose}
-      className="sm:max-w-sm"
+      placement="center"
       footer={
         <div className="flex w-full gap-3">
           <Button type="button" variant="secondary" onClick={onClose} className="flex-1">

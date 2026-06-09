@@ -293,6 +293,7 @@ export function CategoriesView() {
         open={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
         title="Delete category?"
+        placement="center"
         footer={
           <div className="flex gap-3">
             <Button type="button" variant="secondary" onClick={() => setDeleteConfirm(null)} className="flex-1">Cancel</Button>
