@@ -62,9 +62,19 @@
 
   body {
     @apply bg-slate-50 text-slate-900 dark:bg-ink-950 dark:text-slate-100 antialiased;
-    /* subtle steel ambience anchored top of the viewport */
+  }
+
+  /* Subtle steel ambience as a fixed, behind-content layer. Replaces
+     `background-attachment: fixed`, which forces a full-viewport repaint every
+     scroll frame on mobile (the main cause of laggy scrolling). A fixed pseudo
+     gets its own compositor layer and never repaints while content scrolls. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
     background-image: radial-gradient(70% 50% at 50% -10%, rgb(var(--glow) / 0.08), transparent 60%);
-    background-attachment: fixed;
   }
 
   * {
@@ -158,5 +168,28 @@
   }
   .dark .glass {
     box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  }
+
+  /* Glass for the PERSISTENT bars (sticky header, fixed bottom nav). Content
+     scrolls under these continuously, and re-sampling a backdrop-blur every
+     frame is the main scroll-jank source on mobile — so the blur is dropped on
+     mobile (near-opaque instead) and only enabled on desktop where it's cheap. */
+  .glass-bar {
+    @apply border border-white/50 bg-white/90 dark:border-white/[0.08] dark:bg-ink-900/85;
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
+  }
+  .dark .glass-bar {
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  }
+  @media (min-width: 1024px) {
+    .glass-bar {
+      @apply bg-white/60 backdrop-blur-xl backdrop-saturate-150 dark:bg-ink-900/55;
+    }
+  }
+
+  /* Momentum scrolling + scroll-chain containment for in-app scroll regions. */
+  .scroll-touch {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
   }
 }

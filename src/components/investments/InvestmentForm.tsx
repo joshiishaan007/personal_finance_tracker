@@ -177,8 +177,20 @@ export function InvestmentForm({ open, onClose, editInvestment }: Props) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={editInvestment ? 'Edit Investment' : 'New Investment'}>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={editInvestment ? 'Edit Investment' : 'New Investment'}
+      footer={
+        <div className="flex gap-3">
+          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button type="submit" form="investment-form" variant="gradient" loading={isPending} className="flex-1">
+            {editInvestment ? 'Save Changes' : 'Add Investment'}
+          </Button>
+        </div>
+      }
+    >
+      <form id="investment-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input label="Name" placeholder="HDFC FD" error={errors.name?.message} {...register('name')} />
           <Select label="Type" options={KIND_OPTIONS} {...register('kind')} />
@@ -283,13 +295,6 @@ export function InvestmentForm({ open, onClose, editInvestment }: Props) {
         />
 
         <Textarea label="Note (optional)" placeholder="Notes…" rows={2} {...register('note')} />
-
-        <div className="flex gap-3 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">Cancel</Button>
-          <Button type="submit" variant="gradient" loading={isPending} className="flex-1">
-            {editInvestment ? 'Save Changes' : 'Add Investment'}
-          </Button>
-        </div>
       </form>
     </Modal>
   );

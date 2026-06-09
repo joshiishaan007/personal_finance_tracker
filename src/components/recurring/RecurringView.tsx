@@ -196,8 +196,18 @@ export function RecurringView() {
         loading={deleteRule.isPending}
       />
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="New Recurring Rule">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title="New Recurring Rule"
+        footer={
+          <div className="flex gap-3">
+            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)} className="flex-1">Cancel</Button>
+            <Button type="submit" form="recurring-form" variant="gradient" loading={save.isPending} className="flex-1">Create Rule</Button>
+          </div>
+        }
+      >
+        <form id="recurring-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input label="Description" placeholder="Netflix, Salary, Rent…" {...register('note')} />
           <div className="grid grid-cols-2 gap-3">
             <Input label="Amount" type="number" step="0.01" error={errors.amount?.message} {...register('amount')} />
@@ -218,10 +228,6 @@ export function RecurringView() {
           >
             {autoPost ? 'Auto-post enabled' : 'Auto-post off — confirm each time'}
           </Button>
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)} className="flex-1">Cancel</Button>
-            <Button type="submit" variant="gradient" loading={save.isPending} className="flex-1">Create Rule</Button>
-          </div>
         </form>
       </Modal>
     </div>

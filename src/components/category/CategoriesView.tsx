@@ -119,8 +119,20 @@ function CategoryFormModal({ open, onClose, edit }: FormModalProps) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={edit ? 'Edit Category' : 'New Category'}>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={edit ? 'Edit Category' : 'New Category'}
+      footer={
+        <div className="flex gap-3">
+          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button type="submit" form="category-form" loading={isPending} className="flex-1">
+            {edit ? 'Save Changes' : 'Create'}
+          </Button>
+        </div>
+      }
+    >
+      <form id="category-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="flex gap-3">
           <Controller
             control={control}
@@ -160,12 +172,6 @@ function CategoryFormModal({ open, onClose, edit }: FormModalProps) {
           </Badge>
         </div>
 
-        <div className="flex gap-3 pt-1">
-          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">Cancel</Button>
-          <Button type="submit" loading={isPending} className="flex-1">
-            {edit ? 'Save Changes' : 'Create'}
-          </Button>
-        </div>
       </form>
     </Modal>
   );
@@ -283,14 +289,12 @@ export function CategoriesView() {
       <CategoryFormModal open={formOpen} onClose={closeForm} edit={editTarget} />
 
       {/* Delete confirmation */}
-      <Modal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} title="Delete category?">
-        <div className="space-y-4">
-          <Text variant="muted">
-            Deleting <Text as="span" className="font-semibold text-slate-800 dark:text-slate-100">{deleteConfirm?.name}</Text> will
-            remove it from all future transaction choices. Existing transactions keep their category label but it will show as unknown
-            in filters. This cannot be undone.
-          </Text>
-          <div className="flex gap-3 pt-1">
+      <Modal
+        open={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        title="Delete category?"
+        footer={
+          <div className="flex gap-3">
             <Button type="button" variant="secondary" onClick={() => setDeleteConfirm(null)} className="flex-1">Cancel</Button>
             <Button
               type="button"
@@ -301,7 +305,13 @@ export function CategoriesView() {
               Delete
             </Button>
           </div>
-        </div>
+        }
+      >
+        <Text variant="muted">
+          Deleting <Text as="span" className="font-semibold text-slate-800 dark:text-slate-100">{deleteConfirm?.name}</Text> will
+          remove it from all future transaction choices. Existing transactions keep their category label but it will show as unknown
+          in filters. This cannot be undone.
+        </Text>
       </Modal>
     </div>
   );

@@ -26,7 +26,8 @@ export const Input = forwardRef<HTMLInputElement, Props>(function Input(
         id={inputId}
         {...rest}
         className={cn(
-          'w-full px-3 py-2.5 text-sm rounded-lg border bg-white dark:bg-slate-900 transition-colors',
+          // text-base on mobile keeps fields at 16px so iOS doesn't auto-zoom on focus; text-sm on desktop.
+          'w-full px-3 py-2.5 text-base sm:text-sm rounded-lg border bg-white dark:bg-slate-900 transition-colors',
           error
             ? 'border-danger-500 focus:border-danger-500 focus:ring-danger-500'
             : 'border-slate-300 dark:border-slate-700 focus:border-brand-400 focus:ring-brand-400',

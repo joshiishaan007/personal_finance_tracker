@@ -124,8 +124,29 @@ export function LifeGoalForm({ open, onClose, editGoal }: Props) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={editGoal ? 'Edit goal' : 'New goal'}>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={editGoal ? 'Edit goal' : 'New goal'}
+      footer={
+        <div className="flex gap-3">
+          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="life-goal-form"
+            variant="gradient"
+            loading={isPending}
+            className="flex-1"
+            style={!isPending ? { background: `linear-gradient(135deg, ${currentColor} 0%, ${currentColor}cc 100%)` } : undefined}
+          >
+            {editGoal ? 'Save changes' : 'Create goal'}
+          </Button>
+        </div>
+      }
+    >
+      <form id="life-goal-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
 
         {/* ── Identity ───────────────────────────────── */}
         <div className="space-y-4">
@@ -227,21 +248,6 @@ export function LifeGoalForm({ open, onClose, editGoal }: Props) {
           </div>
         </div>
 
-        {/* ── Actions ────────────────────────────────── */}
-        <div className="flex gap-3 pt-1">
-          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            variant="gradient"
-            loading={isPending}
-            className="flex-1"
-            style={!isPending ? { background: `linear-gradient(135deg, ${currentColor} 0%, ${currentColor}cc 100%)` } : undefined}
-          >
-            {editGoal ? 'Save changes' : 'Create goal'}
-          </Button>
-        </div>
       </form>
     </Modal>
   );
