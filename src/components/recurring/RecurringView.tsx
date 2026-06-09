@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
+import { Switch } from '@/components/ui/Switch';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { Heading } from '@/components/ui/Heading';
 import { Text } from '@/components/ui/Text';
@@ -218,16 +219,23 @@ export function RecurringView() {
             <Select label="Frequency" options={[{ value: 'daily', label: 'Daily' }, { value: 'weekly', label: 'Weekly' }, { value: 'monthly', label: 'Monthly' }, { value: 'yearly', label: 'Yearly' }]} {...register('frequency')} />
             <DatePicker label="First Due Date" value={watch('nextDueDate')} onChange={(v) => setValue('nextDueDate', v)} />
           </div>
-          <Button
-            type="button"
-            variant={autoPost ? 'primary' : 'secondary'}
-            className="w-full justify-start"
-            leftIcon={autoPost ? <Zap size={16} strokeWidth={2.4} /> : <Hand size={16} strokeWidth={2.2} />}
-            onClick={() => setValue('autoPost', !autoPost, { shouldDirty: true })}
-            aria-pressed={autoPost}
-          >
-            {autoPost ? 'Auto-post enabled' : 'Auto-post off — confirm each time'}
-          </Button>
+          <div className="flex items-start gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/60 dark:bg-ink-800/40 px-3 py-2.5">
+            {autoPost
+              ? <Zap size={15} strokeWidth={2.4} className="mt-0.5 shrink-0 text-brand-500" />
+              : <Hand size={15} strokeWidth={2.2} className="mt-0.5 shrink-0 text-slate-400" />}
+            <div className="min-w-0 flex-1">
+              <Text className="text-sm font-medium leading-tight">Auto-post</Text>
+              <Text variant="small" className="leading-tight text-slate-500">
+                {autoPost ? 'Posts automatically on the due date' : 'Off — you confirm each time'}
+              </Text>
+            </div>
+            <Switch
+              checked={autoPost}
+              onChange={(v) => setValue('autoPost', v, { shouldDirty: true })}
+              label="Auto-post"
+              className="mt-0.5"
+            />
+          </div>
         </form>
       </Modal>
     </div>

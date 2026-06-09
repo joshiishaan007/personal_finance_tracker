@@ -19,6 +19,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Text } from '@/components/ui/Text';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
+import { Switch } from '@/components/ui/Switch';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { cn } from '@/lib/utils';
 import { fmt } from '@/lib/utils';
@@ -426,25 +427,12 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
               <Text className="text-sm font-medium leading-tight">Save as instant card</Text>
               <Text variant="small" className="text-slate-500 leading-tight">One-tap repeat with today&apos;s date</Text>
             </div>
-            <Button
-              type="button"
-              role="switch"
-              aria-checked={saveAsCard}
-              onClick={() => setSaveAsCard((v) => !v)}
-              variant="ghost"
-              size="sm"
-              className={cn(
-                'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500 p-0 min-h-0 mt-0.5 hover:bg-transparent',
-                saveAsCard ? 'bg-brand-500' : 'bg-slate-300 dark:bg-ink-600',
-              )}
-            >
-              <span
-                className={cn(
-                  'block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform',
-                  saveAsCard ? 'translate-x-4' : 'translate-x-0.5',
-                )}
-              />
-            </Button>
+            <Switch
+              checked={saveAsCard}
+              onChange={setSaveAsCard}
+              label="Save as instant card"
+              className="mt-0.5"
+            />
           </div>
         )}
 

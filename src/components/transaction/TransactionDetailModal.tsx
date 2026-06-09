@@ -55,7 +55,7 @@ export function TransactionDetailModal({ open, onClose, tx, onEdit }: Props) {
 
   return (
     <>
-      <Modal open={open} onClose={onClose} title="Transaction details">
+      <Modal open={open} onClose={onClose} title="Transaction details" placement="center" className="max-w-md">
         <div className="space-y-4">
           {/* Type + date header */}
           <div className="flex items-center justify-between">

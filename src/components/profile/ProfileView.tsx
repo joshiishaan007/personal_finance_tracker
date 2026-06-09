@@ -131,6 +131,7 @@ export function ProfileView() {
         open={deleteModal}
         onClose={() => setDeleteModal(false)}
         title="Delete Account"
+        placement="center"
         footer={
           <div className="flex gap-3">
             <Button variant="secondary" onClick={() => setDeleteModal(false)} className="flex-1">Cancel</Button>
