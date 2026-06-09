@@ -275,18 +275,24 @@ export function GrossPLView() {
         loading={remove.isPending}
       />
 
-      <Modal open={modalOpen} onClose={close} title={editing ? 'Edit Entry' : 'Add Adjustment'}>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <Modal
+        open={modalOpen}
+        onClose={close}
+        title={editing ? 'Edit Entry' : 'Add Adjustment'}
+        footer={
+          <div className="flex gap-3">
+            <Button type="button" variant="secondary" onClick={close} className="flex-1">Cancel</Button>
+            <Button type="submit" form="grosspl-form" loading={create.isPending || update.isPending} className="flex-1">
+              {editing ? 'Save Changes' : 'Add Entry'}
+            </Button>
+          </div>
+        }
+      >
+        <form id="grosspl-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input label="Month" type="month" error={errors.month?.message} {...register('month')} />
           <Select label="Type" error={errors.kind?.message} options={[{ value: 'profit', label: 'Profit' }, { value: 'loss', label: 'Loss' }]} {...register('kind')} />
           <Input label="Amount" type="number" step="0.01" min="0" error={errors.amount?.message} {...register('amount')} />
           <Input label="Note (optional)" error={errors.note?.message} {...register('note')} />
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="secondary" onClick={close} className="flex-1">Cancel</Button>
-            <Button type="submit" loading={create.isPending || update.isPending} className="flex-1">
-              {editing ? 'Save Changes' : 'Add Entry'}
-            </Button>
-          </div>
         </form>
       </Modal>
     </div>

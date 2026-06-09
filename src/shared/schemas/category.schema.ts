@@ -6,7 +6,9 @@ export const CreateCategorySchema = z.object({
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).default('#6B7280'),
   type: z.enum(['income', 'expense', 'transfer', 'investment']),
   parentCategoryId: z.string().optional(),
-  isDefault: z.boolean().default(false),
+  // `isDefault` is a server/seed-only flag — NEVER client-writable. A user-owned
+  // doc with isDefault:true would leak into every tenant via the global-default
+  // branch of category queries. Seeds set it directly on the model.
   monthlyBudget: z.number().int().positive().optional(),
 });
 

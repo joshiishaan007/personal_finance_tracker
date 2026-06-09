@@ -30,7 +30,27 @@ export function ConfirmDialog({
   loading,
 }: Props) {
   return (
-    <Modal open={open} onClose={onClose} className="max-w-sm">
+    <Modal
+      open={open}
+      onClose={onClose}
+      className="sm:max-w-sm"
+      footer={
+        <div className="flex w-full gap-3">
+          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
+            {cancelLabel}
+          </Button>
+          <Button
+            type="button"
+            variant={variant === 'danger' ? 'danger' : 'primary'}
+            onClick={() => { onConfirm(); onClose(); }}
+            loading={loading}
+            className="flex-1"
+          >
+            {confirmLabel}
+          </Button>
+        </div>
+      }
+    >
       <div className="flex flex-col items-center gap-4 py-2 text-center">
         <div
           className={cn(
@@ -51,20 +71,6 @@ export function ConfirmDialog({
           {description && (
             <Text variant="small" className="text-slate-500">{description}</Text>
           )}
-        </div>
-        <div className="flex w-full gap-3 pt-1">
-          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
-            {cancelLabel}
-          </Button>
-          <Button
-            type="button"
-            variant={variant === 'danger' ? 'danger' : 'primary'}
-            onClick={() => { onConfirm(); onClose(); }}
-            loading={loading}
-            className="flex-1"
-          >
-            {confirmLabel}
-          </Button>
         </div>
       </div>
     </Modal>

@@ -1,17 +1,18 @@
 import { z } from 'zod';
+import { moneyMinor } from './money';
 
 export const AssetsSchema = z.object({
-  cash: z.number().int().default(0),
-  bank: z.number().int().default(0),
-  property: z.number().int().default(0),
-  vehicles: z.number().int().default(0),
-  other: z.number().int().default(0),
+  cash: moneyMinor.default(0),
+  bank: moneyMinor.default(0),
+  property: moneyMinor.default(0),
+  vehicles: moneyMinor.default(0),
+  other: moneyMinor.default(0),
 });
 
 export const LiabilitiesSchema = z.object({
-  loans: z.number().int().default(0),
-  credit: z.number().int().default(0),
-  other: z.number().int().default(0),
+  loans: moneyMinor.default(0),
+  credit: moneyMinor.default(0),
+  other: moneyMinor.default(0),
 });
 
 export const UpsertNetWorthSchema = z.object({

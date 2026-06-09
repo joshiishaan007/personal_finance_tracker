@@ -224,7 +224,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col overflow-hidden">
         <OfflineBanner />
         {/* Glass sticky top bar */}
-        <header className="sticky top-0 z-30 glass pt-safe flex items-center justify-between px-4 py-3 lg:px-6">
+        <header className="sticky top-0 z-30 glass-bar pt-safe flex items-center justify-between px-4 py-3 lg:px-6">
           <div className="flex items-center min-w-0">
             <Heading level={4} className="hidden lg:block truncate">{pageTitle}</Heading>
             <GradientText className="lg:hidden text-base font-semibold capitalize">
@@ -238,14 +238,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-safe-nav lg:pb-0 scrollbar-thin">
+        <main className="flex-1 overflow-y-auto scroll-touch pb-safe-nav lg:pb-0 scrollbar-thin">
           {children}
         </main>
       </div>
 
       {/* Mobile bottom nav — five equal columns with the FAB dead-center */}
       <nav
-        className="lg:hidden fixed inset-x-0 bottom-0 z-40 glass border-t pb-safe"
+        className="lg:hidden fixed inset-x-0 bottom-0 z-40 glass-bar border-t pb-safe"
         aria-label="Main navigation"
       >
         <div className="grid grid-cols-5 h-16">

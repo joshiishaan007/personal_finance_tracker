@@ -35,10 +35,12 @@ export const spendingPlanRepository = {
       { $group: { _id: '$categoryId', total: { $sum: '$amount' } } },
     ]),
 
-  // Expense/investment categories (user-owned + defaults) for unassigned detection.
+  // Expense/investment categories (user-owned + global defaults) for unassigned
+  // detection. The default branch requires userId absent so a user-owned doc can
+  // never match it (defense in depth — mirrors categoryRepository.list).
   listCategories: (userId: string) =>
     CategoryModel.find({
-      $or: [{ userId }, { isDefault: true }],
+      $or: [{ userId }, { isDefault: true, userId: { $exists: false } }],
       type: { $in: ['expense', 'investment'] },
     }).lean(),
 

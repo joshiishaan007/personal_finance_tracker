@@ -5,7 +5,9 @@ import { z } from 'zod';
 export const CreateContributionSchema = z.object({
   goalId: z.string().min(1),
   date: z.string().datetime().optional(), // defaults to now server-side
-  value: z.number().default(1),
+  // Bounded integer — applied to the goal via $inc, so an unbounded/NaN/huge
+  // value would corrupt currentValue and the heatmap aggregation.
+  value: z.number().int().min(-1_000_000).max(1_000_000).default(1),
   note: z.string().max(500).optional(),
 });
 

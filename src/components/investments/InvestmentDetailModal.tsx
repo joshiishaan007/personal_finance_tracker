@@ -49,7 +49,7 @@ export function InvestmentDetailModal({ inv, currency, onClose, onEdit, onDelete
   const gainTone = inv.expectedReturn >= 0 ? 'success' : 'danger';
 
   return (
-    <Modal open={!!inv} onClose={onClose} title={inv.name} className="max-w-sm">
+    <Modal open={!!inv} onClose={onClose} title={inv.name} className="sm:max-w-sm">
       {/* Icon + type + status */}
       <div className="flex items-center gap-3 mb-4">
         <span

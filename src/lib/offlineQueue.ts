@@ -55,6 +55,18 @@ export async function flushQueue(fetch: (endpoint: string, method: string, body:
   }
 }
 
+// Wipe all queued items — called on logout so plaintext financial data
+// (amounts, notes) never lingers in IndexedDB on a shared device.
+export async function clearQueue(): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    const req = tx.objectStore(STORE).clear();
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
 // Register online handler to flush queue on reconnect
 export function initOfflineSync(fetch: (endpoint: string, method: string, body: unknown) => Promise<void>): void {
   window.addEventListener('online', () => {

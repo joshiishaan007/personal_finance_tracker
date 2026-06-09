@@ -1,3 +1,4 @@
+export * from './schemas/money';
 export * from './schemas/user.schema';
 export * from './schemas/transaction.schema';
 export * from './schemas/category.schema';

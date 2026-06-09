@@ -127,18 +127,11 @@ export function ProfileView() {
         </div>
       </Card>
 
-      <Modal open={deleteModal} onClose={() => setDeleteModal(false)} title="Delete Account">
-        <div className="space-y-4">
-          <div className="flex items-start gap-2.5 p-3 bg-danger-50 dark:bg-danger-500/10 rounded-xl text-danger-700 dark:text-danger-300">
-            <AlertTriangle size={18} strokeWidth={2.2} className="shrink-0 mt-0.5" />
-            <Text as="span" className="text-sm text-danger-700 dark:text-danger-300">This will permanently delete your account and all data. This cannot be undone.</Text>
-          </div>
-          <Text>Type your email address to confirm:</Text>
-          <Input
-            value={confirmEmail}
-            onChange={(e) => setConfirmEmail(e.target.value)}
-            placeholder={user.email}
-          />
+      <Modal
+        open={deleteModal}
+        onClose={() => setDeleteModal(false)}
+        title="Delete Account"
+        footer={
           <div className="flex gap-3">
             <Button variant="secondary" onClick={() => setDeleteModal(false)} className="flex-1">Cancel</Button>
             <Button
@@ -151,6 +144,19 @@ export function ProfileView() {
               Permanently Delete
             </Button>
           </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-2.5 p-3 bg-danger-50 dark:bg-danger-500/10 rounded-xl text-danger-700 dark:text-danger-300">
+            <AlertTriangle size={18} strokeWidth={2.2} className="shrink-0 mt-0.5" />
+            <Text as="span" className="text-sm text-danger-700 dark:text-danger-300">This will permanently delete your account and all data. This cannot be undone.</Text>
+          </div>
+          <Text>Type your email address to confirm:</Text>
+          <Input
+            value={confirmEmail}
+            onChange={(e) => setConfirmEmail(e.target.value)}
+            placeholder={user.email}
+          />
         </div>
       </Modal>
     </div>

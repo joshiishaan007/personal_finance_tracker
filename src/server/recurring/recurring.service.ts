@@ -38,9 +38,18 @@ export const recurringService = {
     const now = new Date();
     let generated = 0;
 
+    // Hard safety cap per rule per run — a far-past or daily rule must not spin
+    // tens of thousands of iterations + DB writes in a single request.
+    const MAX_ITERATIONS = 500;
+    // Never backfill more than ~1 year; anything older is clamped to this window.
+    const earliest = new Date(now.getTime() - 366 * 24 * 60 * 60 * 1000);
+
     for (const rule of rules) {
       let current = new Date(rule.nextDueDate);
-      while (current <= now) {
+      if (current < earliest) current = earliest;
+      let iterations = 0;
+      while (current <= now && iterations < MAX_ITERATIONS) {
+        iterations++;
         const hash = createHash('sha256')
           .update(`recurring|${String(rule._id)}|${current.toISOString()}`)
           .digest('hex');

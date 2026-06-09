@@ -217,8 +217,16 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
       open={open}
       onClose={onClose}
       title={editTx ? 'Edit Transaction' : 'New Transaction'}
+      footer={
+        <div className="flex gap-3">
+          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button type="submit" form="transaction-form" variant="gradient" loading={isPending} disabled={splitOverflow} className="flex-1">
+            {editTx ? 'Save Changes' : 'Add Transaction'}
+          </Button>
+        </div>
+      }
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form id="transaction-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input
             label="Amount"
@@ -440,12 +448,6 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
           </div>
         )}
 
-        <div className="flex gap-3 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">Cancel</Button>
-          <Button type="submit" variant="gradient" loading={isPending} disabled={splitOverflow} className="flex-1">
-            {editTx ? 'Save Changes' : 'Add Transaction'}
-          </Button>
-        </div>
       </form>
     </Modal>
   );

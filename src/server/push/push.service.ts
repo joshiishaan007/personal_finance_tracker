@@ -68,29 +68,34 @@ export const pushService = {
       url:   '/transactions?new=1',
     });
 
-    const results = await Promise.allSettled(
-      subs.map((sub) =>
-        webPush.sendNotification(
-          JSON.parse(sub.subscription) as webPush.PushSubscription,
-          notification,
-        ),
-      ),
-    );
-
     let sent = 0;
     const staleEndpoints: Array<{ userId: string; endpoint: string }> = [];
 
-    results.forEach((r, i) => {
-      if (r.status === 'fulfilled') {
-        sent++;
-      } else {
-        const statusCode = (r.reason as { statusCode?: number }).statusCode;
-        if (statusCode === 410 || statusCode === 404) {
-          const sub = subs[i]!;
-          staleEndpoints.push({ userId: String(sub.userId), endpoint: sub.endpoint });
+    // Send in bounded chunks so a large subscriber base can't open thousands of
+    // concurrent web-push sockets in one tick (connection/CPU exhaustion).
+    const CHUNK = 100;
+    for (let start = 0; start < subs.length; start += CHUNK) {
+      const batch = subs.slice(start, start + CHUNK);
+      const results = await Promise.allSettled(
+        batch.map((sub) =>
+          webPush.sendNotification(
+            JSON.parse(sub.subscription) as webPush.PushSubscription,
+            notification,
+          ),
+        ),
+      );
+      results.forEach((r, i) => {
+        if (r.status === 'fulfilled') {
+          sent++;
+        } else {
+          const statusCode = (r.reason as { statusCode?: number }).statusCode;
+          if (statusCode === 410 || statusCode === 404) {
+            const sub = batch[i]!;
+            staleEndpoints.push({ userId: String(sub.userId), endpoint: sub.endpoint });
+          }
         }
-      }
-    });
+      });
+    }
 
     // Purge expired subscriptions so they don't pile up.
     await Promise.all(staleEndpoints.map((s) => repo.removeByEndpoint(s.userId, s.endpoint)));

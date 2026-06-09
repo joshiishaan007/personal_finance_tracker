@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { moneyMinor } from './money';
 
 export const InvestmentKindEnum = z.enum(['fd', 'rd', 'sip', 'equity', 'ppf']);
 export const CompoundingEnum = z.enum(['monthly', 'quarterly', 'halfyearly', 'yearly']);
@@ -22,11 +23,11 @@ export const CreateInvestmentSchema = z.object({
   compounding: CompoundingEnum.optional(),
   // Lump-sum principal in minor units (FD / equity lump). Optional seed; the real
   // invested figure is `investedAmount`, accumulated from linked transactions.
-  principal: z.number().int().min(0).optional(),
+  principal: moneyMinor.optional(),
   // Per-month contribution in minor units (RD / SIP / PPF).
-  monthlyAmount: z.number().int().min(0).optional(),
+  monthlyAmount: moneyMinor.optional(),
   // Market-linked manual current value in minor units (equity/MF).
-  currentValue: z.number().int().min(0).optional(),
+  currentValue: moneyMinor.optional(),
   note: z.string().max(300).optional(),
   status: InvestmentStatusEnum.default('active'),
 });

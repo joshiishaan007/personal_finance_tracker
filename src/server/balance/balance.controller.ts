@@ -4,7 +4,7 @@ import { balanceService as svc } from './balance.service';
 
 export const balanceController = {
   async get() {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     return ok(await svc.get(userId));
   },
 };

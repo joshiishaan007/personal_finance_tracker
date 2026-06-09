@@ -206,8 +206,18 @@ export function GoalsView() {
         loading={deleteGoal.isPending}
       />
 
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditGoal(null); }} title={editGoal ? 'Edit Goal' : 'New Goal'}>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <Modal
+        open={modalOpen}
+        onClose={() => { setModalOpen(false); setEditGoal(null); }}
+        title={editGoal ? 'Edit Goal' : 'New Goal'}
+        footer={
+          <div className="flex gap-3">
+            <Button type="button" variant="secondary" onClick={() => { setModalOpen(false); setEditGoal(null); }} className="flex-1">Cancel</Button>
+            <Button type="submit" form="goal-form" loading={saving} className="flex-1">{editGoal ? 'Save Changes' : 'Create Goal'}</Button>
+          </div>
+        }
+      >
+        <form id="goal-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="flex gap-3">
             <IconPicker label="Icon" value={watch('icon') ?? '🎯'} onChange={(v) => setValue('icon', v)} className="w-28 shrink-0" />
             <div className="flex-1"><Input label="Goal Name" error={errors.title?.message} {...register('title')} /></div>
@@ -218,10 +228,6 @@ export function GoalsView() {
           </div>
           <DatePicker label="Deadline (optional)" value={watch('deadline')} onChange={(v) => setValue('deadline', v)} />
           <ColorPicker label="Colour" value={watch('color') ?? '#6366F1'} onChange={(v) => setValue('color', v)} />
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="secondary" onClick={() => { setModalOpen(false); setEditGoal(null); }} className="flex-1">Cancel</Button>
-            <Button type="submit" loading={saving} className="flex-1">{editGoal ? 'Save Changes' : 'Create Goal'}</Button>
-          </div>
         </form>
       </Modal>
     </div>

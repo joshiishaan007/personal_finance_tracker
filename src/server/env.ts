@@ -15,6 +15,14 @@ const EnvSchema = z.object({
   GEMINI_MODEL: z.string().min(1).default("gemini-2.5-flash"),
   NEXT_PUBLIC_APP_URL: z.string().url(),
   SENTRY_DSN: z.string().url().optional(),
+  // Bearer secret Vercel Cron sends with scheduled invocations. Optional so a
+  // missing value never 500s the whole app — but the cron route fails CLOSED
+  // (401) when it is absent, so the endpoint can never run unauthenticated.
+  CRON_SECRET: z.string().min(16).optional(),
+  // Web-push VAPID keys (server-only). Optional: push is a progressive feature.
+  VAPID_PUBLIC_KEY: z.string().min(1).optional(),
+  VAPID_PRIVATE_KEY: z.string().min(1).optional(),
+  VAPID_EMAIL: z.string().optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

@@ -7,12 +7,12 @@ import { spendingPlanService as svc } from './spendingPlan.service';
 
 export const spendingPlanController = {
   async get() {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     return ok(await svc.view(userId));
   },
 
   async update(req: NextRequest) {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const data = validateBody(UpdateSpendingPlanSchema, await req.json());
     return ok(await svc.update(userId, data));
   },

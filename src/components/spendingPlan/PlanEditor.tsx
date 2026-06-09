@@ -105,7 +105,22 @@ export function PlanEditor({ open, onClose, buckets: initial, assignments: initi
   ];
 
   return (
-    <Modal open={open} onClose={onClose} title="Edit spending plan" className="max-w-lg">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Edit spending plan"
+      className="sm:max-w-lg"
+      footer={
+        <div className="flex gap-3">
+          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
+            Cancel
+          </Button>
+          <Button type="button" onClick={onSave} loading={update.isPending} className="flex-1">
+            Save plan
+          </Button>
+        </div>
+      }
+    >
       <div className="space-y-6">
         <section className="space-y-3">
           <div className="flex items-center justify-between gap-2">

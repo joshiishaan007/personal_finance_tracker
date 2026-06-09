@@ -1,11 +1,7 @@
 import { Types } from 'mongoose';
 import { DebtModel } from '../models/debt.model';
+import { escapeRegex } from '../util/escapeRegex';
 import type { CreateDebt } from '@/shared';
-
-// Escape special regex chars so user-supplied names can't inject a pattern.
-function escapeRegex(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
 
 export const debtRepository = {
   list: async (userId: string, filter: { status?: string; friendName?: string; sourceTxId?: string; page: number; limit: number }) => {

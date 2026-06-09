@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { ENDPOINTS } from '@/lib/endpoints';
+import { clearQueue } from '@/lib/offlineQueue';
 
 interface UserData {
   _id: string;
@@ -44,7 +45,10 @@ function readCache(): UserData | null {
 
 function writeCache(u: UserData | null) {
   try {
-    if (u) localStorage.setItem(USER_CACHE_KEY, JSON.stringify(u));
+    // Redact email from the at-rest cache — it's only needed for first paint of
+    // name/avatar/preferences; the real email arrives from /api/auth/me. Keeps
+    // PII out of localStorage (an XSS-readable, shared-device-readable store).
+    if (u) localStorage.setItem(USER_CACHE_KEY, JSON.stringify({ ...u, email: '' }));
     else localStorage.removeItem(USER_CACHE_KEY);
   } catch {
     // Ignore: private-mode / storage-quota edge cases.
@@ -84,6 +88,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await api.post(ENDPOINTS.auth.logout);
     } finally {
       applyUser(null);
+      // Drop any plaintext financial data queued offline on this device.
+      void clearQueue().catch(() => {});
       window.location.href = '/login';
     }
   }

@@ -12,7 +12,7 @@ const YearMonthSchema = z.object({
 
 export const plController = {
   async report(req: NextRequest) {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const { year, month } = validateQuery(YearMonthSchema, req);
     return ok(await svc.report(userId, year, month));
   },

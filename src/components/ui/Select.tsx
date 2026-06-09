@@ -27,7 +27,8 @@ export const Select = forwardRef<HTMLSelectElement, Props>(function Select(
         id={selectId}
         {...rest}
         className={cn(
-          'w-full px-3 py-2.5 text-sm rounded-lg border bg-white dark:bg-slate-900 transition-colors appearance-none',
+          // text-base on mobile keeps fields at 16px so iOS doesn't auto-zoom on focus; text-sm on desktop.
+          'w-full px-3 py-2.5 text-base sm:text-sm rounded-lg border bg-white dark:bg-slate-900 transition-colors appearance-none',
           error
             ? 'border-danger-500'
             : 'border-slate-300 dark:border-slate-700 focus:border-brand-400',

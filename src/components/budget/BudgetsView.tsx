@@ -198,8 +198,18 @@ export function BudgetsView() {
         loading={deleteBudget.isPending}
       />
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Set Budget">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title="Set Budget"
+        footer={
+          <div className="flex gap-3">
+            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)} className="flex-1">Cancel</Button>
+            <Button type="submit" form="budget-form" loading={save.isPending} className="flex-1">Save Budget</Button>
+          </div>
+        }
+      >
+        <form id="budget-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Select
             label="Category"
             error={errors.categoryId?.message}
@@ -215,10 +225,6 @@ export function BudgetsView() {
             <Checkbox {...register('rollover')} />
             <Text as="span">Enable rollover (unspent carries to next month)</Text>
           </Label>
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)} className="flex-1">Cancel</Button>
-            <Button type="submit" loading={save.isPending} className="flex-1">Save Budget</Button>
-          </div>
         </form>
       </Modal>
     </div>

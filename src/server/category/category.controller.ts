@@ -8,27 +8,27 @@ import { categoryService as svc } from './category.service';
 
 export const categoryController = {
   async list() {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const categories = await svc.list(userId);
     return ok(categories);
   },
 
   async create(req: NextRequest) {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const data = validateBody(CreateCategorySchema, await req.json());
     const cat = await svc.create(userId, data);
     return created(cat);
   },
 
   async update(req: NextRequest, ctx: RouteCtx) {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const data = validateBody(UpdateCategorySchema, await req.json());
     const r = await svc.update(userId, String(ctx.params.id), data);
     return r.state === 'ok' ? ok(r.data) : fail(r.reason, 'Category not found');
   },
 
   async remove(_req: NextRequest, ctx: RouteCtx) {
-    const { userId } = requireAuth();
+    const { userId } = await requireAuth();
     const r = await svc.remove(userId, String(ctx.params.id));
     return r.state === 'ok' ? ok(r.data) : fail(r.reason, 'Category not found');
   },

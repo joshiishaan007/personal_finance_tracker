@@ -10,6 +10,9 @@ export interface IUser extends Document {
   currency: Currency;
   timezone: string;
   openingBalance: number;
+  // Bumped on logout / forced sign-out. Embedded in the JWT as `tv`; requireAuth
+  // rejects a token whose tv no longer matches — server-side session revocation.
+  tokenVersion: number;
   preferences: {
     theme: 'light' | 'dark' | 'system';
     mode: 'finance' | 'goals';
@@ -31,6 +34,7 @@ const userSchema = new Schema<IUser>({
   currency: { type: String, default: 'INR' },
   timezone: { type: String, default: 'Asia/Kolkata' },
   openingBalance: { type: Number, default: 0 },
+  tokenVersion: { type: Number, default: 0 },
   preferences: {
     theme: { type: String, enum: ['light', 'dark', 'system'], default: 'system' },
     mode: { type: String, enum: ['finance', 'goals'], default: 'finance' },
