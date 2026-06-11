@@ -4,11 +4,13 @@ import type {
   AllocationBucket,
   BucketComputed,
   SpendingPlanView,
+  SpendingPlanHistoryMonth,
   UpdateSpendingPlan,
 } from '@/shared';
 
-const DAY = 86_400_000;
-const INCOME_WINDOW_DAYS = 180;
+function monthLabel(d: Date): string {
+  return new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' }).format(d);
+}
 
 // Default 50/30/20 plan used when the user has no saved doc.
 const DEFAULT_BUCKETS: AllocationBucket[] = [
@@ -84,15 +86,49 @@ export const spendingPlanService = {
     const buckets: AllocationBucket[] = plan?.buckets?.length ? plan.buckets : DEFAULT_BUCKETS;
     const assignments: Record<string, string> = plan?.assignments ?? {};
 
-    const since = new Date(Date.now() - INCOME_WINDOW_DAYS * DAY);
-    const incomeRows = await repo.recentIncomes(userId, since);
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const incomeRows = await repo.recentIncomes(userId, monthStart);
     const incomes: IncomeRow[] = incomeRows.map((r) => ({ date: new Date(r.date), amount: r.amount }));
-    const cycle = resolveIncomeCycle(incomes, new Date());
+    const cycle = resolveIncomeCycle(incomes, now);
 
     const spendRows = await repo.spendByCategory(userId, cycle.start, cycle.end);
     const categoryIds = categories.map((c) => String(c._id));
 
-    return buildView(buckets, assignments, cycle.baseIncome, spendRows, categoryIds, cycle, currency);
+    const result = buildView(buckets, assignments, cycle.baseIncome, spendRows, categoryIds, cycle, currency);
+
+    // Freeze this month's snapshot for history — live-upserted on each load, then
+    // naturally frozen once the month passes (no later load re-touches a past month).
+    const hasActivity = cycle.baseIncome > 0 || result.buckets.some((b) => b.used > 0);
+    if (hasActivity) {
+      await repo.upsertHistory(userId, monthStart, {
+        baseIncome: cycle.baseIncome,
+        currency,
+        buckets: result.buckets.map((b) => ({
+          id: b.id, name: b.name, color: b.color, kind: b.kind,
+          percent: b.percent, allocated: b.allocated, spent: b.used,
+        })),
+        schemaVersion: 1,
+      });
+    }
+
+    return result;
+  },
+
+  async history(userId: string): Promise<SpendingPlanHistoryMonth[]> {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const rows = await repo.listHistory(userId, monthStart, 24);
+    return rows.map((r) => ({
+      month:      new Date(r.month).toISOString(),
+      label:      monthLabel(new Date(r.month)),
+      baseIncome: r.baseIncome,
+      currency:   r.currency,
+      buckets:    r.buckets.map((b) => ({
+        id: b.id, name: b.name, color: b.color, kind: b.kind,
+        percent: b.percent, allocated: b.allocated, spent: b.spent,
+      })),
+    }));
   },
 
   async update(userId: string, data: UpdateSpendingPlan): Promise<SpendingPlanView> {

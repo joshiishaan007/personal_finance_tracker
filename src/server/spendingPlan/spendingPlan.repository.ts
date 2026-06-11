@@ -1,5 +1,6 @@
 import { Types } from 'mongoose';
 import { SpendingPlanModel } from '../models/spendingPlan.model';
+import { SpendingPlanHistoryModel } from '../models/spendingPlanHistory.model';
 import { TransactionModel } from '../models/transaction.model';
 import { CategoryModel } from '../models/category.model';
 import { UserModel } from '../models/user.model';
@@ -49,4 +50,19 @@ export const spendingPlanRepository = {
     const user = await UserModel.findOne({ _id: userId }, { currency: 1 }).lean();
     return user?.currency ?? 'INR';
   },
+
+  // One frozen snapshot per (user, month) — upserted live for the current month.
+  upsertHistory: (userId: string, month: Date, set: Record<string, unknown>) =>
+    SpendingPlanHistoryModel.findOneAndUpdate(
+      { userId: new Types.ObjectId(userId), month },
+      { $set: { ...set, userId: new Types.ObjectId(userId), month } },
+      { upsert: true, new: true },
+    ).lean(),
+
+  // Completed months only (strictly before `before`), newest first.
+  listHistory: (userId: string, before: Date, limit: number) =>
+    SpendingPlanHistoryModel.find({ userId: new Types.ObjectId(userId), month: { $lt: before } })
+      .sort({ month: -1 })
+      .limit(limit)
+      .lean(),
 };

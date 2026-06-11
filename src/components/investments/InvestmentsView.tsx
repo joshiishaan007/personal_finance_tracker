@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus, Wallet, TrendingUp, LineChart, Trash2, Pencil } from 'lucide-react';
 import { fmt, fmtDate, cn } from '@/lib/utils';
 import type { InvestmentView, InvestmentKind } from '@/shared';
@@ -55,10 +56,22 @@ function cardContext(
 export function InvestmentsView() {
   const { user } = useAuth();
   const currency = user?.currency ?? 'INR';
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [modalOpen,  setModalOpen]  = useState(false);
   const [editing,    setEditing]    = useState<InvestmentView | null>(null);
   const [detailInv,  setDetailInv]  = useState<InvestmentView | null>(null);
   const [deleteId,   setDeleteId]   = useState<string | null>(null);
+
+  // The context-aware FAB links here with ?new=1 — open the add form, then strip
+  // the param so a refresh (or back nav) doesn't reopen it.
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setEditing(null);
+      setModalOpen(true);
+      router.replace('/investments');
+    }
+  }, [searchParams, router]);
 
   const { data: investments, isLoading } = useInvestments();
   const deleteInv = useDeleteInvestment();

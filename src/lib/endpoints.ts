@@ -32,6 +32,7 @@ export const ENDPOINTS = {
   spendingPlan: {
     get: '/api/spending-plan',
     update: '/api/spending-plan',
+    history: '/api/spending-plan/history',
   },
   investments: {
     list: '/api/investments',

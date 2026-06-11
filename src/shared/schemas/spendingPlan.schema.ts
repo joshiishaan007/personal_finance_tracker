@@ -50,3 +50,23 @@ export interface SpendingPlanView {
   totalPercent: number; // sum of bucket percents (should be 100)
   unassignedCategoryIds: string[];
 }
+
+// --- Monthly history (frozen per-month snapshots) ---
+
+export interface SpendingPlanHistoryBucket {
+  id: string;
+  name: string;
+  color: string;
+  kind: 'needs' | 'wants' | 'savings' | 'custom';
+  percent: number;
+  allocated: number; // target, minor units
+  spent: number; // actual outflow, minor units
+}
+
+export interface SpendingPlanHistoryMonth {
+  month: string; // ISO, first instant of the month
+  label: string; // e.g. "May 2026"
+  baseIncome: number;
+  currency: string;
+  buckets: SpendingPlanHistoryBucket[];
+}
