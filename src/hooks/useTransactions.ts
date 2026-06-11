@@ -125,6 +125,8 @@ export function useCreateTransaction() {
       void qc.invalidateQueries({ queryKey: ['transactions'] });
       void qc.invalidateQueries({ queryKey: ['analytics'] });
       void qc.invalidateQueries({ queryKey: ['engagement'] });
+      // Income/expense changes shift the month's base income and bucket usage.
+      void qc.invalidateQueries({ queryKey: ['spendingPlan'] });
     },
   });
 }
@@ -133,7 +135,11 @@ export function useUpdateTransaction(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: UpdateTransaction) => api.patch(ENDPOINTS.transactions.detail(id), data),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['transactions'] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: ['analytics'] });
+      void qc.invalidateQueries({ queryKey: ['spendingPlan'] });
+    },
   });
 }
 
@@ -147,6 +153,8 @@ export function useDeleteTransaction() {
       void qc.invalidateQueries({ queryKey: ['engagement'] });
       // Deleting a settlement tx reverts its linked debt to pending server-side.
       void qc.invalidateQueries({ queryKey: ['debts'] });
+      // Deleting an income/expense changes the month's base income and bucket usage.
+      void qc.invalidateQueries({ queryKey: ['spendingPlan'] });
     },
   });
 }
