@@ -89,11 +89,6 @@
 }
 
 @layer utilities {
-  /* GPU-layer hints — browser pre-promotes these before animation starts. */
-  .animate-fade-in  { will-change: opacity; }
-  .animate-slide-up { will-change: transform, opacity; }
-  .animate-pop      { will-change: transform, opacity; }
-
   .skeleton {
     @apply animate-shimmer bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-ink-800 dark:via-ink-700 dark:to-ink-800;
     background-size: 200% 100%;
