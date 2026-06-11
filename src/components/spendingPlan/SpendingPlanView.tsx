@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Pencil, AlertTriangle, Wallet, Info, SplitSquareHorizontal } from 'lucide-react';
 import { fmt, cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSpendingPlan } from '@/hooks/useSpendingPlan';
+import { useCategories } from '@/hooks/useCategories';
 import { Donut } from '@/components/charts/lazy';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -12,14 +14,29 @@ import { Badge } from '@/components/ui/Badge';
 import { Heading } from '@/components/ui/Heading';
 import { Text } from '@/components/ui/Text';
 import { EmptyState } from '@/components/EmptyState';
+import { TransactionForm } from '@/components/transaction/TransactionForm';
 import { PlanEditor } from './PlanEditor';
+import { SpendingPlanHistory } from './SpendingPlanHistory';
 
 export function SpendingPlanView() {
   const { user } = useAuth();
   const currency = user?.currency ?? 'INR';
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [editorOpen, setEditorOpen] = useState(false);
+  const [incomeFormOpen, setIncomeFormOpen] = useState(false);
 
   const { data, isLoading } = useSpendingPlan();
+  const { data: categories } = useCategories();
+
+  // The context-aware FAB links here with ?new=income — open the transaction form
+  // preset to income, then strip the param so a refresh doesn't reopen it.
+  useEffect(() => {
+    if (searchParams.get('new') === 'income') {
+      setIncomeFormOpen(true);
+      router.replace('/spending-plan');
+    }
+  }, [searchParams, router]);
 
   if (isLoading) {
     return (
@@ -57,15 +74,13 @@ export function SpendingPlanView() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <Text as="span" variant="small" className="uppercase tracking-wide">
-              Cycle {cycle.label}
+              {cycle.label}
             </Text>
             <Heading level={3} className="mt-1 tabular-nums">{fmt(cycle.baseIncome, currency)}</Heading>
             <Text variant="muted" className="mt-0.5">
-              {cycle.source === 'salary'
-                ? 'Detected from your latest paycheck'
-                : cycle.source === 'income-sum'
-                  ? 'Summed from income this cycle'
-                  : 'No income detected'}
+              {cycle.source === 'none'
+                ? 'No income yet this month — expenses still tracked'
+                : 'Income so far this month'}
             </Text>
           </div>
           {!noIncome && (
@@ -79,7 +94,7 @@ export function SpendingPlanView() {
           <div className="mt-4 flex items-start gap-2 rounded-xl bg-warn-50 dark:bg-warn-700/15 p-3">
             <Info size={16} className="mt-0.5 shrink-0 text-warn-700 dark:text-warn-500" />
             <Text variant="small" className="text-warn-700 dark:text-warn-500">
-              Add an income transaction for this cycle to see allocations against your paycheck.
+              Add your salary/income for this month to see allocations. Expenses are already counted.
             </Text>
           </div>
         )}
@@ -177,11 +192,20 @@ export function SpendingPlanView() {
         })}
       </div>
 
+      <SpendingPlanHistory />
+
       <PlanEditor
         open={editorOpen}
         onClose={() => setEditorOpen(false)}
         buckets={buckets}
         assignments={data.assignments}
+      />
+
+      <TransactionForm
+        open={incomeFormOpen}
+        onClose={() => setIncomeFormOpen(false)}
+        categories={categories ?? []}
+        prefill={{ type: 'income' }}
       />
     </div>
   );

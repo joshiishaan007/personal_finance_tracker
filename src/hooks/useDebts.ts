@@ -3,26 +3,32 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { ENDPOINTS } from '@/lib/endpoints';
-import type { CreateDebt, DebtView, DebtSummaryItem, DebtListResult } from '@/shared';
+import type { CreateDebt, DebtView, DebtSummaryItem, DebtListResult, DebtDirection } from '@/shared';
 
-export type { DebtView, DebtSummaryItem };
+export type { DebtView, DebtSummaryItem, DebtDirection };
 
-export function useDebtSummary() {
+export function useDebtSummary(direction: DebtDirection = 'they_owe_me') {
   return useQuery({
-    queryKey: ['debts', 'summary'],
+    queryKey: ['debts', 'summary', direction],
     queryFn: () =>
-      api.get<{ data: DebtSummaryItem[] }>(ENDPOINTS.debts.summary).then((r) => r.data.data),
+      api.get<{ data: DebtSummaryItem[] }>(
+        ENDPOINTS.debts.summary(new URLSearchParams({ direction }).toString()),
+      ).then((r) => r.data.data),
     staleTime: 1000 * 60 * 2,
   });
 }
 
 // Single-page fetch — use for small/bounded lists (transaction form, duplicate detection).
-export function useFriendDebts(friendName: string | null, status: 'pending' | 'settled' = 'pending') {
+export function useFriendDebts(
+  friendName: string | null,
+  status: 'pending' | 'settled' = 'pending',
+  direction: DebtDirection = 'they_owe_me',
+) {
   const qs = friendName
-    ? new URLSearchParams({ friendName, status, limit: '100' }).toString()
+    ? new URLSearchParams({ friendName, status, direction, limit: '100' }).toString()
     : '';
   return useQuery({
-    queryKey: ['debts', 'friend', friendName, status],
+    queryKey: ['debts', 'friend', direction, friendName, status],
     queryFn: () =>
       api.get<{ data: DebtListResult }>(ENDPOINTS.debts.list(qs)).then((r) => r.data.data.items),
     enabled: !!friendName,
@@ -32,13 +38,18 @@ export function useFriendDebts(friendName: string | null, status: 'pending' | 's
 }
 
 // Infinite query — use in FriendDebtsModal for paginated scrollable lists.
-export function useInfiniteFriendDebts(friendName: string | null, status: 'pending' | 'settled' = 'pending') {
+export function useInfiniteFriendDebts(
+  friendName: string | null,
+  status: 'pending' | 'settled' = 'pending',
+  direction: DebtDirection = 'they_owe_me',
+) {
   return useInfiniteQuery({
-    queryKey: ['debts', 'friend', friendName, status, 'inf'],
+    queryKey: ['debts', 'friend', direction, friendName, status, 'inf'],
     queryFn: ({ pageParam }: { pageParam: number }) => {
       const qs = new URLSearchParams({
         friendName: friendName!,
         status,
+        direction,
         page:  String(pageParam),
         limit: '20',
       }).toString();
@@ -54,7 +65,8 @@ export function useInfiniteFriendDebts(friendName: string | null, status: 'pendi
 }
 
 export function useTransactionDebts(txId: string | null | undefined) {
-  const qs = txId ? new URLSearchParams({ sourceTxId: txId, status: 'all', limit: '100' }).toString() : '';
+  // direction 'all' — a tx may be a split source (they_owe_me) regardless of card.
+  const qs = txId ? new URLSearchParams({ sourceTxId: txId, status: 'all', direction: 'all', limit: '100' }).toString() : '';
   return useQuery({
     queryKey: ['debts', 'tx', txId],
     queryFn: () =>
@@ -65,10 +77,10 @@ export function useTransactionDebts(txId: string | null | undefined) {
 }
 
 // Fetches all settled entries across all friends for the outer summary card.
-export function useSettledDebts() {
-  const qs = new URLSearchParams({ status: 'settled', limit: '100' }).toString();
+export function useSettledDebts(direction: DebtDirection = 'they_owe_me') {
+  const qs = new URLSearchParams({ status: 'settled', direction, limit: '100' }).toString();
   return useQuery({
-    queryKey: ['debts', 'settled'],
+    queryKey: ['debts', 'settled', direction],
     queryFn: () =>
       api.get<{ data: DebtListResult }>(ENDPOINTS.debts.list(qs)).then((r) => r.data.data.items),
     staleTime: 1000 * 60 * 2,

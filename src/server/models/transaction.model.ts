@@ -8,6 +8,7 @@ export interface ITransaction extends Document {
   subcategoryId?: Types.ObjectId;
   tags: string[];
   date: Date;
+  incurredAt?: Date;
   note?: string;
   paymentMethod: string;
   isRecurring: boolean;
@@ -31,6 +32,7 @@ const transactionSchema = new Schema<ITransaction>({
   subcategoryId: { type: Schema.Types.ObjectId, ref: 'Category' },
   tags: { type: [String], default: [] },
   date: { type: Date, required: true },
+  incurredAt: Date,
   note: String,
   paymentMethod: { type: String, default: 'cash' },
   isRecurring: { type: Boolean, default: false },

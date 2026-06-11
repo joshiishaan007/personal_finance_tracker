@@ -77,13 +77,22 @@ const GOALS_MORE: NavItem[] = [
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
-const NAV: Record<AppMode, { primary: NavItem[]; more: NavItem[]; fab: { href: string; label: string } }> = {
-  finance: { primary: FINANCE_PRIMARY, more: FINANCE_MORE, fab: { href: '/transactions?new=1', label: 'Add transaction' } },
-  goals: { primary: GOALS_PRIMARY, more: GOALS_MORE, fab: { href: '/goals?new=1', label: 'Add goal' } },
+const NAV: Record<AppMode, { primary: NavItem[]; more: NavItem[] }> = {
+  finance: { primary: FINANCE_PRIMARY, more: FINANCE_MORE },
+  goals: { primary: GOALS_PRIMARY, more: GOALS_MORE },
 };
 
 function isMatch(pathname: string, to: string): boolean {
   return pathname === to || pathname.startsWith(`${to}/`);
+}
+
+// The single bottom-bar + button adapts to the open page: it adds the thing that
+// page is about (an investment, this month's income, otherwise a transaction).
+function resolveFab(mode: AppMode, pathname: string): { href: string; label: string } {
+  if (mode === 'goals') return { href: '/goals?new=1', label: 'Add goal' };
+  if (isMatch(pathname, '/investments')) return { href: '/investments?new=1', label: 'Add investment' };
+  if (isMatch(pathname, '/spending-plan')) return { href: '/spending-plan?new=income', label: 'Add income' };
+  return { href: '/transactions?new=1', label: 'Add transaction' };
 }
 
 // The active item is the one with the LONGEST matching path, so /goals/tasks
@@ -131,7 +140,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => { setMoreOpen(false); }, [pathname]);
 
-  const { primary, more, fab } = NAV[mode];
+  const { primary, more } = NAV[mode];
+  const fab = resolveFab(mode, pathname);
   const allNav = [...primary, ...more];
   const activeTo = bestActiveTo(pathname, allNav);
   const pageTitle = allNav.find((i) => i.to === activeTo)?.label ?? 'xpensr';
@@ -191,7 +201,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-ink-950">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col w-64 glass border-r p-4 gap-1.5 overflow-y-auto scrollbar-thin">
-        <Link href={fab.href.startsWith('/goals') ? '/goals' : '/dashboard'} className="flex items-center px-2 py-3 no-underline hover:no-underline">
+        <Link href={mode === 'goals' ? '/goals' : '/dashboard'} className="flex items-center px-2 py-3 no-underline hover:no-underline">
           <GradientText className="text-xl font-bold">xpensr</GradientText>
         </Link>
 

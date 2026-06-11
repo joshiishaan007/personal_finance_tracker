@@ -11,6 +11,9 @@ export const CreateTransactionSchema = z.object({
   subcategoryId: z.string().optional(),
   tags: z.array(z.string().max(50)).max(10).default([]),
   date: z.string().datetime(),
+  // Economic "money actually used" date, distinct from the cash-movement `date`.
+  // Set on debt settlement txns (repayment expense / reimbursement income).
+  incurredAt: z.string().datetime().optional(),
   note: z.string().max(500).optional(),
   paymentMethod: PaymentMethodEnum.default('cash'),
   isRecurring: z.boolean().default(false),

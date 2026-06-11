@@ -11,6 +11,11 @@ export const spendingPlanController = {
     return ok(await svc.view(userId));
   },
 
+  async history() {
+    const { userId } = await requireAuth();
+    return ok(await svc.history(userId));
+  },
+
   async update(req: NextRequest) {
     const { userId } = await requireAuth();
     const data = validateBody(UpdateSpendingPlanSchema, await req.json());

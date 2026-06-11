@@ -11,6 +11,7 @@ import { useRecurring } from '@/hooks/useRecurring';
 import { useGoals } from '@/hooks/useGoals';
 import { useBalance } from '@/hooks/useBalance';
 import { useInvestments } from '@/hooks/useInvestments';
+import { useSpendingPlan } from '@/hooks/useSpendingPlan';
 import { fmt, fmtDate } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
 import { Heading } from '@/components/ui/Heading';
@@ -25,10 +26,11 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { StatCard } from '@/components/StatCard';
 import { QuickAddBar } from '@/components/transaction/QuickAddBar';
 import { InstantCards } from '@/components/transaction/InstantCards';
+import { SpendingPlanSummary } from '@/components/spendingPlan/SpendingPlanSummary';
 import { StreakBadge } from '@/components/engagement/StreakBadge';
 import { EndOfDayCard } from '@/components/engagement/EndOfDayCard';
 import { ChartCard } from '@/components/charts/ChartCard';
-import { AreaTrend, Donut, GaugeRadial } from '@/components/charts/lazy';
+import { AreaTrend, Donut } from '@/components/charts/lazy';
 import type { LucideIcon } from 'lucide-react';
 
 const QUOTES: string[] = [
@@ -115,6 +117,7 @@ export function DashboardView() {
   const { data: recurring, isLoading: recurringLoading } = useRecurring();
   const { data: balance, isLoading: balanceLoading } = useBalance();
   const { data: investments } = useInvestments();
+  const { data: plan } = useSpendingPlan();
 
   // Gate the whole data region on the three queries that feed it, so the user
   // never sees half-filled cards (zeros, "No goals yet") flash before the real
@@ -288,16 +291,7 @@ export function DashboardView() {
       )}
 
       <div className="grid lg:grid-cols-3 gap-6">
-        <Card>
-          <SectionHeader
-            title="Savings Rate"
-            subtitle="Share of income kept"
-            icon={PiggyBank}
-          />
-          <div className="mt-2">
-            <GaugeRadial value={savingsRate} suffix="%" label="of income saved" colorVar="var(--chart-3)" />
-          </div>
-        </Card>
+        <SpendingPlanSummary data={plan} currency={currency} />
 
         <Card>
           <SectionHeader

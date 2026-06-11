@@ -3,13 +3,22 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { ENDPOINTS } from '@/lib/endpoints';
-import type { SpendingPlanView, UpdateSpendingPlan } from '@/shared';
+import type { SpendingPlanView, SpendingPlanHistoryMonth, UpdateSpendingPlan } from '@/shared';
 
 export function useSpendingPlan() {
   return useQuery({
     queryKey: ['spendingPlan'],
     queryFn: () =>
       api.get<{ data: SpendingPlanView }>(ENDPOINTS.spendingPlan.get).then((r) => r.data.data),
+  });
+}
+
+export function useSpendingPlanHistory() {
+  return useQuery({
+    queryKey: ['spendingPlan', 'history'],
+    queryFn: () =>
+      api.get<{ data: SpendingPlanHistoryMonth[] }>(ENDPOINTS.spendingPlan.history).then((r) => r.data.data),
+    staleTime: 1000 * 60 * 5,
   });
 }
 

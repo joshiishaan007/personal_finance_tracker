@@ -32,6 +32,7 @@ export const ENDPOINTS = {
   spendingPlan: {
     get: '/api/spending-plan',
     update: '/api/spending-plan',
+    history: '/api/spending-plan/history',
   },
   investments: {
     list: '/api/investments',
@@ -106,7 +107,7 @@ export const ENDPOINTS = {
   debts: {
     list:    (qs?: string) => `/api/debts${qs ? `?${qs}` : ''}`,
     create:  '/api/debts',
-    summary: '/api/debts/summary',
+    summary: (qs?: string) => `/api/debts/summary${qs ? `?${qs}` : ''}`,
     cleanup: '/api/debts/cleanup',
     detail:  (id: string) => `/api/debts/${id}`,
   },

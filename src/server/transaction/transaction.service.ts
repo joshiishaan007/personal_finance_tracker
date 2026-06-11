@@ -23,7 +23,14 @@ export const transactionService = {
 
   create: (userId: string, data: CreateTransaction) => {
     const hash = makeHash(data.date, data.amount, data.note);
-    const doc = { ...data, userId, hash, date: new Date(data.date), schemaVersion: 1 };
+    const doc = {
+      ...data,
+      userId,
+      hash,
+      date: new Date(data.date),
+      incurredAt: data.incurredAt ? new Date(data.incurredAt) : undefined,
+      schemaVersion: 1,
+    };
     // clientId present (offline-capable path) → idempotent upsert so replays don't
     // duplicate; otherwise a plain insert (two identical entries stay distinct).
     return data.clientId ? repo.upsertByClientId(userId, data.clientId, doc) : repo.create(doc);
@@ -37,8 +44,11 @@ export const transactionService = {
   async remove(userId: string, id: string): Promise<Result<{ deleted: true }, 'not_found'>> {
     const tx = await repo.remove(userId, id);
     if (!tx) return Err('not_found');
-    // Cascade: remove any split debts that were linked to this transaction.
+    // Cascade: remove any split debts that were linked to this transaction as their source,
+    // and revert any debt that was *settled* via this transaction back to pending so its
+    // settlement link can't dangle.
     await debtRepository.deleteBySourceTx(userId, id);
+    await debtRepository.unlinkSettlementTx(userId, id);
     return Ok({ deleted: true });
   },
 
