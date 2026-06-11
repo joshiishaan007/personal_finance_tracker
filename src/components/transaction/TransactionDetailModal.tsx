@@ -73,6 +73,14 @@ export function TransactionDetailModal({ open, onClose, tx, onEdit }: Props) {
 
           {/* Details grid */}
           <div className="divide-y divide-slate-100 dark:divide-white/[0.06]">
+            {/* Actual money-used date (debt settlements) — distinct from the cash date above */}
+            {t.incurredAt && fmtDate(t.incurredAt) !== fmtDate(t.date) && (
+              <div className="flex items-center justify-between py-2.5">
+                <Text variant="small" className="text-slate-500">Money used on</Text>
+                <Text className="text-sm font-medium">{fmtDate(t.incurredAt)}</Text>
+              </div>
+            )}
+
             {/* Category */}
             <div className="flex items-center justify-between py-2.5">
               <Text variant="small" className="text-slate-500">Category</Text>

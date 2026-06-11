@@ -4,14 +4,14 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Zap, Users, Plus, X, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
+import { Zap, Users, Plus, X, AlertTriangle, CheckCircle2, Clock, HandCoins } from 'lucide-react';
 import { toMinorUnits, type Currency } from '@/shared';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreateTransaction, useUpdateTransaction } from '@/hooks/useTransactions';
 import { useCreateInstantCard } from '@/hooks/useInstantCards';
 import { useCreateDebts, useUpdateDebt, useTransactionDebts, useDebtSummary } from '@/hooks/useDebts';
 import { useInvestments } from '@/hooks/useInvestments';
-import type { CreateTransaction } from '@/shared';
+import type { CreateTransaction, CreateDebt } from '@/shared';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -69,13 +69,16 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
 
   const [saveAsCard, setSaveAsCard] = useState(false);
   const [splits, setSplits] = useState<{ name: string; amount: string; note: string }[]>([]);
+  // "I owe someone" mode — creates an i_owe_them debt instead of a transaction.
+  const [oweMode, setOweMode] = useState(false);
+  const [oweName, setOweName] = useState('');
 
   const createTx    = useCreateTransaction();
   const updateTx    = useUpdateTransaction(editTx?._id ?? '');
   const createCard  = useCreateInstantCard();
   const createDebts = useCreateDebts();
   const updateDebt  = useUpdateDebt();
-  const isPending   = editTx ? updateTx.isPending : createTx.isPending;
+  const isPending   = editTx ? updateTx.isPending : oweMode ? createDebts.isPending : createTx.isPending;
 
   // Existing debts linked to the transaction being edited.
   const { data: txDebts = [] } = useTransactionDebts(editTx?._id);
@@ -96,6 +99,11 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
   const filteredCategories = categories.filter((c) => c.type === selectedType);
   const isInvestment = selectedType === 'investment';
   const { data: investments } = useInvestments();
+
+  // "I owe someone" only applies to expenses; drop it if the type changes away.
+  useEffect(() => {
+    if (selectedType !== 'expense') setOweMode(false);
+  }, [selectedType]);
 
   useEffect(() => {
     if (editTx) {
@@ -119,6 +127,8 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
     }
     setSplits([]);
     setSaveAsCard(false);
+    setOweMode(false);
+    setOweName('');
   }, [editTx, reset, open, prefill]);
 
   // ── Amount validation ──────────────────────────────────────────────────────
@@ -136,11 +146,11 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
   const splitOverflow = txAmountMinor > 0 && projectedTotal > txAmountMinor;
 
   // ── Debt helpers ───────────────────────────────────────────────────────────
-  async function fireDebts(sourceTxId?: string) {
+  async function fireDebts(sourceTxId?: string, incurredAtISO?: string) {
     const validSplits = splits.filter((s) => s.name.trim() && parseFloat(s.amount) > 0);
     if (validSplits.length === 0) return;
 
-    const toCreate: { friendName: string; amount: number; note?: string; sourceTxId?: string }[] = [];
+    const toCreate: CreateDebt[] = [];
 
     for (const s of validSplits) {
       const newAmt = toMinorUnits(parseFloat(s.amount), currency as Currency);
@@ -158,7 +168,15 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
           ...(s.note.trim() ? { note: s.note.trim() } : {}),
         }});
       } else {
-        toCreate.push({ friendName: s.name.trim(), amount: newAmt, note: s.note.trim() || undefined, sourceTxId });
+        toCreate.push({
+          friendName: s.name.trim(),
+          amount: newAmt,
+          note: s.note.trim() || undefined,
+          direction: 'they_owe_me',
+          // The date you paid for them — shown alongside the reimbursement income on settle.
+          incurredAt: incurredAtISO,
+          sourceTxId,
+        });
       }
     }
 
@@ -167,6 +185,25 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
 
   function onSubmit(values: FormValues) {
     if (splitOverflow) return; // blocked by UI already, belt-and-suspenders
+
+    // "I owe someone": no money has left your account yet, so create a borrow debt
+    // (not a transaction). The repayment expense is created when you mark it done.
+    if (oweMode) {
+      if (!oweName.trim()) return;
+      createDebts.mutate(
+        [{
+          friendName:    oweName.trim(),
+          amount:        toMinorUnits(values.amount, currency as Currency),
+          note:          values.note,
+          direction:     'i_owe_them',
+          incurredAt:    new Date(values.date).toISOString(),
+          categoryId:    values.categoryId,
+          paymentMethod: values.paymentMethod,
+        }],
+        { onSuccess: () => { setOweMode(false); setOweName(''); onClose(); } },
+      );
+      return;
+    }
 
     const payload: CreateTransaction = {
       amount: toMinorUnits(values.amount, currency as Currency),
@@ -181,10 +218,11 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
       investmentId: values.type === 'investment' && values.investmentId ? values.investmentId : undefined,
     };
 
+    const incurredAtISO = new Date(values.date).toISOString();
     if (editTx) {
       updateTx.mutate(payload, {
         onSuccess: () => {
-          void fireDebts(editTx._id);
+          void fireDebts(editTx._id, incurredAtISO);
           setSplits([]);
           onClose();
         },
@@ -202,7 +240,7 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
               tags:          payload.tags ?? [],
             });
           }
-          void fireDebts(txId);
+          void fireDebts(txId, incurredAtISO);
           setSaveAsCard(false);
           setSplits([]);
           onClose();
@@ -211,7 +249,8 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
     }
   }
 
-  const showSplits = selectedType === 'expense' || selectedType === 'transfer';
+  const showSplits = (selectedType === 'expense' || selectedType === 'transfer') && !oweMode;
+  const showOweToggle = !editTx && selectedType === 'expense';
 
   return (
     <Modal
@@ -221,8 +260,8 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
       footer={
         <div className="flex gap-3">
           <Button type="button" variant="secondary" onClick={onClose} className="flex-1">Cancel</Button>
-          <Button type="submit" form="transaction-form" variant="gradient" loading={isPending} disabled={splitOverflow} className="flex-1">
-            {editTx ? 'Save Changes' : 'Add Transaction'}
+          <Button type="submit" form="transaction-form" variant="gradient" loading={isPending} disabled={splitOverflow || (oweMode && !oweName.trim())} className="flex-1">
+            {oweMode ? 'Add what I owe' : editTx ? 'Save Changes' : 'Add Transaction'}
           </Button>
         </div>
       }
@@ -270,9 +309,29 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
           />
         )}
 
+        {showOweToggle && (
+          <div className="flex items-start gap-3 rounded-xl border border-warn-300/70 dark:border-warn-800/50 bg-warn-50/70 dark:bg-warn-950/20 px-3 py-2.5">
+            <HandCoins size={15} className="shrink-0 text-warn-500 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <Text className="text-sm font-medium leading-tight">I owe someone</Text>
+              <Text variant="small" className="text-slate-500 leading-tight">A friend paid for this — track it now; the expense is added when you mark it repaid.</Text>
+            </div>
+            <Switch checked={oweMode} onChange={setOweMode} label="I owe someone" className="mt-0.5" />
+          </div>
+        )}
+
+        {oweMode && (
+          <Input
+            label="Who paid for you?"
+            placeholder="Friend's name"
+            value={oweName}
+            onChange={(e) => setOweName(e.target.value)}
+          />
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <DatePicker
-            label="Date"
+            label={oweMode ? 'Date money was used' : 'Date'}
             value={watch('date')}
             onChange={(v) => setValue('date', v)}
             error={errors.date?.message}
@@ -419,8 +478,8 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
           </div>
         )}
 
-        {/* Instant card toggle — only for new transactions */}
-        {!editTx && (
+        {/* Instant card toggle — only for new transactions (not when tracking a debt) */}
+        {!editTx && !oweMode && (
           <div className="flex items-start gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/60 dark:bg-ink-800/40 px-3 py-2.5">
             <Zap size={15} className="shrink-0 text-brand-500 mt-0.5" />
             <div className="flex-1 min-w-0">

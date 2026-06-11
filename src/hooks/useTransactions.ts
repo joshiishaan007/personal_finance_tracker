@@ -22,6 +22,7 @@ export interface Transaction {
   type: string;
   categoryId: string;
   date: string;
+  incurredAt?: string;
   note?: string;
   tags: string[];
   paymentMethod: string;
@@ -144,6 +145,8 @@ export function useDeleteTransaction() {
       void qc.invalidateQueries({ queryKey: ['transactions'] });
       void qc.invalidateQueries({ queryKey: ['analytics'] });
       void qc.invalidateQueries({ queryKey: ['engagement'] });
+      // Deleting a settlement tx reverts its linked debt to pending server-side.
+      void qc.invalidateQueries({ queryKey: ['debts'] });
     },
   });
 }

@@ -24,6 +24,7 @@ import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { TransactionForm } from '@/components/transaction/TransactionForm';
 import { TransactionDetailModal } from '@/components/transaction/TransactionDetailModal';
 import { PeopleOweYou } from '@/components/transaction/PeopleOweYou';
+import { YouOweOthers } from '@/components/transaction/YouOweOthers';
 import { QuickAddBar } from '@/components/transaction/QuickAddBar';
 import { InstantCards } from '@/components/transaction/InstantCards';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -151,6 +152,7 @@ export function TransactionsView() {
         <QuickAddBar />
         <InstantCards />
         <PeopleOweYou />
+        <YouOweOthers />
       </div>
 
       {items.length > 0 && (

@@ -2,7 +2,7 @@ import { debtService as svc } from './debt.service';
 import { requireAuth } from '../http/requireAuth';
 import { validateBody, validateQuery } from '../http/validate';
 import { ok, created, fail } from '../http/respond';
-import { CreateDebtSchema, UpdateDebtSchema, DebtFilterSchema } from '@/shared';
+import { CreateDebtSchema, UpdateDebtSchema, DebtFilterSchema, DebtSummaryQuerySchema } from '@/shared';
 import { z } from 'zod';
 import type { NextRequest } from 'next/server';
 import type { RouteCtx } from '../http/catchRoute';
@@ -16,9 +16,10 @@ export const debtController = {
     return ok(await svc.list(userId, filter));
   },
 
-  async summary(_req: NextRequest) {
+  async summary(req: NextRequest) {
     const { userId } = await requireAuth();
-    return ok(await svc.summary(userId));
+    const { direction } = validateQuery(DebtSummaryQuerySchema, req);
+    return ok(await svc.summary(userId, direction));
   },
 
   async create(req: NextRequest) {
