@@ -88,7 +88,8 @@ export const spendingPlanService = {
 
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const incomeRows = await repo.recentIncomes(userId, monthStart);
+    const reimbursementIds = await repo.reimbursementCategoryIds(userId);
+    const incomeRows = await repo.recentIncomes(userId, monthStart, reimbursementIds);
     const incomes: IncomeRow[] = incomeRows.map((r) => ({ date: new Date(r.date), amount: r.amount }));
     const cycle = resolveIncomeCycle(incomes, now);
 

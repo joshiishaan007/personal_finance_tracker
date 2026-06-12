@@ -81,14 +81,14 @@ export function InstantCards() {
                   {card.paymentMethod}
                 </Text>
               </button>
-              {/* Delete handle — shows on hover */}
+              {/* Delete handle — subtle by default (always visible for touch), red on press */}
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); deleteCard.mutate(card._id); }}
-                className="absolute -top-1.5 -right-1.5 hidden group-hover:flex items-center justify-center w-4 h-4 rounded-full bg-danger-500 text-white shadow hover:bg-danger-600 transition-colors"
+                className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-5 h-5 rounded-full bg-slate-200/90 dark:bg-ink-700 text-slate-500 dark:text-slate-300 shadow-sm hover:bg-danger-500 hover:text-white active:scale-90 transition-colors"
                 aria-label="Remove instant card"
               >
-                <X size={9} strokeWidth={3} />
+                <X size={11} strokeWidth={2.5} />
               </button>
             </div>
           );
