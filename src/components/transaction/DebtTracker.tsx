@@ -34,7 +34,9 @@ export interface DebtTrackerConfig {
   title:             string;
   icon:              LucideIcon;
   emptyText:         string;
-  settleTxType:      'income' | 'expense';
+  // The transaction type settling creates: 'reimbursement' (lending — money back to
+  // you) or 'expense' (borrowing — you repaying a friend).
+  settleTxType:      'reimbursement' | 'expense';
   // Action copy — kept per-direction so "People owe you" keeps its original wording.
   markLabel:         string; // "Mark settled" / "Mark done"
   markQuestion:      string; // "Mark as settled?" / "Mark as done?"
@@ -99,8 +101,8 @@ function FriendDebtsModal({ config, friendName, onClose, initialShowSettled = fa
   const deleteTx   = useDeleteTransaction();
 
   const tone = TONES[config.tone];
-  const noun = config.settleTxType; // 'income' | 'expense'
-  const SettleIcon = noun === 'income' ? ArrowDownLeft : ArrowUpRight;
+  const noun = config.settleTxType; // 'reimbursement' | 'expense'
+  const SettleIcon = noun === 'expense' ? ArrowUpRight : ArrowDownLeft;
 
   const [editingId,      setEditingId]      = useState<string | null>(null);
   const [editAmount,     setEditAmount]     = useState('');
@@ -184,7 +186,7 @@ function FriendDebtsModal({ config, friendName, onClose, initialShowSettled = fa
 
   // Resolve the category the settlement transaction should use.
   function settleCategoryId(d: DebtView): string | undefined {
-    if (noun === 'income') return reimbursementCat?._id;
+    if (noun === 'reimbursement') return reimbursementCat?._id;
     return d.categoryId ?? expenseCat?._id;
   }
 
@@ -197,10 +199,10 @@ function FriendDebtsModal({ config, friendName, onClose, initialShowSettled = fa
       incurredAt:  d.incurredAt,
       isRecurring: false as const,
     };
-    if (noun === 'income') {
+    if (noun === 'reimbursement') {
       return {
         ...base,
-        type:          'income',
+        type:          'reimbursement',
         note:          `Reimbursement from ${friendName ?? ''}`,
         paymentMethod: 'upi',
         tags:          ['reimbursement'],
@@ -251,7 +253,7 @@ function FriendDebtsModal({ config, friendName, onClose, initialShowSettled = fa
     }
   }
 
-  const hasSettleCategory = noun === 'income' ? !!reimbursementCat : (!!expenseCat || debts.some((d) => d.categoryId));
+  const hasSettleCategory = noun === 'reimbursement' ? !!reimbursementCat : (!!expenseCat || debts.some((d) => d.categoryId));
 
   return (
     <>
@@ -330,7 +332,7 @@ function FriendDebtsModal({ config, friendName, onClose, initialShowSettled = fa
                       </Text>
                       {/* Shown after settling to confirm the tx was recorded */}
                       {settledIds.has(d._id) && (
-                        <Badge variant={noun === 'income' ? 'success' : 'warn'} className="text-[10px] flex items-center gap-0.5">
+                        <Badge variant={noun === 'expense' ? 'warn' : 'success'} className="text-[10px] flex items-center gap-0.5">
                           <SettleIcon size={9} strokeWidth={2.5} /> {noun} recorded
                         </Badge>
                       )}
@@ -475,7 +477,7 @@ function FriendDebtsModal({ config, friendName, onClose, initialShowSettled = fa
       onClose={() => setConfirmAll(false)}
       onConfirm={() => void settleAll()}
       title={config.markAllQuestion}
-      description={`This will mark all ${debts.length} entries as ${noun === 'income' ? 'settled' : 'done'} and record ${noun} transactions for each.`}
+      description={`This will mark all ${debts.length} entries as ${noun === 'expense' ? 'done' : 'settled'} and record ${noun} transactions for each.`}
       confirmLabel={config.markAllLabel}
       variant="danger"
       loading={updateDebt.isPending || createTx.isPending}

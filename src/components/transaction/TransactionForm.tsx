@@ -26,7 +26,7 @@ import { fmt } from '@/lib/utils';
 
 const FormSchema = z.object({
   amount: z.coerce.number().positive('Amount must be positive'),
-  type: z.enum(['income', 'expense', 'transfer', 'investment']),
+  type: z.enum(['income', 'expense', 'transfer', 'investment', 'reimbursement']),
   categoryId: z.string().min(1, 'Select a category'),
   date: z.string(),
   note: z.string().max(500).optional(),
@@ -358,6 +358,7 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill, ca
               { value: 'income', label: 'Income' },
               { value: 'transfer', label: 'Transfer' },
               { value: 'investment', label: 'Investment' },
+              { value: 'reimbursement', label: 'Reimbursement' },
             ]}
             {...register('type')}
           />

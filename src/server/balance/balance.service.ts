@@ -18,9 +18,12 @@ export const balanceService = {
     const byType = new Map(totals.map((r) => [String(r._id), Number(r.total) || 0]));
     const income = byType.get('income') ?? 0;
     const expense = byType.get('expense') ?? 0;
+    // Reimbursements are cash returned to you — they raise the balance like income,
+    // but are kept out of the `income` KPI (they aren't earnings).
+    const reimbursement = byType.get('reimbursement') ?? 0;
 
     return {
-      total: meta.openingBalance + income - expense,
+      total: meta.openingBalance + income + reimbursement - expense,
       openingBalance: meta.openingBalance,
       income,
       expense,

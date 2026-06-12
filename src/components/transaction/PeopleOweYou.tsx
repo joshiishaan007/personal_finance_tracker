@@ -9,7 +9,7 @@ const CONFIG: DebtTrackerConfig = {
   title:             'People owe you',
   icon:              Users,
   emptyText:         'All settled up!',
-  settleTxType:      'income',
+  settleTxType:      'reimbursement',
   markLabel:         'Mark settled',
   markQuestion:      'Mark as settled?',
   markAllLabel:      'Settle all',

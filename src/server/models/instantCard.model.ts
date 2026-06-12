@@ -3,7 +3,7 @@ import { Schema, model, Document, Types, Model, models } from 'mongoose';
 export interface IInstantCard extends Document {
   userId: Types.ObjectId;
   amount: number;
-  type: 'income' | 'expense' | 'transfer' | 'investment';
+  type: 'income' | 'expense' | 'transfer' | 'investment' | 'reimbursement';
   categoryId: string;
   paymentMethod: string;
   note?: string;
@@ -17,7 +17,7 @@ const instantCardSchema = new Schema<IInstantCard>(
   {
     userId:        { type: Schema.Types.ObjectId, ref: 'User', required: true },
     amount:        { type: Number, required: true },
-    type:          { type: String, enum: ['income', 'expense', 'transfer', 'investment'], required: true },
+    type:          { type: String, enum: ['income', 'expense', 'transfer', 'investment', 'reimbursement'], required: true },
     categoryId:    { type: String, required: true },
     paymentMethod: { type: String, default: 'cash' },
     note:          String,

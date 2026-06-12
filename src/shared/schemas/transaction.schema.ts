@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { moneyMinorPositive } from './money';
 
-export const TransactionTypeEnum = z.enum(['income', 'expense', 'transfer', 'investment']);
+export const TransactionTypeEnum = z.enum(['income', 'expense', 'transfer', 'investment', 'reimbursement']);
 export const PaymentMethodEnum = z.enum(['cash', 'card', 'upi', 'netbanking', 'wallet', 'cheque', 'other']);
 
 export const CreateTransactionSchema = z.object({
