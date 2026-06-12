@@ -37,6 +37,9 @@ export interface DebtTrackerConfig {
   // The transaction type settling creates: 'reimbursement' (lending — money back to
   // you) or 'expense' (borrowing — you repaying a friend).
   settleTxType:      'reimbursement' | 'expense';
+  // Whether to show the settled-entries section (in-card + per-friend modal). When
+  // false, settled entries are reverted from their settlement transaction instead.
+  showSettled:       boolean;
   // Action copy — kept per-direction so "People owe you" keeps its original wording.
   markLabel:         string; // "Mark settled" / "Mark done"
   markQuestion:      string; // "Mark as settled?" / "Mark as done?"
@@ -200,10 +203,13 @@ function FriendDebtsModal({ config, friendName, onClose, initialShowSettled = fa
       isRecurring: false as const,
     };
     if (noun === 'reimbursement') {
+      // The icon already conveys "reimbursement" — the note just carries who repaid
+      // you and what it was for (the original entry's note), e.g. "Alice · dinner".
+      const what = d.note?.trim();
       return {
         ...base,
         type:          'reimbursement',
-        note:          `Reimbursement from ${friendName ?? ''}`,
+        note:          what ? `${friendName ?? ''} · ${what}` : (friendName ?? ''),
         paymentMethod: 'upi',
         tags:          ['reimbursement'],
       };
@@ -395,6 +401,7 @@ function FriendDebtsModal({ config, friendName, onClose, initialShowSettled = fa
         )}
 
         {/* Settled entries with revert option */}
+        {config.showSettled && (
         <div>
           <Button
             type="button"
@@ -444,6 +451,7 @@ function FriendDebtsModal({ config, friendName, onClose, initialShowSettled = fa
             <Text variant="small" className="text-center text-slate-400 py-2">No settled entries</Text>
           )}
         </div>
+        )}
       </div>
     </Modal>
 
@@ -531,7 +539,7 @@ export function DebtTracker({ config }: { config: DebtTrackerConfig }) {
     ...new Map(allSettled.map((d) => [d.friendName.toLowerCase(), d.friendName])).values(),
   ];
 
-  if (summary.length === 0 && settledFriends.length === 0) return null;
+  if (summary.length === 0 && (!config.showSettled || settledFriends.length === 0)) return null;
 
   const grandTotal = summary.reduce((s, f) => s + f.total, 0);
 
@@ -595,7 +603,7 @@ export function DebtTracker({ config }: { config: DebtTrackerConfig }) {
       </Card>
 
       {/* Settled friends section */}
-      {settledFriends.length > 0 && (
+      {config.showSettled && settledFriends.length > 0 && (
         <Card variant="glass" padding="sm">
           <div className="flex items-center -mx-1 px-1">
             <Button
@@ -671,12 +679,14 @@ export function DebtTracker({ config }: { config: DebtTrackerConfig }) {
         onClose={() => setSelectedFriend(null)}
       />
 
-      <FriendDebtsModal
-        config={config}
-        friendName={openSettledFor}
-        onClose={() => setOpenSettledFor(null)}
-        initialShowSettled
-      />
+      {config.showSettled && (
+        <FriendDebtsModal
+          config={config}
+          friendName={openSettledFor}
+          onClose={() => setOpenSettledFor(null)}
+          initialShowSettled
+        />
+      )}
 
       <ConfirmDialog
         open={confirmCleanup}

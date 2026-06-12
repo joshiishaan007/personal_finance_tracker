@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Pencil, Trash2, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, TrendingUp, Undo2, Tag, Users } from 'lucide-react';
+import { Pencil, Trash2, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, TrendingUp, Undo2, RotateCcw, Tag, Users } from 'lucide-react';
 import { fmt, fmtDate, cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInvestments } from '@/hooks/useInvestments';
@@ -53,6 +53,7 @@ export function TransactionDetailModal({ open, onClose, tx, onEdit }: Props) {
   const inv     = t.investmentId ? invMap[t.investmentId] : null;
   const meta    = TYPE_META[t.type as keyof typeof TYPE_META] ?? TYPE_META.expense;
   const Icon    = meta.icon;
+  const isReimbursement = t.type === 'reimbursement';
 
   return (
     <>
@@ -163,25 +164,42 @@ export function TransactionDetailModal({ open, onClose, tx, onEdit }: Props) {
 
           {/* Actions */}
           <div className="flex gap-2 pt-1">
-            <Button
-              variant="secondary"
-              size="sm"
-              className="flex-1"
-              leftIcon={<Pencil size={14} strokeWidth={2.2} />}
-              onClick={() => { onClose(); onEdit(t); }}
-            >
-              Edit
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex-1 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-950/30"
-              leftIcon={<Trash2 size={14} strokeWidth={2.2} />}
-              loading={deleteTx.isPending}
-              onClick={() => setConfirmDelete(true)}
-            >
-              Delete
-            </Button>
+            {isReimbursement ? (
+              // A reimbursement is an auto-recorded repayment — reverting removes it
+              // and returns the related entry to pending under "People owe you".
+              <Button
+                variant="secondary"
+                size="sm"
+                className="flex-1 hover:text-warn-600"
+                leftIcon={<RotateCcw size={14} strokeWidth={2.2} />}
+                loading={deleteTx.isPending}
+                onClick={() => setConfirmDelete(true)}
+              >
+                Revert reimbursement
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="flex-1"
+                  leftIcon={<Pencil size={14} strokeWidth={2.2} />}
+                  onClick={() => { onClose(); onEdit(t); }}
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-1 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-950/30"
+                  leftIcon={<Trash2 size={14} strokeWidth={2.2} />}
+                  loading={deleteTx.isPending}
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  Delete
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </Modal>
@@ -190,8 +208,12 @@ export function TransactionDetailModal({ open, onClose, tx, onEdit }: Props) {
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
         onConfirm={() => deleteTx.mutate(t._id, { onSuccess: onClose })}
-        title="Delete transaction?"
-        description="This transaction will be permanently removed from your records."
+        title={isReimbursement ? 'Revert this reimbursement?' : 'Delete transaction?'}
+        description={isReimbursement
+          ? 'The reimbursement will be removed and the related entry returns to pending under People owe you.'
+          : 'This transaction will be permanently removed from your records.'}
+        confirmLabel={isReimbursement ? 'Revert' : 'Delete'}
+        variant={isReimbursement ? 'warn' : 'danger'}
         loading={deleteTx.isPending}
       />
     </>
