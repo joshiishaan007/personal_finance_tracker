@@ -13,11 +13,23 @@ import { Text } from '@/components/ui/Text';
 import { fmt, cn } from '@/lib/utils';
 import type { CreateTransaction } from '@/shared';
 
+const loadEditor = () => import('./InstantCardsEditor');
+
 // dnd-kit only loads once the user enters edit mode — keeps it off the hot
-// dashboard/transactions render path.
+// dashboard/transactions render path. The loading fallback keeps the row's
+// height stable so the section never collapses while the chunk resolves.
 const InstantCardsEditor = dynamic(
-  () => import('./InstantCardsEditor').then((m) => m.InstantCardsEditor),
-  { ssr: false },
+  () => loadEditor().then((m) => m.InstantCardsEditor),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="skeleton h-[88px] min-w-[80px] rounded-2xl shrink-0" />
+        ))}
+      </div>
+    ),
+  },
 );
 
 const CARD_BOX = 'flex flex-col items-center gap-1 min-w-[80px] max-w-[100px] rounded-2xl px-3 py-2.5 border shrink-0';
@@ -35,6 +47,12 @@ export function InstantCards() {
   const [editing, setEditing] = useState(false);
   const [order, setOrder] = useState<string[]>([]);
   const [cardForm, setCardForm] = useState<{ open: boolean; editCard: InstantCard | null }>({ open: false, editCard: null });
+
+  // Warm the dnd-kit editor chunk in the background once cards exist, so the first
+  // Edit click renders instantly instead of blanking the row while it downloads.
+  useEffect(() => {
+    if (cards && cards.length > 0) void loadEditor();
+  }, [cards]);
 
   // While editing, keep the working order in sync with the live cards: append any
   // newly-added ids, drop deleted ones, preserve the user's arrangement.
