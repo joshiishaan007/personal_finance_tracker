@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Zap, Users, Plus, X, AlertTriangle, CheckCircle2, Clock, HandCoins } from 'lucide-react';
+import { Zap, Users, Plus, X, AlertTriangle, CheckCircle2, Clock, HandCoins, Trash2 } from 'lucide-react';
 import { toMinorUnits, type Currency } from '@/shared';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreateTransaction, useUpdateTransaction, useDeleteTransaction } from '@/hooks/useTransactions';
-import { useCreateInstantCard } from '@/hooks/useInstantCards';
+import { useCreateInstantCard, useUpdateInstantCard, useDeleteInstantCard, type InstantCard } from '@/hooks/useInstantCards';
 import { useCreateDebts, useUpdateDebt, useTransactionDebts, useDebtSummary } from '@/hooks/useDebts';
 import { useInvestments } from '@/hooks/useInvestments';
 import type { CreateTransaction, CreateDebt } from '@/shared';
@@ -51,6 +51,10 @@ interface Props {
   categories: Category[];
   // Pre-fill for a fresh transaction (e.g. natural-language quick-add); ignored when editing.
   prefill?: Partial<FormValues> | null;
+  // Instant-card editor mode — the form creates/updates an InstantCard and NEVER
+  // a transaction. Used by the instant-cards tray's Add and per-card Edit.
+  cardMode?: boolean;
+  editCard?: InstantCard | null;
 }
 
 const PAYMENT_METHODS = [
@@ -63,7 +67,7 @@ const PAYMENT_METHODS = [
   { value: 'other', label: 'Other' },
 ];
 
-export function TransactionForm({ open, onClose, editTx, categories, prefill }: Props) {
+export function TransactionForm({ open, onClose, editTx, categories, prefill, cardMode = false, editCard = null }: Props) {
   const { user } = useAuth();
   const currency = user?.currency ?? 'INR';
 
@@ -77,9 +81,13 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
   const updateTx    = useUpdateTransaction(editTx?._id ?? '');
   const deleteTx    = useDeleteTransaction();
   const createCard  = useCreateInstantCard();
+  const updateCard  = useUpdateInstantCard();
+  const deleteCard  = useDeleteInstantCard();
   const createDebts = useCreateDebts();
   const updateDebt  = useUpdateDebt();
-  const isPending   = editTx ? updateTx.isPending : oweMode ? createDebts.isPending : createTx.isPending;
+  const isPending   = cardMode
+    ? (editCard ? updateCard.isPending : createCard.isPending)
+    : editTx ? updateTx.isPending : oweMode ? createDebts.isPending : createTx.isPending;
 
   // Existing debts linked to the transaction being edited.
   const { data: txDebts = [] } = useTransactionDebts(editTx?._id);
@@ -107,7 +115,21 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
   }, [selectedType]);
 
   useEffect(() => {
-    if (editTx) {
+    const today = new Date().toISOString().split('T')[0];
+    if (cardMode) {
+      reset(editCard
+        ? {
+            amount: editCard.amount / 100,
+            type: editCard.type as FormValues['type'],
+            categoryId: editCard.categoryId,
+            date: today,
+            note: editCard.note ?? '',
+            paymentMethod: editCard.paymentMethod as FormValues['paymentMethod'],
+            tags: editCard.tags.join(', '),
+            investmentId: '',
+          }
+        : { type: 'expense', date: today, paymentMethod: 'cash' });
+    } else if (editTx) {
       reset({
         amount: editTx.amount / 100,
         type: editTx.type as FormValues['type'],
@@ -121,7 +143,7 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
     } else {
       reset({
         type: 'expense',
-        date: new Date().toISOString().split('T')[0],
+        date: today,
         paymentMethod: 'cash',
         ...prefill,
       });
@@ -130,7 +152,7 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
     setSaveAsCard(false);
     setOweMode(false);
     setOweName('');
-  }, [editTx, reset, open, prefill]);
+  }, [editTx, editCard, cardMode, reset, open, prefill]);
 
   // ── Amount validation ──────────────────────────────────────────────────────
   const txAmountMinor = toMinorUnits(Number(watchedAmount) || 0, currency as Currency);
@@ -185,6 +207,21 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
   }
 
   function onSubmit(values: FormValues) {
+    // Instant-card editor: create/update a card only — never a transaction.
+    if (cardMode) {
+      const cardData = {
+        amount:        toMinorUnits(values.amount, currency as Currency),
+        type:          values.type,
+        categoryId:    values.categoryId,
+        paymentMethod: values.paymentMethod,
+        note:          values.note,
+        tags:          values.tags ? values.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
+      };
+      if (editCard) updateCard.mutate({ id: editCard._id, data: cardData }, { onSuccess: onClose });
+      else createCard.mutate(cardData, { onSuccess: onClose });
+      return;
+    }
+
     if (splitOverflow) return; // blocked by UI already, belt-and-suspenders
 
     // "I owe someone": no money has left your account yet, so create a borrow debt
@@ -262,21 +299,46 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
     }
   }
 
-  const showSplits = (selectedType === 'expense' || selectedType === 'transfer') && !oweMode;
-  const showOweToggle = selectedType === 'expense';
+  const showSplits = (selectedType === 'expense' || selectedType === 'transfer') && !oweMode && !cardMode;
+  const showOweToggle = selectedType === 'expense' && !cardMode;
+
+  const title = cardMode
+    ? (editCard ? 'Edit instant card' : 'New instant card')
+    : editTx ? 'Edit Transaction' : 'New Transaction';
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title={editTx ? 'Edit Transaction' : 'New Transaction'}
+      title={title}
       footer={
-        <div className="flex gap-3">
-          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">Cancel</Button>
-          <Button type="submit" form="transaction-form" variant="gradient" loading={isPending} disabled={splitOverflow || (oweMode && !oweName.trim())} className="flex-1">
-            {oweMode ? 'Add what I owe' : editTx ? 'Save Changes' : 'Add Transaction'}
-          </Button>
-        </div>
+        cardMode ? (
+          <div className="flex gap-3">
+            {editCard && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => deleteCard.mutate(editCard._id, { onSuccess: onClose })}
+                loading={deleteCard.isPending}
+                className="hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-950/30"
+                leftIcon={<Trash2 size={16} strokeWidth={2.2} />}
+              >
+                Delete
+              </Button>
+            )}
+            <Button type="button" variant="secondary" onClick={onClose} className="flex-1">Cancel</Button>
+            <Button type="submit" form="transaction-form" variant="gradient" loading={isPending} className="flex-1">
+              {editCard ? 'Save card' : 'Add card'}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex gap-3">
+            <Button type="button" variant="secondary" onClick={onClose} className="flex-1">Cancel</Button>
+            <Button type="submit" form="transaction-form" variant="gradient" loading={isPending} disabled={splitOverflow || (oweMode && !oweName.trim())} className="flex-1">
+              {oweMode ? 'Add what I owe' : editTx ? 'Save Changes' : 'Add Transaction'}
+            </Button>
+          </div>
+        )
       }
     >
       <form id="transaction-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -311,7 +373,7 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
           {...register('categoryId')}
         />
 
-        {isInvestment && (
+        {isInvestment && !cardMode && (
           <Select
             label="Investment wallet (optional)"
             options={[
@@ -322,13 +384,16 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
           />
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <DatePicker
-            label={oweMode ? 'Date money was used' : 'Date'}
-            value={watch('date')}
-            onChange={(v) => setValue('date', v)}
-            error={errors.date?.message}
-          />
+        <div className={cn('grid gap-3', cardMode ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2')}>
+          {/* Instant cards have no date — they apply today's date when used. */}
+          {!cardMode && (
+            <DatePicker
+              label={oweMode ? 'Date money was used' : 'Date'}
+              value={watch('date')}
+              onChange={(v) => setValue('date', v)}
+              error={errors.date?.message}
+            />
+          )}
           <Select
             label="Payment Method"
             options={PAYMENT_METHODS}
@@ -492,8 +557,8 @@ export function TransactionForm({ open, onClose, editTx, categories, prefill }: 
           </div>
         )}
 
-        {/* Instant card toggle — hidden only while tracking a debt */}
-        {!oweMode && (
+        {/* Instant card toggle — hidden while tracking a debt or editing a card */}
+        {!oweMode && !cardMode && (
           <div className="flex items-start gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/60 dark:bg-ink-800/40 px-3 py-2.5">
             <Zap size={15} className="shrink-0 text-brand-500 mt-0.5" />
             <div className="flex-1 min-w-0">
