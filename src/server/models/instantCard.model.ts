@@ -8,6 +8,7 @@ export interface IInstantCard extends Document {
   paymentMethod: string;
   note?: string;
   tags: string[];
+  sortOrder: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,11 +22,12 @@ const instantCardSchema = new Schema<IInstantCard>(
     paymentMethod: { type: String, default: 'cash' },
     note:          String,
     tags:          [String],
+    sortOrder:     { type: Number, default: 0 },
   },
   { timestamps: true },
 );
 
-instantCardSchema.index({ userId: 1, createdAt: -1 });
+instantCardSchema.index({ userId: 1, sortOrder: 1 });
 
 export const InstantCardModel =
   (models.InstantCard as Model<IInstantCard>) || model<IInstantCard>('InstantCard', instantCardSchema);

@@ -10,7 +10,12 @@ export const CreateInstantCardSchema = z.object({
   tags:          z.array(z.string().max(50)).max(10).default([]),
 });
 
+export const ReorderInstantCardsSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1).max(100),
+});
+
 export type CreateInstantCard = z.infer<typeof CreateInstantCardSchema>;
+export type ReorderInstantCards = z.infer<typeof ReorderInstantCardsSchema>;
 
 export interface InstantCardView {
   _id:           string;

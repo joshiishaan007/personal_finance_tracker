@@ -112,9 +112,10 @@ export const ENDPOINTS = {
     detail:  (id: string) => `/api/debts/${id}`,
   },
   instantCards: {
-    list:   '/api/instant-cards',
-    create: '/api/instant-cards',
-    detail: (id: string) => `/api/instant-cards/${id}`,
+    list:    '/api/instant-cards',
+    create:  '/api/instant-cards',
+    reorder: '/api/instant-cards/reorder',
+    detail:  (id: string) => `/api/instant-cards/${id}`,
   },
   export: {
     json: '/api/export/json',

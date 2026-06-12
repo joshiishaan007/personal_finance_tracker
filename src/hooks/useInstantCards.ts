@@ -39,3 +39,11 @@ export function useDeleteInstantCard() {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['instantCards'] }),
   });
 }
+
+export function useReorderInstantCards() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => api.patch(ENDPOINTS.instantCards.reorder, { ids }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['instantCards'] }),
+  });
+}
