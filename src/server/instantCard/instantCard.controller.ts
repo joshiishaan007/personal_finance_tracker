@@ -2,7 +2,7 @@ import { instantCardService as svc } from './instantCard.service';
 import { requireAuth } from '../http/requireAuth';
 import { validateBody } from '../http/validate';
 import { ok, created, fail } from '../http/respond';
-import { CreateInstantCardSchema } from '@/shared';
+import { CreateInstantCardSchema, ReorderInstantCardsSchema } from '@/shared';
 import type { NextRequest } from 'next/server';
 import type { RouteCtx } from '../http/catchRoute';
 
@@ -42,5 +42,11 @@ export const instantCardController = {
     const { userId } = await requireAuth();
     const result = await svc.remove(userId, String(ctx.params.id));
     return result.state === 'ok' ? ok(result.data) : fail(result.reason);
+  },
+
+  async reorder(req: NextRequest) {
+    const { userId } = await requireAuth();
+    const { ids } = validateBody(ReorderInstantCardsSchema, await req.json());
+    return ok(await svc.reorder(userId, ids));
   },
 };
