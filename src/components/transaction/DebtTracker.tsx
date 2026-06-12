@@ -169,19 +169,22 @@ function FriendDebtsModal({ config, friendName, onClose, initialShowSettled = fa
 
   const total = debts.reduce((s, d) => s + d.amount, 0);
 
-  const incomeList  = (categories ?? []).filter((c) => c.type === 'income');
-  const expenseList = (categories ?? []).filter((c) => c.type === 'expense');
+  const incomeList        = (categories ?? []).filter((c) => c.type === 'income');
+  const expenseList       = (categories ?? []).filter((c) => c.type === 'expense');
+  const reimbursementList = (categories ?? []).filter((c) => c.type === 'reimbursement');
   const pickByKeyword = (list: typeof incomeList, keywords: string[]) =>
     keywords.reduce<(typeof list)[number] | undefined>(
       (found, k) => found ?? list.find((c) => c.name.toLowerCase().includes(k)),
       undefined,
     ) ?? list[0];
-  const incomeCat  = pickByKeyword(incomeList, INCOME_KEYWORDS);
-  const expenseCat = pickByKeyword(expenseList, EXPENSE_KEYWORDS);
+  // Repayments TO you file under the Reimbursement category (excluded from the
+  // spending-plan base income); fall back to an income category if not seeded yet.
+  const reimbursementCat = reimbursementList[0] ?? pickByKeyword(incomeList, INCOME_KEYWORDS);
+  const expenseCat       = pickByKeyword(expenseList, EXPENSE_KEYWORDS);
 
   // Resolve the category the settlement transaction should use.
   function settleCategoryId(d: DebtView): string | undefined {
-    if (noun === 'income') return incomeCat?._id;
+    if (noun === 'income') return reimbursementCat?._id;
     return d.categoryId ?? expenseCat?._id;
   }
 
@@ -248,7 +251,7 @@ function FriendDebtsModal({ config, friendName, onClose, initialShowSettled = fa
     }
   }
 
-  const hasSettleCategory = noun === 'income' ? !!incomeCat : (!!expenseCat || debts.some((d) => d.categoryId));
+  const hasSettleCategory = noun === 'income' ? !!reimbursementCat : (!!expenseCat || debts.some((d) => d.categoryId));
 
   return (
     <>

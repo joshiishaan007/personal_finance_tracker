@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Plus, Trash2, AlertTriangle, SplitSquareHorizontal } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import type { AllocationBucket, BucketComputed } from '@/shared';
 import { useCategories } from '@/hooks/useCategories';
 import { useUpdateSpendingPlan } from '@/hooks/useSpendingPlan';
@@ -234,20 +233,6 @@ export function PlanEditor({ open, onClose, buckets: initial, assignments: initi
             </div>
           )}
         </section>
-
-        <div className="flex gap-3 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            onClick={onSave}
-            loading={update.isPending}
-            className={cn('flex-1')}
-          >
-            Save plan
-          </Button>
-        </div>
       </div>
     </Modal>
   );

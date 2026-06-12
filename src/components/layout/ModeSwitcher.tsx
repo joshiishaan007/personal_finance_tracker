@@ -37,7 +37,9 @@ export function ModeSwitcher({ className }: { className?: string }) {
             className="min-h-0 flex-1 gap-1.5 py-1.5"
           >
             <Icon size={15} strokeWidth={2.4} />
-            <Text as="span" className="text-sm font-medium text-current">{opt.label}</Text>
+            {/* cn() is a plain join (no tw-merge), so Text's default slate color would
+                win over the gradient's white — force white on the active pill. */}
+            <Text as="span" className={cn('text-sm font-medium', active ? '!text-white' : 'text-current')}>{opt.label}</Text>
           </Button>
         );
       })}

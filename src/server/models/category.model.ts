@@ -5,7 +5,7 @@ export interface ICategory extends Document {
   name: string;
   icon: string;
   color: string;
-  type: 'income' | 'expense' | 'transfer' | 'investment';
+  type: 'income' | 'expense' | 'transfer' | 'investment' | 'reimbursement';
   parentCategoryId?: Types.ObjectId;
   isDefault: boolean;
   monthlyBudget?: number;
@@ -19,7 +19,7 @@ const categorySchema = new Schema<ICategory>({
   name: { type: String, required: true },
   icon: { type: String, default: '📦' },
   color: { type: String, default: '#6B7280' },
-  type: { type: String, enum: ['income', 'expense', 'transfer', 'investment'], required: true },
+  type: { type: String, enum: ['income', 'expense', 'transfer', 'investment', 'reimbursement'], required: true },
   parentCategoryId: { type: Schema.Types.ObjectId, ref: 'Category' },
   isDefault: { type: Boolean, default: false },
   monthlyBudget: Number,

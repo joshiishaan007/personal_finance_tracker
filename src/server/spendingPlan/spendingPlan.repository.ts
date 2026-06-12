@@ -16,12 +16,27 @@ export const spendingPlanRepository = {
       { upsert: true, new: true },
     ).lean(),
 
-  // Income rows for the cycle resolver (last ~180 days).
-  recentIncomes: (userId: string, since: Date) =>
+  // Income rows for the cycle resolver. Reimbursement-category income (money
+  // repaid to you) is excluded so it doesn't inflate the plan's base income.
+  recentIncomes: (userId: string, since: Date, excludeCategoryIds: Types.ObjectId[] = []) =>
     TransactionModel.find(
-      { userId, type: 'income', date: { $gte: since } },
+      {
+        userId,
+        type: 'income',
+        date: { $gte: since },
+        ...(excludeCategoryIds.length ? { categoryId: { $nin: excludeCategoryIds } } : {}),
+      },
       { date: 1, amount: 1 },
     ).lean(),
+
+  // Reimbursement-type category ids (user-owned + global defaults).
+  reimbursementCategoryIds: async (userId: string): Promise<Types.ObjectId[]> => {
+    const cats = await CategoryModel.find(
+      { type: 'reimbursement', $or: [{ userId }, { isDefault: true, userId: { $exists: false } }] },
+      { _id: 1 },
+    ).lean<{ _id: Types.ObjectId }[]>();
+    return cats.map((c) => c._id);
+  },
 
   // This-cycle outflow grouped by category (expense + investment count as "used").
   spendByCategory: (userId: string, start: Date, end: Date): Promise<Array<{ _id: unknown; total: number }>> =>
