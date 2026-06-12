@@ -4,4 +4,5 @@ import { instantCardController as c } from '@/server/instantCard/instantCard.con
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+export const PATCH = catchRoute(c.update);
 export const DELETE = catchRoute(c.remove);

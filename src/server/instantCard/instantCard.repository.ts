@@ -1,5 +1,5 @@
 import { InstantCardModel } from '../models/instantCard.model';
-import type { CreateInstantCard } from '@/shared';
+import type { CreateInstantCard, UpdateInstantCard } from '@/shared';
 
 export const instantCardRepository = {
   list: (userId: string) =>
@@ -11,6 +11,9 @@ export const instantCardRepository = {
     const sortOrder = (last?.sortOrder ?? -1) + 1;
     return InstantCardModel.create({ ...data, userId, sortOrder });
   },
+
+  update: (userId: string, id: string, data: UpdateInstantCard) =>
+    InstantCardModel.findOneAndUpdate({ _id: id, userId }, { $set: data }, { new: true }).lean().exec(),
 
   remove: (userId: string, id: string) =>
     InstantCardModel.findOneAndDelete({ _id: id, userId }).lean().exec(),
