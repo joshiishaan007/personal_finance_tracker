@@ -10,6 +10,7 @@ const CONFIG: DebtTrackerConfig = {
   icon:              HandCoins,
   emptyText:         'All paid up!',
   settleTxType:      'expense',
+  showSettled:       true,
   markLabel:         'Mark done',
   markQuestion:      'Mark as done?',
   markAllLabel:      'Mark all done',

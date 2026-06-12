@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Search, Plus, Pencil, Trash2, Receipt,
-  ArrowDownLeft, ArrowUpRight, ArrowLeftRight, TrendingUp, Undo2,
+  ArrowDownLeft, ArrowUpRight, ArrowLeftRight, TrendingUp, Undo2, RotateCcw,
   type LucideIcon,
 } from 'lucide-react';
 import { fmt, fmtDate, cn } from '@/lib/utils';
@@ -264,24 +264,40 @@ export function TransactionsView() {
                         {amountSign(tx.type)}{fmt(tx.amount, currency)}
                       </Text>
                       <div className="flex gap-1 transition-opacity sm:opacity-0 sm:group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="px-2"
-                          onClick={() => { setEditTx(tx); setFormOpen(true); }}
-                          aria-label="Edit transaction"
-                        >
-                          <Pencil size={15} strokeWidth={2.2} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="px-2 hover:text-danger-500"
-                          onClick={() => setDeleteId(tx._id)}
-                          aria-label="Delete transaction"
-                        >
-                          <Trash2 size={15} strokeWidth={2.2} />
-                        </Button>
+                        {tx.type === 'reimbursement' ? (
+                          // Reverting a reimbursement = remove it; the linked entry returns to pending.
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="px-2 hover:text-warn-500"
+                            onClick={() => setDeleteId(tx._id)}
+                            aria-label="Revert reimbursement"
+                            title="Revert reimbursement"
+                          >
+                            <RotateCcw size={15} strokeWidth={2.2} />
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="px-2"
+                              onClick={() => { setEditTx(tx); setFormOpen(true); }}
+                              aria-label="Edit transaction"
+                            >
+                              <Pencil size={15} strokeWidth={2.2} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="px-2 hover:text-danger-500"
+                              onClick={() => setDeleteId(tx._id)}
+                              aria-label="Delete transaction"
+                            >
+                              <Trash2 size={15} strokeWidth={2.2} />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </Card>
                     </div>
@@ -303,8 +319,12 @@ export function TransactionsView() {
         open={!!deleteId}
         onClose={() => setDeleteId(null)}
         onConfirm={() => deleteTx.mutate(deleteId!)}
-        title="Delete transaction?"
-        description="This transaction will be permanently removed from your records."
+        title={items.find((t) => t._id === deleteId)?.type === 'reimbursement' ? 'Revert this reimbursement?' : 'Delete transaction?'}
+        description={items.find((t) => t._id === deleteId)?.type === 'reimbursement'
+          ? 'The reimbursement will be removed and the related entry returns to pending under People owe you.'
+          : 'This transaction will be permanently removed from your records.'}
+        confirmLabel={items.find((t) => t._id === deleteId)?.type === 'reimbursement' ? 'Revert' : 'Delete'}
+        variant={items.find((t) => t._id === deleteId)?.type === 'reimbursement' ? 'warn' : 'danger'}
         loading={deleteTx.isPending}
       />
 

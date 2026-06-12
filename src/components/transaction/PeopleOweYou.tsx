@@ -10,6 +10,8 @@ const CONFIG: DebtTrackerConfig = {
   icon:              Users,
   emptyText:         'All settled up!',
   settleTxType:      'reimbursement',
+  // Settled entries are reverted from their reimbursement transaction in the feed.
+  showSettled:       false,
   markLabel:         'Mark settled',
   markQuestion:      'Mark as settled?',
   markAllLabel:      'Settle all',
