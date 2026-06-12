@@ -3,7 +3,7 @@ import { Schema, model, Document, Types, Model, models } from 'mongoose';
 export interface ITransaction extends Document {
   userId: Types.ObjectId;
   amount: number;
-  type: 'income' | 'expense' | 'transfer' | 'investment';
+  type: 'income' | 'expense' | 'transfer' | 'investment' | 'reimbursement';
   categoryId: Types.ObjectId;
   subcategoryId?: Types.ObjectId;
   tags: string[];
@@ -27,7 +27,7 @@ export interface ITransaction extends Document {
 const transactionSchema = new Schema<ITransaction>({
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   amount: { type: Number, required: true },
-  type: { type: String, enum: ['income', 'expense', 'transfer', 'investment'], required: true },
+  type: { type: String, enum: ['income', 'expense', 'transfer', 'investment', 'reimbursement'], required: true },
   categoryId: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
   subcategoryId: { type: Schema.Types.ObjectId, ref: 'Category' },
   tags: { type: [String], default: [] },

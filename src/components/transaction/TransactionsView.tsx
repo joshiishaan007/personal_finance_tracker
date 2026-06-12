@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Search, Plus, Pencil, Trash2, Receipt,
-  ArrowDownLeft, ArrowUpRight, ArrowLeftRight, TrendingUp,
+  ArrowDownLeft, ArrowUpRight, ArrowLeftRight, TrendingUp, Undo2,
   type LucideIcon,
 } from 'lucide-react';
 import { fmt, fmtDate, cn } from '@/lib/utils';
@@ -29,7 +29,7 @@ import { QuickAddBar } from '@/components/transaction/QuickAddBar';
 import { InstantCards } from '@/components/transaction/InstantCards';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
-type TxType = 'income' | 'expense' | 'transfer' | 'investment';
+type TxType = 'income' | 'expense' | 'transfer' | 'investment' | 'reimbursement';
 type Tone = 'success' | 'danger' | 'aqua' | 'brand';
 
 const TYPE_PILLS: { value: string; label: string }[] = [
@@ -38,6 +38,7 @@ const TYPE_PILLS: { value: string; label: string }[] = [
   { value: 'expense', label: 'Expense' },
   { value: 'transfer', label: 'Transfer' },
   { value: 'investment', label: 'Investment' },
+  { value: 'reimbursement', label: 'Reimbursement' },
 ];
 
 const TYPE_META: Record<TxType, { icon: LucideIcon; tone: Tone }> = {
@@ -45,16 +46,18 @@ const TYPE_META: Record<TxType, { icon: LucideIcon; tone: Tone }> = {
   expense: { icon: ArrowUpRight, tone: 'danger' },
   transfer: { icon: ArrowLeftRight, tone: 'aqua' },
   investment: { icon: TrendingUp, tone: 'brand' },
+  reimbursement: { icon: Undo2, tone: 'aqua' },
 };
 
 function amountClass(type: string): string {
   if (type === 'income') return 'text-success-600 dark:text-success-400';
   if (type === 'expense') return 'text-danger-600 dark:text-danger-400';
+  if (type === 'reimbursement') return 'text-aqua-600 dark:text-aqua-400';
   return 'text-slate-700 dark:text-slate-200';
 }
 
 function amountSign(type: string): string {
-  if (type === 'income') return '+';
+  if (type === 'income' || type === 'reimbursement') return '+';
   if (type === 'expense') return '-';
   return '';
 }
@@ -127,7 +130,7 @@ export function TransactionsView() {
   }
 
   const netInView = items.reduce(
-    (s, tx) => (tx.type === 'income' ? s + tx.amount : tx.type === 'expense' ? s - tx.amount : s),
+    (s, tx) => (tx.type === 'income' || tx.type === 'reimbursement' ? s + tx.amount : tx.type === 'expense' ? s - tx.amount : s),
     0,
   );
 

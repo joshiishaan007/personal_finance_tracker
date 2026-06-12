@@ -13,7 +13,7 @@ import { TransactionForm } from '@/components/transaction/TransactionForm';
 
 type Prefill = {
   amount: number;
-  type: 'income' | 'expense' | 'transfer' | 'investment';
+  type: 'income' | 'expense' | 'transfer' | 'investment' | 'reimbursement';
   categoryId: string;
   paymentMethod: 'cash' | 'card' | 'upi' | 'netbanking' | 'wallet' | 'cheque' | 'other';
   note?: string;

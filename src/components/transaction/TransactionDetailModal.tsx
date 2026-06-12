@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Pencil, Trash2, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, TrendingUp, Tag, Users } from 'lucide-react';
+import { Pencil, Trash2, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, TrendingUp, Undo2, Tag, Users } from 'lucide-react';
 import { fmt, fmtDate, cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInvestments } from '@/hooks/useInvestments';
@@ -26,6 +26,7 @@ const TYPE_META = {
   expense:    { icon: ArrowUpRight,  label: 'Expense',    color: 'text-danger-600 dark:text-danger-400',    bg: 'bg-danger-50 dark:bg-danger-950/40',    sign: '-' },
   transfer:   { icon: ArrowLeftRight,label: 'Transfer',   color: 'text-slate-700 dark:text-slate-200',      bg: 'bg-slate-100 dark:bg-ink-800',           sign: ''  },
   investment: { icon: TrendingUp,    label: 'Investment', color: 'text-brand-600 dark:text-brand-400',      bg: 'bg-brand-50 dark:bg-brand-950/40',       sign: ''  },
+  reimbursement: { icon: Undo2,      label: 'Reimbursement', color: 'text-aqua-600 dark:text-aqua-400',   bg: 'bg-aqua-50 dark:bg-aqua-950/40',         sign: '+' },
 };
 
 const PM_LABELS: Record<string, string> = {
