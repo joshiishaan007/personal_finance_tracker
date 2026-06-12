@@ -14,10 +14,12 @@ interface Props extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<Variant, string> = {
-  primary: 'bg-brand-grad text-white shadow-glow hover:brightness-110',
-  gradient: 'bg-aurora bg-[length:200%_200%] text-white shadow-glow hover:animate-gradient-shift',
+  // No glow shadows or filter-based hovers on buttons: the soft halo reads as a
+  // blurry button, and brightness() composites the label (grayscale AA) on hover.
+  primary: 'bg-brand-600 text-white hover:bg-brand-700 shadow-sm',
+  gradient: 'bg-aurora bg-[length:200%_200%] text-white shadow-sm hover:animate-gradient-shift',
   secondary: 'bg-slate-100 dark:bg-ink-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-ink-700',
-  danger: 'bg-danger-500 text-white hover:bg-danger-600 shadow-glow-danger',
+  danger: 'bg-danger-500 text-white hover:bg-danger-600 shadow-sm',
   ghost: 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-ink-800',
 };
 

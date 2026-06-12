@@ -59,7 +59,6 @@ export function QuickAddChips() {
               loading={pendingKey === key}
               disabled={createTx.isPending}
               onClick={() => add(t)}
-              className="bg-white/60 dark:bg-ink-800/60"
             >
               {t.categoryIcon ? `${t.categoryIcon} ` : ''}
               {t.categoryName ?? 'Expense'} · {fmt(t.amount, currency)}

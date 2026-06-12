@@ -145,10 +145,7 @@ export function TasksView() {
             key={f.key}
             size="sm"
             variant={filterKey === f.key ? 'primary' : 'secondary'}
-            className={cn(
-              'px-3 shrink-0',
-              filterKey !== f.key && 'bg-white/60 dark:bg-ink-800/60',
-            )}
+            className="px-3 shrink-0"
             onClick={() => setFilterKey(f.key)}
           >
             {f.label}
