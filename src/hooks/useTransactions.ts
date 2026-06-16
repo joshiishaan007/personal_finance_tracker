@@ -153,6 +153,8 @@ export function useDeleteTransaction() {
       void qc.invalidateQueries({ queryKey: ['engagement'] });
       // Deleting a settlement tx reverts its linked debt to pending server-side.
       void qc.invalidateQueries({ queryKey: ['debts'] });
+      // Deleting an EMI expense drops the linked loan payment.
+      void qc.invalidateQueries({ queryKey: ['loans'] });
       // Deleting an income/expense changes the month's base income and bucket usage.
       void qc.invalidateQueries({ queryKey: ['spendingPlan'] });
     },

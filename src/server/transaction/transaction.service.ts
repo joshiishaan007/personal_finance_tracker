@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
 import { transactionRepository as repo } from './transaction.repository';
 import { debtRepository } from '../debt/debt.repository';
+import { loanRepository } from '../loan/loan.repository';
 import { Ok, Err, type Result } from '../http/result';
 import type { CreateTransaction, UpdateTransaction, TransactionFilter } from '@/shared';
 
@@ -49,6 +50,8 @@ export const transactionService = {
     // settlement link can't dangle.
     await debtRepository.deleteBySourceTx(userId, id);
     await debtRepository.unlinkSettlementTx(userId, id);
+    // Deleting an EMI expense drops the matching loan payment.
+    await loanRepository.unlinkPayment(userId, id);
     return Ok({ deleted: true });
   },
 
