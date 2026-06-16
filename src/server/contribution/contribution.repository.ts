@@ -23,6 +23,22 @@ export const contributionRepository = {
     return rows.map((r) => String(r._id));
   },
 
+  // Per-goal daily totals (user timezone) since `since` — feeds per-goal today
+  // value + streak on the goals home. One row per (goal, day).
+  async recentByGoal(userId: string, since: Date, timezone: string): Promise<{ goalId: string; day: string; value: number }[]> {
+    const rows = await ContributionModel.aggregate([
+      { $match: { userId: new Types.ObjectId(userId), date: { $gte: since } } },
+      {
+        $group: {
+          _id: { goalId: '$goalId', day: { $dateToString: { format: '%Y-%m-%d', date: '$date', timezone } } },
+          value: { $sum: '$value' },
+        },
+      },
+      { $project: { _id: 0, goalId: '$_id.goalId', day: '$_id.day', value: 1 } },
+    ]);
+    return rows.map((r) => ({ goalId: String(r.goalId), day: String(r.day), value: Number(r.value) }));
+  },
+
   // Day-by-day contribution totals for the heatmap.
   // goalId present → sum values per day for that goal.
   // goalId absent  → count contributions per day across all goals.

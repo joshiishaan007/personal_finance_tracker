@@ -14,6 +14,9 @@ export const CreateLifeGoalSchema = z.object({
   status: LifeGoalStatusEnum.default('active'),
   // Measurable goals set targetValue (+ unit); otherwise manualProgress (0–100).
   targetValue: z.number().positive().optional(),
+  // A per-day target (e.g. 15 pages/day) marks this a daily habit: the goals home
+  // shows today's progress + streak and offers one-tap "log today".
+  dailyTarget: z.number().positive().optional(),
   unit: z.string().max(20).optional(),
   currentValue: z.number().min(0).default(0),
   manualProgress: z.number().min(0).max(100).optional(),

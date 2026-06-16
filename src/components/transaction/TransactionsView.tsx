@@ -201,7 +201,7 @@ export function TransactionsView() {
                   key={pill.value || 'all'}
                   size="sm"
                   variant={active ? 'primary' : 'secondary'}
-                  className={cn('shrink-0 px-3', !active && 'bg-white/60 dark:bg-ink-800/60')}
+                  className="shrink-0 px-3"
                   onClick={() => setFilters((f) => ({ ...f, type: pill.value }))}
                 >
                   {pill.label}

@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Flame, Target, ListChecks, CircleAlert, Trophy } from 'lucide-react';
-import { useLifeGoals, useGoalsSummary, lifeGoalProgress, type LifeGoal } from '@/hooks/useLifeGoals';
-import { useContributionHeatmap } from '@/hooks/useContributions';
+import { Plus, Flame, Target, ListChecks, CircleAlert, Trophy, Check } from 'lucide-react';
+import { useLifeGoals, useGoalsSummary, useGoalsToday, lifeGoalProgress, type LifeGoal, type GoalToday } from '@/hooks/useLifeGoals';
+import { useContributionHeatmap, useLogContribution } from '@/hooks/useContributions';
 import { LifeGoalForm } from '@/components/goal-mgmt/LifeGoalForm';
 import { ActivityHeatmap } from '@/components/goal-mgmt/ActivityHeatmap';
 import { Card } from '@/components/ui/Card';
@@ -40,11 +40,25 @@ export function GoalsHomeView() {
   const searchParams = useSearchParams();
   const { data: goals, isLoading } = useLifeGoals();
   const { data: summary } = useGoalsSummary();
+  const { data: today } = useGoalsToday();
+  const logContribution = useLogContribution();
 
   const { from, to } = useHeatmapRange();
   const { data: heatmap } = useContributionHeatmap(from, to);
 
   const [formOpen, setFormOpen] = useState(false);
+  const [loggingId, setLoggingId] = useState<string | null>(null);
+
+  function logToday(goal: LifeGoal) {
+    if (!goal.dailyTarget) return;
+    const remainder = Math.max(goal.dailyTarget - (today?.[goal._id]?.todayValue ?? 0), 0);
+    if (remainder <= 0) return;
+    setLoggingId(goal._id);
+    logContribution.mutate(
+      { goalId: goal._id, value: remainder },
+      { onSettled: () => setLoggingId(null) },
+    );
+  }
 
   useEffect(() => {
     if (searchParams.get('new') === '1') {
@@ -147,7 +161,9 @@ export function GoalsHomeView() {
         <div>
           <Heading level={5} className="mb-3">Active goals</Heading>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {visible.map((g) => <GoalCard key={g._id} goal={g} />)}
+            {visible.map((g) => (
+              <GoalCard key={g._id} goal={g} today={today?.[g._id]} onLog={logToday} logging={loggingId === g._id} />
+            ))}
           </div>
         </div>
       )}
@@ -160,7 +176,9 @@ export function GoalsHomeView() {
             <Heading level={5}>Achieved</Heading>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {achieved.map((g) => <GoalCard key={g._id} goal={g} />)}
+            {achieved.map((g) => (
+              <GoalCard key={g._id} goal={g} today={today?.[g._id]} onLog={logToday} logging={loggingId === g._id} />
+            ))}
           </div>
         </div>
       )}
@@ -170,43 +188,82 @@ export function GoalsHomeView() {
   );
 }
 
-function GoalCard({ goal }: { goal: LifeGoal }) {
-  const pct = lifeGoalProgress(goal);
+interface GoalCardProps {
+  goal: LifeGoal;
+  today?: GoalToday;
+  onLog: (g: LifeGoal) => void;
+  logging: boolean;
+}
+
+const DONE_COLOR = '#22D3A7';
+
+function GoalCard({ goal, today, onLog, logging }: GoalCardProps) {
+  const overallPct = lifeGoalProgress(goal);
+  const isHabit = !!goal.dailyTarget && goal.dailyTarget > 0;
+  const finite = !!goal.targetValue && goal.targetValue > 0;
+  const todayValue = today?.todayValue ?? 0;
+  const streak = today?.streak ?? 0;
+  const dailyDone = isHabit && todayValue >= goal.dailyTarget!;
+  const todayPct = isHabit ? Math.min(100, Math.round((todayValue / goal.dailyTarget!) * 100)) : 0;
+  // Pure habit (no total target) → ring tracks TODAY (always achievable, resets
+  // daily); otherwise the lifetime % toward the total.
+  const ringPct = isHabit && !finite ? todayPct : overallPct;
+  const remainder = isHabit ? Math.max(goal.dailyTarget! - todayValue, 0) : 0;
   const statusVariant = STATUS_VARIANT[goal.status] ?? 'default';
+  const accent = dailyDone ? DONE_COLOR : goal.color;
 
   return (
-    <Link href={`/goals/${goal._id}`} className="no-underline hover:no-underline">
-      <Card interactive className="flex h-full items-center gap-3.5 p-4">
-        <div className="shrink-0">
-          <ProgressRing pct={pct} size={52} color={goal.color} strokeWidth={5} />
+    <Card className="flex h-full flex-col gap-2.5 p-4">
+      <Link href={`/goals/${goal._id}`} className="no-underline hover:no-underline flex items-center gap-3.5">
+        <div className="relative shrink-0">
+          <ProgressRing pct={ringPct} size={52} color={accent} strokeWidth={5} />
+          {dailyDone && (
+            <Check size={18} strokeWidth={3} className="absolute inset-0 m-auto text-success-500" />
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <Text className="truncate text-sm font-semibold text-slate-900 dark:text-slate-50 leading-snug">
             {goal.icon} {goal.title}
           </Text>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
-            <Badge variant={statusVariant} className="text-[10px] px-1.5 py-0.5">
-              {goal.area}
-            </Badge>
-            {goal.targetValue ? (
-              <Text as="span" variant="small" className="tabular-nums text-slate-500">
-                {goal.currentValue}/{goal.targetValue} {goal.unit ?? ''}
+            <Badge variant={statusVariant} className="text-[10px] px-1.5 py-0.5">{goal.area}</Badge>
+            {streak > 0 && (
+              <Text as="span" className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-warn-600 dark:text-warn-400">
+                <Flame size={11} strokeWidth={2.4} /> {streak}
               </Text>
-            ) : pct > 0 ? (
-              <Text as="span" variant="small" className="tabular-nums text-slate-500">
-                {pct}%
-              </Text>
-            ) : null}
+            )}
           </div>
+          <Text as="span" variant="small" className="mt-1 block tabular-nums text-slate-500">
+            {isHabit
+              ? `${todayValue}/${goal.dailyTarget} ${goal.unit ?? ''} today`
+              : finite
+                ? `${goal.currentValue}/${goal.targetValue} ${goal.unit ?? ''}`
+                : overallPct > 0 ? `${overallPct}%` : ''}
+          </Text>
           {/* Thin progress bar */}
           <div className="mt-2 h-1 w-full rounded-full bg-slate-100 dark:bg-ink-700 overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${pct}%`, backgroundColor: goal.color }}
+              style={{ width: `${ringPct}%`, backgroundColor: accent }}
             />
           </div>
         </div>
-      </Card>
-    </Link>
+      </Link>
+
+      {/* One-tap daily log — only for habit goals (those with a daily target) */}
+      {isHabit && (
+        <Button
+          size="sm"
+          variant={dailyDone ? 'secondary' : 'primary'}
+          className="w-full"
+          disabled={dailyDone}
+          loading={logging}
+          leftIcon={dailyDone ? <Check size={14} strokeWidth={2.6} /> : <Plus size={14} strokeWidth={2.6} />}
+          onClick={() => onLog(goal)}
+        >
+          {dailyDone ? 'Done today' : `Log today${remainder ? ` · +${remainder} ${goal.unit ?? ''}` : ''}`}
+        </Button>
+      )}
+    </Card>
   );
 }

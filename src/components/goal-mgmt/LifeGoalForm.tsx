@@ -41,6 +41,7 @@ const FormSchema = z.object({
   color:          z.string().default('#14B8A6'),
   description:    z.string().optional(),
   targetValue:    z.string().optional(),
+  dailyTarget:    z.string().optional(),
   unit:           z.string().optional(),
   manualProgress: z.string().optional(),
   targetDate:     z.string().optional(),
@@ -88,6 +89,7 @@ export function LifeGoalForm({ open, onClose, editGoal }: Props) {
         color:          editGoal.color ?? '#14B8A6',
         description:    editGoal.description ?? '',
         targetValue:    editGoal.targetValue?.toString() ?? '',
+        dailyTarget:    editGoal.dailyTarget?.toString() ?? '',
         unit:           editGoal.unit ?? '',
         manualProgress: editGoal.manualProgress?.toString() ?? '',
         targetDate:     editGoal.targetDate ? editGoal.targetDate.split('T')[0] : '',
@@ -111,6 +113,7 @@ export function LifeGoalForm({ open, onClose, editGoal }: Props) {
       color:          v.color || '#14B8A6',
       description:    v.description || undefined,
       targetValue:    v.targetValue ? Number(v.targetValue) : undefined,
+      dailyTarget:    v.dailyTarget ? Number(v.dailyTarget) : undefined,
       unit:           v.unit || undefined,
       manualProgress: !v.targetValue && v.manualProgress ? Number(v.manualProgress) : undefined,
       targetDate,
@@ -226,6 +229,18 @@ export function LifeGoalForm({ open, onClose, editGoal }: Props) {
               {...register('unit')}
             />
           </div>
+
+          <Input
+            label="Daily target (optional)"
+            type="number"
+            step="any"
+            min="0"
+            placeholder="e.g. 15 — makes this a daily habit"
+            {...register('dailyTarget')}
+          />
+          <Text variant="small" className="-mt-1 text-slate-400">
+            Set a per-day amount to enable one-tap &quot;log today&quot; and a daily streak on the Goals home.
+          </Text>
 
           {!hasTarget && (
             <Input

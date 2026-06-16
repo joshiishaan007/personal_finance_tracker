@@ -15,7 +15,11 @@ const paddingMap = { none: '', sm: 'p-3', md: 'p-4', lg: 'p-6' };
 
 const variantMap: Record<Variant, string> = {
   default: 'bg-white dark:bg-ink-900 border border-slate-200 dark:border-white/[0.07] shadow-card',
-  glass: 'glass shadow-card',
+  // Opaque like default: backdrop-blur on content cards forces GPU compositing,
+  // which degrades text to grayscale antialiasing (blurry). The translucent .glass
+  // utility is reserved for app chrome (sidebar/header/nav) where content scrolls
+  // beneath; content cards must stay crisp.
+  glass: 'bg-white dark:bg-ink-900 border border-slate-200 dark:border-white/[0.07] shadow-card',
   gradient: 'bg-aurora-soft border border-white/50 dark:border-white/10 shadow-card',
   plain: 'bg-white dark:bg-ink-900',
 };

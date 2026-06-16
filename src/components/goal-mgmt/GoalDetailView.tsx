@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Pencil, Trash2, Plus, ListChecks, CalendarDays, TrendingUp } from 'lucide-react';
-import { useLifeGoal, useDeleteLifeGoal, lifeGoalProgress } from '@/hooks/useLifeGoals';
+import { useLifeGoal, useDeleteLifeGoal, useGoalsToday, lifeGoalProgress } from '@/hooks/useLifeGoals';
 import { useContributions, useAddContribution, useDeleteContribution } from '@/hooks/useContributions';
 import { useTasks, useCreateTask, useUpdateTask, useDeleteTask } from '@/hooks/useTasks';
 import { LifeGoalForm } from '@/components/goal-mgmt/LifeGoalForm';
@@ -25,7 +25,7 @@ import { ProgressRing } from '@/components/ProgressRing';
 import { EmptyState } from '@/components/EmptyState';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
-import { fmtDate } from '@/lib/utils';
+import { fmtDate, cn } from '@/lib/utils';
 
 function todayStr() {
   return new Date().toISOString().split('T')[0]!;
@@ -42,6 +42,7 @@ export function GoalDetailView({ goalId }: { goalId: string }) {
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
   const deleteGoal = useDeleteLifeGoal();
+  const { data: goalsToday } = useGoalsToday();
 
   const [editOpen,           setEditOpen]           = useState(false);
   const [confirmDelete,      setConfirmDelete]      = useState(false);
@@ -225,7 +226,25 @@ export function GoalDetailView({ goalId }: { goalId: string }) {
 
       {/* ── Log progress ─────────────────────────────────── */}
       <Card>
-        <Heading level={5} className="mb-3">Log progress</Heading>
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <Heading level={5}>Log progress</Heading>
+          {goal.dailyTarget ? (
+            <Text as="span" variant="small" className="tabular-nums">
+              Today:{' '}
+              <Text
+                as="span"
+                className={cn(
+                  'font-semibold',
+                  (goalsToday?.[goalId]?.todayValue ?? 0) >= goal.dailyTarget
+                    ? 'text-success-600 dark:text-success-500'
+                    : 'text-slate-600 dark:text-slate-300',
+                )}
+              >
+                {goalsToday?.[goalId]?.todayValue ?? 0}/{goal.dailyTarget} {goal.unit ?? ''}
+              </Text>
+            </Text>
+          ) : null}
+        </div>
         <form
           onSubmit={(e) => { e.preventDefault(); logProgress(); }}
           className="space-y-2"

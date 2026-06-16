@@ -10,6 +10,7 @@ export interface ILifeGoal extends Document {
   color: string;
   status: LifeGoalStatus;
   targetValue?: number;
+  dailyTarget?: number;
   unit?: string;
   currentValue: number;
   manualProgress?: number;
@@ -29,6 +30,7 @@ const lifeGoalSchema = new Schema<ILifeGoal>({
   color: { type: String, default: '#14B8A6' },
   status: { type: String, enum: ['active', 'achieved', 'paused', 'archived'], default: 'active' },
   targetValue: Number,
+  dailyTarget: Number,
   unit: String,
   currentValue: { type: Number, default: 0 },
   manualProgress: Number,
