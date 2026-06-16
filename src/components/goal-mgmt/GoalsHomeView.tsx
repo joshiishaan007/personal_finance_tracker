@@ -129,14 +129,7 @@ export function GoalsHomeView() {
       {/* Activity heatmap */}
       {heatmap && (
         <Card>
-          <div className="flex items-center justify-between mb-3">
-            <Heading level={5}>Activity — last 12 months</Heading>
-            {heatmap.days.length > 0 && (
-              <Text variant="small" className="text-slate-400">
-                {heatmap.days.length} active day{heatmap.days.length !== 1 ? 's' : ''}
-              </Text>
-            )}
-          </div>
+          <Heading level={5} className="mb-3">Activity — last 12 months</Heading>
           {heatmap.days.length === 0 ? (
             <Text variant="small" className="text-slate-400">
               Log progress on any goal to see your activity here.
