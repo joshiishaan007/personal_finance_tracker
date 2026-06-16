@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import {
-  Trophy, Medal, Award, Sprout, Download, FileSpreadsheet,
+  Trophy, Medal, Award, Sprout, Download, FileSpreadsheet, FileText,
   CalendarDays, ShieldAlert, Trash2, AlertTriangle, type LucideIcon,
 } from 'lucide-react';
+import { ExportReportDialog } from '@/components/profile/ExportReportDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { ENDPOINTS } from '@/lib/endpoints';
 import { fmtDate } from '@/lib/utils';
@@ -31,6 +32,7 @@ export function ProfileView() {
   const { user, logout } = useAuth();
   const [deleteModal, setDeleteModal] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState('');
+  const [pdfOpen, setPdfOpen] = useState(false);
 
   const exportData = useExportJson();
   const deleteAccount = useDeleteAccount();
@@ -92,6 +94,15 @@ export function ProfileView() {
             </div>
             <Button variant="secondary" size="sm" loading={exportData.isPending} onClick={() => exportData.mutate()} leftIcon={<Download size={15} strokeWidth={2.2} />}>
               Export JSON
+            </Button>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <Text className="font-medium">Profit &amp; loss report</Text>
+              <Text variant="small">PDF for a month or year, with charts</Text>
+            </div>
+            <Button variant="secondary" size="sm" onClick={() => setPdfOpen(true)} leftIcon={<FileText size={15} strokeWidth={2.2} />}>
+              Download PDF
             </Button>
           </div>
           <div className="flex items-center justify-between gap-3">
@@ -160,6 +171,8 @@ export function ProfileView() {
           />
         </div>
       </Modal>
+
+      <ExportReportDialog open={pdfOpen} onClose={() => setPdfOpen(false)} />
     </div>
   );
 }
