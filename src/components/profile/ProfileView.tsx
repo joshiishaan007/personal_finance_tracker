@@ -87,34 +87,35 @@ export function ProfileView() {
           <Heading level={3}>Data &amp; Privacy</Heading>
         </div>
         <div className="space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+            <div className="min-w-0">
               <Text className="font-medium">Export all data</Text>
               <Text variant="small">Download a complete JSON backup</Text>
             </div>
-            <Button variant="secondary" size="sm" loading={exportData.isPending} onClick={() => exportData.mutate()} leftIcon={<Download size={15} strokeWidth={2.2} />}>
+            <Button variant="secondary" size="sm" loading={exportData.isPending} onClick={() => exportData.mutate()} leftIcon={<Download size={15} strokeWidth={2.2} />} className="w-full sm:w-36 shrink-0">
               Export JSON
             </Button>
           </div>
-          <div className="flex items-center justify-between gap-3">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+            <div className="min-w-0">
               <Text className="font-medium">Profit &amp; loss report</Text>
               <Text variant="small">PDF for a month or year, with charts</Text>
             </div>
-            <Button variant="secondary" size="sm" onClick={() => setPdfOpen(true)} leftIcon={<FileText size={15} strokeWidth={2.2} />}>
+            <Button variant="secondary" size="sm" onClick={() => setPdfOpen(true)} leftIcon={<FileText size={15} strokeWidth={2.2} />} className="w-full sm:w-36 shrink-0">
               Download PDF
             </Button>
           </div>
-          <div className="flex items-center justify-between gap-3">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+            <div className="min-w-0">
               <Text className="font-medium">Export transactions</Text>
               <Text variant="small">Download CSV for spreadsheets</Text>
             </div>
-            {/* Full-page download of a server-streamed CSV — a real anchor, not the client router. */}
+            {/* Full-page download of a server-streamed CSV — a real anchor, not the client router.
+                Styled to match the secondary Button (incl. min-height + width) so all three align. */}
             <a
               href={ENDPOINTS.export.transactionsCsv}
               download
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold bg-slate-100 dark:bg-ink-800 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-200 dark:hover:bg-ink-700 active:scale-[0.97] transition-all duration-200"
+              className="inline-flex items-center justify-center gap-1.5 w-full sm:w-36 shrink-0 px-3 py-1.5 min-h-[36px] text-sm font-semibold bg-slate-100 dark:bg-ink-800 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-200 dark:hover:bg-ink-700 active:scale-[0.97] transition-all duration-200"
             >
               <FileSpreadsheet size={15} strokeWidth={2.2} />
               Export CSV
