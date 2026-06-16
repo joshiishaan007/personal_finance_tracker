@@ -11,6 +11,7 @@ export interface ILifeGoal extends Document {
   status: LifeGoalStatus;
   targetValue?: number;
   dailyTarget?: number;
+  trackDays?: number[];
   unit?: string;
   currentValue: number;
   manualProgress?: number;
@@ -31,6 +32,7 @@ const lifeGoalSchema = new Schema<ILifeGoal>({
   status: { type: String, enum: ['active', 'achieved', 'paused', 'archived'], default: 'active' },
   targetValue: Number,
   dailyTarget: Number,
+  trackDays: { type: [Number], default: undefined },
   unit: String,
   currentValue: { type: Number, default: 0 },
   manualProgress: Number,

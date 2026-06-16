@@ -196,6 +196,7 @@ interface GoalCardProps {
 }
 
 const DONE_COLOR = '#22D3A7';
+const REST_COLOR = '#cbd5e1';
 
 function GoalCard({ goal, today, onLog, logging }: GoalCardProps) {
   const overallPct = lifeGoalProgress(goal);
@@ -203,14 +204,17 @@ function GoalCard({ goal, today, onLog, logging }: GoalCardProps) {
   const finite = !!goal.targetValue && goal.targetValue > 0;
   const todayValue = today?.todayValue ?? 0;
   const streak = today?.streak ?? 0;
-  const dailyDone = isHabit && todayValue >= goal.dailyTarget!;
+  // Is the habit scheduled today? (no trackDays = every day)
+  const scheduledToday = !goal.trackDays || goal.trackDays.length === 0 || goal.trackDays.includes(new Date().getDay());
+  const restDay = isHabit && !scheduledToday;
+  const dailyDone = isHabit && scheduledToday && todayValue >= goal.dailyTarget!;
   const todayPct = isHabit ? Math.min(100, Math.round((todayValue / goal.dailyTarget!) * 100)) : 0;
   // Pure habit (no total target) → ring tracks TODAY (always achievable, resets
   // daily); otherwise the lifetime % toward the total.
-  const ringPct = isHabit && !finite ? todayPct : overallPct;
+  const ringPct = restDay ? 0 : isHabit && !finite ? todayPct : overallPct;
   const remainder = isHabit ? Math.max(goal.dailyTarget! - todayValue, 0) : 0;
   const statusVariant = STATUS_VARIANT[goal.status] ?? 'default';
-  const accent = dailyDone ? DONE_COLOR : goal.color;
+  const accent = restDay ? REST_COLOR : dailyDone ? DONE_COLOR : goal.color;
 
   return (
     <Card className="flex h-full flex-col gap-2.5 p-4">
@@ -234,11 +238,13 @@ function GoalCard({ goal, today, onLog, logging }: GoalCardProps) {
             )}
           </div>
           <Text as="span" variant="small" className="mt-1 block tabular-nums text-slate-500">
-            {isHabit
-              ? `${todayValue}/${goal.dailyTarget} ${goal.unit ?? ''} today`
-              : finite
-                ? `${goal.currentValue}/${goal.targetValue} ${goal.unit ?? ''}`
-                : overallPct > 0 ? `${overallPct}%` : ''}
+            {restDay
+              ? 'Rest day'
+              : isHabit
+                ? `${todayValue}/${goal.dailyTarget} ${goal.unit ?? ''} today`
+                : finite
+                  ? `${goal.currentValue}/${goal.targetValue} ${goal.unit ?? ''}`
+                  : overallPct > 0 ? `${overallPct}%` : ''}
           </Text>
           {/* Thin progress bar */}
           <div className="mt-2 h-1 w-full rounded-full bg-slate-100 dark:bg-ink-700 overflow-hidden">
@@ -254,14 +260,14 @@ function GoalCard({ goal, today, onLog, logging }: GoalCardProps) {
       {isHabit && (
         <Button
           size="sm"
-          variant={dailyDone ? 'secondary' : 'primary'}
+          variant={dailyDone || restDay ? 'secondary' : 'primary'}
           className="w-full"
-          disabled={dailyDone}
+          disabled={dailyDone || restDay}
           loading={logging}
-          leftIcon={dailyDone ? <Check size={14} strokeWidth={2.6} /> : <Plus size={14} strokeWidth={2.6} />}
+          leftIcon={dailyDone ? <Check size={14} strokeWidth={2.6} /> : restDay ? undefined : <Plus size={14} strokeWidth={2.6} />}
           onClick={() => onLog(goal)}
         >
-          {dailyDone ? 'Done today' : `Log today${remainder ? ` · +${remainder} ${goal.unit ?? ''}` : ''}`}
+          {restDay ? 'Rest day' : dailyDone ? 'Done today' : `Log today${remainder ? ` · +${remainder} ${goal.unit ?? ''}` : ''}`}
         </Button>
       )}
     </Card>

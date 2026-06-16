@@ -20,6 +20,34 @@ function dayStr(date: Date, timezone: string): string {
 
 const DAY_MS = 86_400_000;
 
+function weekdayOf(day: string): number {
+  return new Date(`${day}T00:00:00Z`).getUTCDay();
+}
+function prevDay(day: string): string {
+  const d = new Date(`${day}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
+// Per-goal streak that respects a weekday schedule: only scheduled days must be
+// logged; non-scheduled (rest) days are skipped and never break the streak. With
+// no schedule it behaves like the all-days streak (today unlogged is a grace day).
+function scheduledStreak(logged: Set<string>, todayStr: string, trackDays?: number[]): number {
+  const scheduled = trackDays && trackDays.length ? new Set(trackDays) : null;
+  let cursor = todayStr;
+  let streak = 0;
+  for (let i = 0; i < 400; i++) {
+    const due = !scheduled || scheduled.has(weekdayOf(cursor));
+    if (due) {
+      if (logged.has(cursor)) streak += 1;
+      else if (cursor !== todayStr) break; // a past due day was missed
+      // today not yet logged → grace: skip without breaking
+    }
+    cursor = prevDay(cursor);
+  }
+  return streak;
+}
+
 export const lifeGoalService = {
   list: (userId: string) => repo.list(userId),
 
@@ -77,14 +105,17 @@ export const lifeGoalService = {
   async today(userId: string): Promise<{ goalId: string; todayValue: number; streak: number }[]> {
     const { timezone } = await engagementRepository.userMeta(userId);
     const now = new Date();
-    const rows = await contributionRepository.recentByGoal(userId, new Date(now.getTime() - 400 * DAY_MS), timezone);
+    const [rows, goals] = await Promise.all([
+      contributionRepository.recentByGoal(userId, new Date(now.getTime() - 400 * DAY_MS), timezone),
+      repo.list(userId),
+    ]);
+    const trackByGoal = new Map(goals.map((g) => [String(g._id), g.trackDays]));
     const today = dayStr(now, timezone);
-    const yesterday = dayStr(new Date(now.getTime() - DAY_MS), timezone);
 
-    const byGoal = new Map<string, { days: string[]; todayValue: number }>();
+    const byGoal = new Map<string, { days: Set<string>; todayValue: number }>();
     for (const r of rows) {
-      const e = byGoal.get(r.goalId) ?? { days: [], todayValue: 0 };
-      e.days.push(r.day);
+      const e = byGoal.get(r.goalId) ?? { days: new Set<string>(), todayValue: 0 };
+      e.days.add(r.day);
       if (r.day === today) e.todayValue = r.value;
       byGoal.set(r.goalId, e);
     }
@@ -92,7 +123,7 @@ export const lifeGoalService = {
     return [...byGoal.entries()].map(([goalId, e]) => ({
       goalId,
       todayValue: e.todayValue,
-      streak: computeStreak(e.days, today, yesterday),
+      streak: scheduledStreak(e.days, today, trackByGoal.get(goalId) ?? undefined),
     }));
   },
 };

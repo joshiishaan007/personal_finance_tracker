@@ -17,6 +17,9 @@ export const CreateLifeGoalSchema = z.object({
   // A per-day target (e.g. 15 pages/day) marks this a daily habit: the goals home
   // shows today's progress + streak and offers one-tap "log today".
   dailyTarget: z.number().positive().optional(),
+  // Weekdays the habit is scheduled on (0=Sun … 6=Sat). Empty/undefined = every
+  // day. Non-scheduled days are "rest days" and don't break the streak.
+  trackDays: z.array(z.number().int().min(0).max(6)).max(7).optional(),
   unit: z.string().max(20).optional(),
   currentValue: z.number().min(0).default(0),
   manualProgress: z.number().min(0).max(100).optional(),
