@@ -39,6 +39,12 @@ export const ENDPOINTS = {
     create: '/api/investments',
     detail: (id: string) => `/api/investments/${id}`,
   },
+  loans: {
+    list:    '/api/loans',
+    create:  '/api/loans',
+    detail:  (id: string) => `/api/loans/${id}`,
+    payment: (id: string) => `/api/loans/${id}/payment`,
+  },
   grossPL: {
     list: '/api/gross-pl',
     create: '/api/gross-pl',

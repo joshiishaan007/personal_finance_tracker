@@ -15,6 +15,7 @@ export interface LifeGoal {
   status: LifeGoalStatus;
   targetValue?: number;
   dailyTarget?: number;
+  trackDays?: number[];
   unit?: string;
   currentValue: number;
   manualProgress?: number;

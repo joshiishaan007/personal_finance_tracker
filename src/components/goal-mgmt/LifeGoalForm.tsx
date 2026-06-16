@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,6 +26,13 @@ const AREAS: { value: string; emoji: string; label: string }[] = [
   { value: 'relationships', emoji: '🤝', label: 'Relations' },
   { value: 'other',         emoji: '🎯', label: 'Other'     },
 ];
+
+// Mon-first display; values are JS weekday numbers (0=Sun … 6=Sat).
+const WEEKDAYS: { value: number; label: string }[] = [
+  { value: 1, label: 'M' }, { value: 2, label: 'T' }, { value: 3, label: 'W' },
+  { value: 4, label: 'T' }, { value: 5, label: 'F' }, { value: 6, label: 'S' }, { value: 0, label: 'S' },
+];
+const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
 
 const STATUS_OPTIONS = [
   { value: 'active',   label: 'Active'   },
@@ -72,6 +79,9 @@ export function LifeGoalForm({ open, onClose, editGoal }: Props) {
   const update = useUpdateLifeGoal(editGoal?._id ?? '');
   const isPending = editGoal ? update.isPending : create.isPending;
 
+  // Weekday schedule (only meaningful for daily habits). Default: every day.
+  const [trackDays, setTrackDays] = useState<number[]>(ALL_DAYS);
+
   const {
     register, handleSubmit, reset, watch, setValue,
     formState: { errors },
@@ -98,11 +108,17 @@ export function LifeGoalForm({ open, onClose, editGoal }: Props) {
     } else {
       reset({ area: 'personal', icon: '🎯', color: '#14B8A6', status: 'active', title: '', description: '' });
     }
+    setTrackDays(editGoal?.trackDays?.length ? editGoal.trackDays : ALL_DAYS);
   }, [editGoal, reset, open]);
 
   const currentColor = watch('color') ?? '#14B8A6';
   const currentArea  = watch('area');
   const hasTarget    = !!watch('targetValue');
+  const hasDaily     = !!watch('dailyTarget');
+
+  function toggleDay(d: number) {
+    setTrackDays((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]));
+  }
 
   function onSubmit(v: FormValues) {
     const targetDate = v.targetDate ? new Date(v.targetDate).toISOString() : undefined;
@@ -114,6 +130,11 @@ export function LifeGoalForm({ open, onClose, editGoal }: Props) {
       description:    v.description || undefined,
       targetValue:    v.targetValue ? Number(v.targetValue) : undefined,
       dailyTarget:    v.dailyTarget ? Number(v.dailyTarget) : undefined,
+      // Only persist a schedule when it's a daily habit on a strict subset of days;
+      // every-day (or no daily target) → undefined.
+      trackDays:      v.dailyTarget && trackDays.length > 0 && trackDays.length < 7
+        ? [...trackDays].sort((a, b) => a - b)
+        : undefined,
       unit:           v.unit || undefined,
       manualProgress: !v.targetValue && v.manualProgress ? Number(v.manualProgress) : undefined,
       targetDate,
@@ -241,6 +262,39 @@ export function LifeGoalForm({ open, onClose, editGoal }: Props) {
           <Text variant="small" className="-mt-1 text-slate-400">
             Set a per-day amount to enable one-tap &quot;log today&quot; and a daily streak on the Goals home.
           </Text>
+
+          {hasDaily && (
+            <div>
+              <Text as="span" className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
+                Track on
+              </Text>
+              <div className="flex flex-wrap gap-1.5">
+                {WEEKDAYS.map((d, i) => {
+                  const active = trackDays.includes(d.value);
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => toggleDay(d.value)}
+                      aria-pressed={active}
+                      className={cn(
+                        'h-9 w-9 rounded-full text-sm font-semibold transition-all select-none',
+                        active
+                          ? 'text-white'
+                          : 'bg-slate-100 dark:bg-ink-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200',
+                      )}
+                      style={active ? { backgroundColor: currentColor } : undefined}
+                    >
+                      {d.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <Text variant="small" className="mt-1.5 text-slate-400">
+                {trackDays.length === 0 || trackDays.length === 7 ? 'Every day' : `${trackDays.length} days/week · rest days won't break your streak`}
+              </Text>
+            </div>
+          )}
 
           {!hasTarget && (
             <Input

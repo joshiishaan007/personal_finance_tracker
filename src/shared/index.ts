@@ -17,6 +17,7 @@ export * from './schemas/spendingPlan.schema';
 export * from './schemas/investment.schema';
 export * from './schemas/instantCard.schema';
 export * from './schemas/debt.schema';
+export * from './schemas/loan.schema';
 export * from './schemas/grossPL.schema';
 export * from './types/common';
 export * from './types/api';

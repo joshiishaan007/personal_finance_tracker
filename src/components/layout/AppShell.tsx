@@ -10,6 +10,7 @@ import {
   ListChecks,
   Wallet,
   Landmark,
+  Banknote,
   TrendingUp,
   PieChart,
   LineChart,
@@ -57,6 +58,7 @@ const FINANCE_PRIMARY: NavItem[] = [
 const FINANCE_MORE: NavItem[] = [
   { to: '/spending-plan', label: 'Spending Plan', icon: PieChart },
   { to: '/investments', label: 'Investments', icon: LineChart },
+  { to: '/loans', label: 'Loans', icon: Banknote },
   { to: '/budgets', label: 'Budgets', icon: Wallet },
   { to: '/net-worth', label: 'Net Worth', icon: Landmark },
   { to: '/pl', label: 'P&L', icon: TrendingUp },
@@ -91,6 +93,7 @@ function isMatch(pathname: string, to: string): boolean {
 function resolveFab(mode: AppMode, pathname: string): { href: string; label: string } {
   if (mode === 'goals') return { href: '/goals?new=1', label: 'Add goal' };
   if (isMatch(pathname, '/investments')) return { href: '/investments?new=1', label: 'Add investment' };
+  if (isMatch(pathname, '/loans')) return { href: '/loans?new=1', label: 'Add loan' };
   if (isMatch(pathname, '/spending-plan')) return { href: '/spending-plan?new=income', label: 'Add income' };
   return { href: '/transactions?new=1', label: 'Add transaction' };
 }
