@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Flame, Target, ListChecks, CircleAlert, Trophy, Check } from 'lucide-react';
+import { Plus, Flame, Target, ListChecks, CircleAlert, Trophy, TrendingUp, Check } from 'lucide-react';
 import { useLifeGoals, useGoalsSummary, useGoalsToday, lifeGoalProgress, type LifeGoal, type GoalToday } from '@/hooks/useLifeGoals';
 import { useContributionHeatmap, useLogContribution } from '@/hooks/useContributions';
 import { LifeGoalForm } from '@/components/goal-mgmt/LifeGoalForm';
@@ -102,7 +102,12 @@ export function GoalsHomeView() {
         </Card>
 
         <Card padding="md" className="flex items-center gap-3">
-          <ProgressRing pct={summary?.overallProgress ?? 0} size={40} strokeWidth={5} />
+          <ProgressRing
+            pct={summary?.overallProgress ?? 0}
+            size={40}
+            strokeWidth={5}
+            center={<TrendingUp size={15} strokeWidth={2.6} className="text-brand-500" />}
+          />
           <div>
             <Text className="text-xl font-bold tabular-nums leading-tight">{summary?.overallProgress ?? 0}%</Text>
             <Text variant="small">overall progress</Text>
@@ -188,7 +193,6 @@ interface GoalCardProps {
   logging: boolean;
 }
 
-const DONE_COLOR = '#22D3A7';
 const REST_COLOR = '#cbd5e1';
 
 function GoalCard({ goal, today, onLog, logging }: GoalCardProps) {
@@ -207,16 +211,14 @@ function GoalCard({ goal, today, onLog, logging }: GoalCardProps) {
   const ringPct = restDay ? 0 : isHabit && !finite ? todayPct : overallPct;
   const remainder = isHabit ? Math.max(goal.dailyTarget! - todayValue, 0) : 0;
   const statusVariant = STATUS_VARIANT[goal.status] ?? 'default';
-  const accent = restDay ? REST_COLOR : dailyDone ? DONE_COLOR : goal.color;
+  // Keep the goal's own colour; completion is signalled by the ring's tick.
+  const accent = restDay ? REST_COLOR : goal.color;
 
   return (
     <Card className="flex h-full flex-col gap-2.5 p-4">
       <Link href={`/goals/${goal._id}`} className="no-underline hover:no-underline flex items-center gap-3.5">
-        <div className="relative shrink-0">
+        <div className="shrink-0">
           <ProgressRing pct={ringPct} size={52} color={accent} strokeWidth={5} />
-          {dailyDone && (
-            <Check size={18} strokeWidth={3} className="absolute inset-0 m-auto text-success-500" />
-          )}
         </div>
         <div className="min-w-0 flex-1">
           <Text className="truncate text-sm font-semibold text-slate-900 dark:text-slate-50 leading-snug">
