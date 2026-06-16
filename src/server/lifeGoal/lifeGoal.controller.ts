@@ -41,4 +41,9 @@ export const lifeGoalController = {
     const { userId } = await requireAuth();
     return ok(await svc.summary(userId));
   },
+
+  async today() {
+    const { userId } = await requireAuth();
+    return ok(await svc.today(userId));
+  },
 };

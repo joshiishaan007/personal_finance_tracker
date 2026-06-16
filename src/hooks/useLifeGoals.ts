@@ -14,11 +14,18 @@ export interface LifeGoal {
   color: string;
   status: LifeGoalStatus;
   targetValue?: number;
+  dailyTarget?: number;
   unit?: string;
   currentValue: number;
   manualProgress?: number;
   targetDate?: string;
   createdAt: string;
+}
+
+export interface GoalToday {
+  goalId: string;
+  todayValue: number;
+  streak: number;
 }
 
 export interface GoalsSummary {
@@ -57,6 +64,18 @@ export function useGoalsSummary() {
     queryKey: ['goalsSummary'],
     queryFn: () => api.get<{ data: GoalsSummary }>(ENDPOINTS.lifeGoals.summary).then((r) => r.data.data),
     staleTime: 1000 * 60,
+  });
+}
+
+// Per-goal today value + streak, keyed by goalId for quick lookup on the home.
+export function useGoalsToday() {
+  return useQuery({
+    queryKey: ['goalsToday'],
+    queryFn: async () => {
+      const rows = await api.get<{ data: GoalToday[] }>(ENDPOINTS.lifeGoals.today).then((r) => r.data.data);
+      return Object.fromEntries(rows.map((r) => [r.goalId, r])) as Record<string, GoalToday>;
+    },
+    staleTime: 1000 * 30,
   });
 }
 

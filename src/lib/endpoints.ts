@@ -87,6 +87,7 @@ export const ENDPOINTS = {
     create: '/api/life-goals',
     detail: (id: string) => `/api/life-goals/${id}`,
     summary: '/api/life-goals/summary',
+    today: '/api/life-goals/today',
   },
   contributions: {
     list: (qs?: string) => `/api/contributions${qs ? `?${qs}` : ''}`,

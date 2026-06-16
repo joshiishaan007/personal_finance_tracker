@@ -71,4 +71,28 @@ export const lifeGoalService = {
       tasksOverdue,
     };
   },
+
+  // Per-goal today value + current streak — powers the goals-home cards (today
+  // ring for habits, one-tap "log today", per-goal streak).
+  async today(userId: string): Promise<{ goalId: string; todayValue: number; streak: number }[]> {
+    const { timezone } = await engagementRepository.userMeta(userId);
+    const now = new Date();
+    const rows = await contributionRepository.recentByGoal(userId, new Date(now.getTime() - 400 * DAY_MS), timezone);
+    const today = dayStr(now, timezone);
+    const yesterday = dayStr(new Date(now.getTime() - DAY_MS), timezone);
+
+    const byGoal = new Map<string, { days: string[]; todayValue: number }>();
+    for (const r of rows) {
+      const e = byGoal.get(r.goalId) ?? { days: [], todayValue: 0 };
+      e.days.push(r.day);
+      if (r.day === today) e.todayValue = r.value;
+      byGoal.set(r.goalId, e);
+    }
+
+    return [...byGoal.entries()].map(([goalId, e]) => ({
+      goalId,
+      todayValue: e.todayValue,
+      streak: computeStreak(e.days, today, yesterday),
+    }));
+  },
 };

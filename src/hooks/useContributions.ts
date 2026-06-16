@@ -40,10 +40,12 @@ export function useContributionHeatmap(from: string, to: string, goalId?: string
   });
 }
 
-function invalidate(qc: ReturnType<typeof useQueryClient>, goalId: string) {
-  void qc.invalidateQueries({ queryKey: ['contributions', goalId] });
+function invalidate(qc: ReturnType<typeof useQueryClient>, goalId?: string) {
+  if (goalId) void qc.invalidateQueries({ queryKey: ['contributions', goalId] });
+  else void qc.invalidateQueries({ queryKey: ['contributions'] });
   void qc.invalidateQueries({ queryKey: ['lifeGoals'] });
   void qc.invalidateQueries({ queryKey: ['goalsSummary'] });
+  void qc.invalidateQueries({ queryKey: ['goalsToday'] });
   void qc.invalidateQueries({ queryKey: ['contributionHeatmap'] });
 }
 
@@ -52,6 +54,15 @@ export function useAddContribution(goalId: string) {
   return useMutation({
     mutationFn: (data: CreateContribution) => api.post(ENDPOINTS.contributions.create, data),
     onSuccess: () => invalidate(qc, goalId),
+  });
+}
+
+// Goal-agnostic logger for the goals home one-tap "log today" across many cards.
+export function useLogContribution() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateContribution) => api.post(ENDPOINTS.contributions.create, data),
+    onSuccess: () => invalidate(qc),
   });
 }
 
