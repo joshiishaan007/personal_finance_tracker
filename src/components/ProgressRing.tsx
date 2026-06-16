@@ -45,7 +45,6 @@ export function ProgressRing({ pct, size = 64, strokeWidth = 6, color, label }: 
           strokeDashoffset={offset}
           strokeLinecap="round"
           className="transition-[stroke-dashoffset] duration-700 ease-out"
-          style={{ filter: `drop-shadow(0 0 4px ${useGradient ? 'var(--chart-1)' : color})` }}
         />
       </svg>
       {useGradient ? (
