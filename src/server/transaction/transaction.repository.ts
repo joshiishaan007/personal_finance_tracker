@@ -102,6 +102,14 @@ export const transactionRepository = {
   deleteBatch: (userId: string, batchId: string) =>
     TransactionModel.deleteMany({ userId, importBatchId: batchId }),
 
+  // Expense totals grouped by category for a window — basis for budget rollover.
+  // Grouping (not a categoryId equality match) sidesteps string/ObjectId casting.
+  spendByCategoryPeriod: (userId: string, from: Date, to: Date): Promise<Map<string, number>> =>
+    TransactionModel.aggregate([
+      { $match: { userId: new Types.ObjectId(userId), type: 'expense', date: { $gte: from, $lte: to } } },
+      { $group: { _id: '$categoryId', total: { $sum: '$amount' } } },
+    ]).then((rows) => new Map(rows.map((r) => [String(r._id), Number(r.total)]))),
+
   // Total expense amount for a category in a date window — used for budget alerts.
   sumByCategoryPeriod: (userId: string, categoryId: string, from: Date, to: Date) =>
     TransactionModel.aggregate([
