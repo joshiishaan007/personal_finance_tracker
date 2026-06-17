@@ -53,9 +53,4 @@ export const analyticsController = {
     const { year, month } = validateQuery(YearMonthSchema, req);
     return ok(await svc.tags(userId, year, month));
   },
-
-  async spendingHeatmap() {
-    const { userId } = await requireAuth();
-    return ok(await svc.spendingHeatmap(userId));
-  },
 };
