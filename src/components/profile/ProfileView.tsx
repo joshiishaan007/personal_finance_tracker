@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { ExportReportDialog } from '@/components/profile/ExportReportDialog';
 import { TrashView } from '@/components/trash/TrashView';
+import { AppLockSettings } from '@/components/lock/AppLockSettings';
 import { useAuth } from '@/contexts/AuthContext';
 import { ENDPOINTS } from '@/lib/endpoints';
 import { fmtDate } from '@/lib/utils';
@@ -172,6 +173,9 @@ export function ProfileView() {
           </div>
         </div>
       </Card>
+
+      {/* App lock */}
+      <AppLockSettings />
 
       {/* Danger zone */}
       <Card className="border-danger-200 dark:border-danger-500/30 bg-danger-50/40 dark:bg-danger-500/[0.06]">
