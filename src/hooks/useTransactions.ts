@@ -149,6 +149,7 @@ export function useDeleteTransaction() {
     mutationFn: (id: string) => api.delete(ENDPOINTS.transactions.detail(id)),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: ['trash'] });
       void qc.invalidateQueries({ queryKey: ['analytics'] });
       void qc.invalidateQueries({ queryKey: ['engagement'] });
       // Deleting a settlement tx reverts its linked debt to pending server-side.

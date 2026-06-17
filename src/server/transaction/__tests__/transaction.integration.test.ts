@@ -129,6 +129,67 @@ describe('clientId idempotency (offline replay safety)', () => {
   });
 });
 
+describe('soft delete / Trash', () => {
+  const uid = new Types.ObjectId().toString();
+  const cat = new Types.ObjectId().toString();
+
+  async function makeOne() {
+    return transactionService.create(uid, {
+      amount: 5000, type: 'expense', categoryId: cat, tags: [],
+      date: '2026-07-10T00:00:00.000Z', note: 'gym', paymentMethod: 'cash', isRecurring: false,
+    });
+  }
+
+  // Raw aggregate proves the pre('aggregate') middleware injects the deletedAt filter.
+  const aggCount = async () => {
+    const rows = await TransactionModel.aggregate([
+      { $match: { userId: new Types.ObjectId(uid) } },
+      { $count: 'n' },
+    ]);
+    return (rows[0]?.n as number) ?? 0;
+  };
+
+  it('soft-delete hides the row from lists, counts and aggregates, but keeps it in Trash', async () => {
+    const tx = await makeOne();
+    const id = String(tx._id);
+
+    expect((await transactionService.list(uid, { page: 1, limit: 50 } as never)).total).toBe(1);
+    expect(await aggCount()).toBe(1);
+
+    const r = await transactionService.remove(uid, id);
+    expect(r.state).toBe('ok');
+
+    // gone from every live read (find + countDocuments + aggregate)…
+    expect((await transactionService.list(uid, { page: 1, limit: 50 } as never)).total).toBe(0);
+    expect(await aggCount()).toBe(0);
+    // …but recoverable from Trash
+    const trash = await transactionService.listTrash(uid);
+    expect(trash).toHaveLength(1);
+    expect(String(trash[0]!._id)).toBe(id);
+    expect(trash[0]!.deletedAt).toBeInstanceOf(Date);
+  });
+
+  it('restore returns the row to live reads and empties it from Trash', async () => {
+    const id = String((await transactionService.listTrash(uid))[0]!._id);
+    const r = await transactionService.restore(uid, id);
+    expect(r.state).toBe('ok');
+    expect((await transactionService.list(uid, { page: 1, limit: 50 } as never)).total).toBe(1);
+    expect(await transactionService.listTrash(uid)).toHaveLength(0);
+  });
+
+  it('emptyTrash permanently removes trashed rows only', async () => {
+    const tx = await makeOne(); // a second live row
+    await transactionService.remove(uid, String(tx._id)); // trash it
+    expect(await transactionService.listTrash(uid)).toHaveLength(1);
+
+    const { deleted } = await transactionService.emptyTrash(uid);
+    expect(deleted).toBe(1);
+    expect(await transactionService.listTrash(uid)).toHaveLength(0);
+    // the earlier restored row is untouched
+    expect((await transactionService.list(uid, { page: 1, limit: 50 } as never)).total).toBe(1);
+  });
+});
+
 describe('category defaults are readable without a userId (global rows)', () => {
   it('exposes isDefault categories to a user', async () => {
     await CategoryModel.create({ name: 'Seeded', icon: '🍔', color: '#F59E0B', type: 'expense', isDefault: true, schemaVersion: 1 });

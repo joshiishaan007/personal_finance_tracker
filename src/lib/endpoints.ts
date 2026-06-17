@@ -13,6 +13,9 @@ export const ENDPOINTS = {
     importPreview: '/api/transactions/import/preview',
     importCommit: '/api/transactions/import/commit',
     importBatch: (batchId: string) => `/api/transactions/import/${batchId}`,
+    trash: '/api/transactions/trash',
+    trashItem: (id: string) => `/api/transactions/trash/${id}`,
+    restore: (id: string) => `/api/transactions/${id}/restore`,
   },
   categories: {
     list: '/api/categories',

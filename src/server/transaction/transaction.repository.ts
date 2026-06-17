@@ -62,8 +62,27 @@ export const transactionRepository = {
   update: (userId: string, id: string, set: Record<string, unknown>) =>
     TransactionModel.findOneAndUpdate({ _id: id, userId }, { $set: set }, { new: true }).lean(),
 
+  // Soft delete — moves the row to Trash. The TTL index purges it after 30 days.
   remove: (userId: string, id: string) =>
-    TransactionModel.findOneAndDelete({ _id: id, userId }).lean(),
+    TransactionModel.findOneAndUpdate({ _id: id, userId }, { $set: { deletedAt: new Date() } }, { new: true }).lean(),
+
+  // Trash-aware queries: each references `deletedAt`, so the schema middleware
+  // skips the live-only filter and lets these see soft-deleted rows.
+  listTrash: (userId: string) =>
+    TransactionModel.find({ userId, deletedAt: { $exists: true } }).sort({ deletedAt: -1 }).limit(200).lean(),
+
+  restore: (userId: string, id: string) =>
+    TransactionModel.findOneAndUpdate(
+      { _id: id, userId, deletedAt: { $exists: true } },
+      { $unset: { deletedAt: 1 } },
+      { new: true },
+    ).lean(),
+
+  purgeOne: (userId: string, id: string) =>
+    TransactionModel.findOneAndDelete({ _id: id, userId, deletedAt: { $exists: true } }).lean(),
+
+  purgeAll: (userId: string) =>
+    TransactionModel.deleteMany({ userId, deletedAt: { $exists: true } }),
 
   findByHash: (userId: string, hash: string) =>
     TransactionModel.findOne({ userId, hash }).lean(),

@@ -45,14 +45,31 @@ export const transactionService = {
   async remove(userId: string, id: string): Promise<Result<{ deleted: true }, 'not_found'>> {
     const tx = await repo.remove(userId, id);
     if (!tx) return Err('not_found');
-    // Cascade: remove any split debts that were linked to this transaction as their source,
-    // and revert any debt that was *settled* via this transaction back to pending so its
-    // settlement link can't dangle.
+    // Cascade runs at soft-delete so balances/loans update immediately. Restoring
+    // from Trash brings the row back but does not re-apply these links (rare edge:
+    // an EMI/settlement tx restored stays standalone — re-pay/re-settle if needed).
     await debtRepository.deleteBySourceTx(userId, id);
     await debtRepository.unlinkSettlementTx(userId, id);
     // Deleting an EMI expense drops the matching loan payment.
     await loanRepository.unlinkPayment(userId, id);
     return Ok({ deleted: true });
+  },
+
+  listTrash: (userId: string) => repo.listTrash(userId),
+
+  async restore(userId: string, id: string): Promise<Result<unknown, 'not_found'>> {
+    const tx = await repo.restore(userId, id);
+    return tx ? Ok(tx) : Err('not_found');
+  },
+
+  async purgeOne(userId: string, id: string): Promise<Result<{ deleted: true }, 'not_found'>> {
+    const tx = await repo.purgeOne(userId, id);
+    return tx ? Ok({ deleted: true }) : Err('not_found');
+  },
+
+  async emptyTrash(userId: string) {
+    const r = await repo.purgeAll(userId);
+    return { deleted: r.deletedCount };
   },
 
   previewImport(records: Record<string, string>[], mapping: CsvMapping) {

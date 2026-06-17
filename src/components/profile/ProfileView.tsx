@@ -3,12 +3,14 @@
 import { useState } from 'react';
 import {
   Trophy, Medal, Award, Sprout, Download, FileSpreadsheet, FileText,
-  CalendarDays, ShieldAlert, Trash2, AlertTriangle, type LucideIcon,
+  CalendarDays, ShieldAlert, Trash2, AlertTriangle, History, type LucideIcon,
 } from 'lucide-react';
 import { ExportReportDialog } from '@/components/profile/ExportReportDialog';
+import { TrashView } from '@/components/trash/TrashView';
 import { useAuth } from '@/contexts/AuthContext';
 import { ENDPOINTS } from '@/lib/endpoints';
 import { fmtDate } from '@/lib/utils';
+import { useTrash } from '@/hooks/useTrash';
 import { useDeleteAccount, useExportJson } from '@/hooks/useUser';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -33,9 +35,11 @@ export function ProfileView() {
   const [deleteModal, setDeleteModal] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState('');
   const [pdfOpen, setPdfOpen] = useState(false);
+  const [trashOpen, setTrashOpen] = useState(false);
 
   const exportData = useExportJson();
   const deleteAccount = useDeleteAccount();
+  const { data: trash } = useTrash();
 
   function onDelete() {
     deleteAccount.mutate(confirmEmail, { onSuccess: () => void logout() });
@@ -121,6 +125,15 @@ export function ProfileView() {
               Export CSV
             </a>
           </div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+            <div className="min-w-0">
+              <Text className="font-medium">Recently deleted</Text>
+              <Text variant="small">Restore deleted transactions within 30 days</Text>
+            </div>
+            <Button variant="secondary" size="sm" onClick={() => setTrashOpen(true)} leftIcon={<History size={15} strokeWidth={2.2} />} className="w-full sm:w-36 shrink-0">
+              Trash{trash?.length ? ` · ${trash.length}` : ''}
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -174,6 +187,7 @@ export function ProfileView() {
       </Modal>
 
       <ExportReportDialog open={pdfOpen} onClose={() => setPdfOpen(false)} />
+      <TrashView open={trashOpen} onClose={() => setTrashOpen(false)} />
     </div>
   );
 }
