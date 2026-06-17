@@ -1,15 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
-  Trophy, Medal, Award, Sprout, Download, FileSpreadsheet, FileText,
-  CalendarDays, ShieldAlert, Trash2, AlertTriangle, type LucideIcon,
+  Trophy, Medal, Award, Sprout, Download, FileSpreadsheet, FileText, Upload,
+  CalendarDays, ShieldAlert, Trash2, AlertTriangle, History, type LucideIcon,
 } from 'lucide-react';
 import { ExportReportDialog } from '@/components/profile/ExportReportDialog';
+import { TrashView } from '@/components/trash/TrashView';
+import { AppLockSettings } from '@/components/lock/AppLockSettings';
 import { useAuth } from '@/contexts/AuthContext';
 import { ENDPOINTS } from '@/lib/endpoints';
 import { fmtDate } from '@/lib/utils';
-import { useDeleteAccount, useExportJson } from '@/hooks/useUser';
+import { useTrash } from '@/hooks/useTrash';
+import { useDeleteAccount, useExportJson, useImportJson } from '@/hooks/useUser';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -33,12 +36,39 @@ export function ProfileView() {
   const [deleteModal, setDeleteModal] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState('');
   const [pdfOpen, setPdfOpen] = useState(false);
+  const [trashOpen, setTrashOpen] = useState(false);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const exportData = useExportJson();
+  const importData = useImportJson();
   const deleteAccount = useDeleteAccount();
+  const { data: trash } = useTrash();
 
   function onDelete() {
     deleteAccount.mutate(confirmEmail, { onSuccess: () => void logout() });
+  }
+
+  async function onPickBackup(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // let the user re-pick the same file later
+    if (!file) return;
+    setImportMsg(null);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(await file.text());
+    } catch {
+      setImportMsg('That file is not valid JSON.');
+      return;
+    }
+    importData.mutate(parsed, {
+      onSuccess: (r) =>
+        setImportMsg(
+          `Restored ${r.transactions} transactions, ${r.categories} categories, ${r.budgets} budgets, ${r.goals} goals` +
+            (r.skipped ? ` · ${r.skipped} already present.` : '.'),
+        ),
+      onError: () => setImportMsg('Import failed — please check the file and try again.'),
+    });
   }
 
   if (!user) return null;
@@ -98,6 +128,17 @@ export function ProfileView() {
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
             <div className="min-w-0">
+              <Text className="font-medium">Restore from backup</Text>
+              <Text variant="small">Import a JSON export — existing data is kept</Text>
+            </div>
+            <Button variant="secondary" size="sm" loading={importData.isPending} onClick={() => fileRef.current?.click()} leftIcon={<Upload size={15} strokeWidth={2.2} />} className="w-full sm:w-36 shrink-0">
+              Import JSON
+            </Button>
+          </div>
+          <Input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={onPickBackup} />
+          {importMsg && <Text variant="small" className="text-slate-500">{importMsg}</Text>}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+            <div className="min-w-0">
               <Text className="font-medium">Profit &amp; loss report</Text>
               <Text variant="small">PDF for a month or year, with charts</Text>
             </div>
@@ -121,8 +162,20 @@ export function ProfileView() {
               Export CSV
             </a>
           </div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+            <div className="min-w-0">
+              <Text className="font-medium">Recently deleted</Text>
+              <Text variant="small">Restore deleted transactions within 30 days</Text>
+            </div>
+            <Button variant="secondary" size="sm" onClick={() => setTrashOpen(true)} leftIcon={<History size={15} strokeWidth={2.2} />} className="w-full sm:w-36 shrink-0">
+              Trash{trash?.length ? ` · ${trash.length}` : ''}
+            </Button>
+          </div>
         </div>
       </Card>
+
+      {/* App lock */}
+      <AppLockSettings />
 
       {/* Danger zone */}
       <Card className="border-danger-200 dark:border-danger-500/30 bg-danger-50/40 dark:bg-danger-500/[0.06]">
@@ -174,6 +227,7 @@ export function ProfileView() {
       </Modal>
 
       <ExportReportDialog open={pdfOpen} onClose={() => setPdfOpen(false)} />
+      <TrashView open={trashOpen} onClose={() => setTrashOpen(false)} />
     </div>
   );
 }

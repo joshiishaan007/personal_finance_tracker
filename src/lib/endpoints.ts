@@ -4,6 +4,7 @@ export const ENDPOINTS = {
     google: '/api/auth/google',
     logout: '/api/auth/logout',
     me: '/api/auth/me',
+    refresh: '/api/auth/refresh',
   },
   transactions: {
     list: (qs?: string) => `/api/transactions${qs ? `?${qs}` : ''}`,
@@ -13,6 +14,9 @@ export const ENDPOINTS = {
     importPreview: '/api/transactions/import/preview',
     importCommit: '/api/transactions/import/commit',
     importBatch: (batchId: string) => `/api/transactions/import/${batchId}`,
+    trash: '/api/transactions/trash',
+    trashItem: (id: string) => `/api/transactions/trash/${id}`,
+    restore: (id: string) => `/api/transactions/${id}/restore`,
   },
   categories: {
     list: '/api/categories',
@@ -73,6 +77,8 @@ export const ENDPOINTS = {
     yearly: (qs?: string) => `/api/analytics/yearly${qs ? `?${qs}` : ''}`,
     custom: (qs?: string) => `/api/analytics/custom${qs ? `?${qs}` : ''}`,
     pl: '/api/analytics/pl',
+    tags: (qs?: string) => `/api/analytics/tags${qs ? `?${qs}` : ''}`,
+    spendingHeatmap: '/api/analytics/spending-heatmap',
   },
   pl: (qs?: string) => `/api/pl${qs ? `?${qs}` : ''}`,
   reports: {
@@ -127,6 +133,9 @@ export const ENDPOINTS = {
   export: {
     json: '/api/export/json',
     transactionsCsv: '/api/export/transactions/csv',
+  },
+  import: {
+    json: '/api/import/json',
   },
   user: {
     preferences: '/api/user/preferences',

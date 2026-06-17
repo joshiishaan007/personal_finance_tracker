@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { catchAuthCallback } from '@/server/http/catchAuthCallback';
 import { getEnv } from '@/server/env';
 import { authService } from '@/server/auth/auth.service';
+import { setAuthCookies } from '@/server/auth/authCookies';
 
 function safeEqual(a: string, b: string): boolean {
   const ba = Buffer.from(a);
@@ -74,15 +75,14 @@ export const GET = catchAuthCallback(async (req: NextRequest) => {
     name: profile.name ?? profile.email,
     avatar: profile.picture,
   });
-  const token = authService.signJWT(user.id, env.JWT_SECRET, user.tokenVersion ?? 0);
+  const issued = await authService.issueTokens(user.id, user.tokenVersion ?? 0, env.JWT_SECRET);
 
   const res = NextResponse.redirect(`${appUrl}/dashboard`);
-  res.cookies.set('token', token, {
-    httpOnly: true,
+  setAuthCookies(res, {
+    accessToken: issued.accessToken,
+    refreshToken: issued.refreshToken,
+    refreshExpiresAt: issued.refreshExpiresAt,
     secure: env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 7 * 24 * 60 * 60,
   });
   // One-time login params consumed — clear them.
   res.cookies.set('oauth_state', '', { path: '/', maxAge: 0 });

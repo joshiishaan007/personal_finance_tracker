@@ -1,8 +1,10 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { defaultShouldDehydrateQuery } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { queryClient } from '@/lib/queryClient';
+import { asyncPersister } from '@/lib/queryPersister';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ModeProvider } from '@/contexts/ModeContext';
@@ -16,9 +18,31 @@ const ReactQueryDevtools =
     ? dynamic(() => import('@tanstack/react-query-devtools').then((m) => m.ReactQueryDevtools), { ssr: false })
     : () => null;
 
+// Only the queries that power the offline-viewable screens (dashboard, balance,
+// goals home, recent transactions) are persisted — not every browsed report —
+// so the snapshot stays small.
+const PERSIST_KEYS = new Set([
+  'analytics', 'balance', 'transactions', 'categories', 'user',
+  'spendingPlan', 'investments', 'recurring',
+  // Form options + transaction-page widgets so they work offline (instant cards
+  // carry the category/icon/colour the add-form needs; debts feed the owe lists).
+  'instantCards', 'debts',
+  'goals', 'lifeGoals', 'goalsSummary', 'goalsToday', 'contributionHeatmap',
+]);
+
+const persistOptions = {
+  persister: asyncPersister,
+  maxAge: 1000 * 60 * 60 * 24 * 3, // keep the snapshot for 3 days
+  buster: 'pft-cache-v1', // bump to invalidate every persisted cache on a breaking change
+  dehydrateOptions: {
+    shouldDehydrateQuery: (query: Parameters<typeof defaultShouldDehydrateQuery>[0]) =>
+      defaultShouldDehydrateQuery(query) && PERSIST_KEYS.has(String((query.queryKey as readonly unknown[])[0])),
+  },
+};
+
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
       <ThemeProvider>
         <AuthProvider>
           <ModeProvider>{children}</ModeProvider>
@@ -27,6 +51,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <OfflineSync />
       <ServiceWorkerRegistrar />
       <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }

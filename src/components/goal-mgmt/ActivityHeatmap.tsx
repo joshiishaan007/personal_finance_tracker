@@ -4,6 +4,7 @@ import { useMemo, useRef, useEffect } from 'react';
 import { Flame, Trophy, CalendarCheck, Activity } from 'lucide-react';
 import { Text } from '@/components/ui/Text';
 import { cn } from '@/lib/utils';
+import { buildHeatmapWeeks } from '@/lib/heatmap';
 import type { HeatmapDay } from '@/hooks/useContributions';
 
 interface Props {
@@ -11,7 +12,6 @@ interface Props {
   peak: number;
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const DOW = ['', 'Mon', '', 'Wed', '', 'Fri', ''];
 
 const CELL = 12; // px
@@ -60,37 +60,7 @@ export function ActivityHeatmap({ days, peak }: Props) {
     return t.toISOString().split('T')[0]!;
   }, []);
 
-  const { weeks, monthLabels } = useMemo(() => {
-    const map = new Map(days.map((d) => [d.date, d.value]));
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const start = new Date(today);
-    start.setDate(start.getDate() - 52 * 7);
-    const startDow = (start.getDay() + 6) % 7; // Mon=0
-    start.setDate(start.getDate() - startDow);
-
-    const weeks: Array<Array<{ date: string; value: number; future: boolean }>> = [];
-    const monthLabels: Array<{ col: number; label: string }> = [];
-    let lastMonth = -1;
-    const cursor = new Date(start);
-
-    for (let w = 0; w < 53; w++) {
-      const week = [];
-      for (let d = 0; d < 7; d++) {
-        const ds = cursor.toISOString().split('T')[0]!;
-        const future = cursor > today;
-        if (d === 0 && !future && cursor.getMonth() !== lastMonth) {
-          monthLabels.push({ col: w, label: MONTHS[cursor.getMonth()]! });
-          lastMonth = cursor.getMonth();
-        }
-        week.push({ date: ds, value: map.get(ds) ?? 0, future });
-        cursor.setDate(cursor.getDate() + 1);
-      }
-      weeks.push(week);
-    }
-    return { weeks, monthLabels };
-  }, [days]);
+  const { weeks, monthLabels } = useMemo(() => buildHeatmapWeeks(days), [days]);
 
   // Streaks + totals over the active days.
   const stats = useMemo(() => {

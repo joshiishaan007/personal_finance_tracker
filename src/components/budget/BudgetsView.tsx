@@ -180,8 +180,10 @@ export function BudgetsView() {
                     {remaining >= 0 ? `${fmt(remaining, currency)} left` : `${fmt(-remaining, currency)} over`}
                   </Text>
                 </div>
-                {budget.rollover && (
-                  <Text as="span" variant="small" className="mt-1 block">Rollover: {fmt(budget.rolloverBalance, currency)}</Text>
+                {budget.rollover && budget.rolloverBalance > 0 && (
+                  <Text as="span" variant="small" className="mt-1 block text-success-600 dark:text-success-400">
+                    +{fmt(budget.rolloverBalance, currency)} carried from last month
+                  </Text>
                 )}
               </Card>
             );

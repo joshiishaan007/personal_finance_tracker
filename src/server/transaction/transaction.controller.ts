@@ -67,6 +67,28 @@ export const transactionController = {
     return r.state === 'ok' ? ok(r.data) : fail(r.reason);
   },
 
+  async trash(_req: NextRequest) {
+    const { userId } = await requireAuth();
+    return ok(await svc.listTrash(userId));
+  },
+
+  async restore(_req: NextRequest, ctx: RouteCtx) {
+    const { userId } = await requireAuth();
+    const r = await svc.restore(userId, String(ctx.params.id));
+    return r.state === 'ok' ? ok(r.data) : fail(r.reason);
+  },
+
+  async purgeOne(_req: NextRequest, ctx: RouteCtx) {
+    const { userId } = await requireAuth();
+    const r = await svc.purgeOne(userId, String(ctx.params.id));
+    return r.state === 'ok' ? ok(r.data) : fail(r.reason);
+  },
+
+  async emptyTrash(_req: NextRequest) {
+    const { userId } = await requireAuth();
+    return ok(await svc.emptyTrash(userId));
+  },
+
   async importPreview(req: NextRequest) {
     await requireAuth();
     const { records, mapping } = await parseUpload(req);

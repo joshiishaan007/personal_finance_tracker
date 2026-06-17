@@ -3,6 +3,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { AppLockProvider } from '@/contexts/AppLockContext';
+import { LockGate } from '@/components/lock/LockGate';
 import { AppShell } from '@/components/layout/AppShell';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -23,5 +25,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (!user) return null;
 
-  return <AppShell>{children}</AppShell>;
+  return (
+    <AppLockProvider>
+      <LockGate>
+        <AppShell>{children}</AppShell>
+      </LockGate>
+    </AppLockProvider>
+  );
 }

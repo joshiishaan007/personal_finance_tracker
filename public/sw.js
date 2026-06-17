@@ -1,7 +1,14 @@
 // Hand-rolled service worker (no next-pwa) for full control over cache-busting —
 // a prior workbox SW caused stale-asset bugs. Bump CACHE on each deploy to evict.
-const CACHE = 'pft-v1';
+const CACHE = 'pft-v2';
 const SHELL = ['/offline'];
+
+// Normalised key for an RSC payload — strip the per-request `_rsc` hash and any
+// page query (e.g. ?new=1) so a Link prefetch made while online matches the
+// in-app navigation request made offline for the same route.
+function rscKey(url) {
+  return `${url.origin}${url.pathname}?__rsc`;
+}
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -26,8 +33,27 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return; // third-party (avatars, etc.)
   if (url.pathname.startsWith('/api/')) return; // never cache API; offline queue handles writes
 
+  // App Router client navigation fetches an RSC payload (RSC header / ?_rsc=), NOT
+  // a navigate-mode request. Network-first, cached under a normalised key so a
+  // prefetched route resolves offline — without this, in-app links (incl. the +
+  // FAB) silently fail to navigate offline.
+  const isRSC = request.headers.has('RSC') || url.searchParams.has('_rsc');
+  if (isRSC) {
+    const key = rscKey(url);
+    event.respondWith(
+      fetch(request)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(key, copy));
+          return res;
+        })
+        .catch(() => caches.match(key)),
+    );
+    return;
+  }
+
   // Navigations: network-first so a deploy is picked up immediately; fall back to
-  // the cached page, then the offline shell.
+  // the cached page (ignoring query so ?new=1 etc. still match), then the offline shell.
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -36,7 +62,11 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE).then((c) => c.put(request, copy));
           return res;
         })
-        .catch(() => caches.match(request).then((cached) => cached || caches.match('/offline'))),
+        .catch(() =>
+          caches
+            .match(request, { ignoreSearch: true })
+            .then((cached) => cached || caches.match('/offline')),
+        ),
     );
     return;
   }
