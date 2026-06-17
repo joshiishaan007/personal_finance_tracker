@@ -106,6 +106,16 @@ export const analyticsRepository = {
       { $sort: { '_id.year': 1, '_id.month': 1 } },
     ]),
 
+  // Expense totals + counts per tag within a date range (one row per tag used).
+  tagBreakdown: (userId: string, start: Date, end: Date, limit: number): Promise<AggRow[]> =>
+    TransactionModel.aggregate([
+      { $match: { userId: new Types.ObjectId(userId), date: { $gte: start, $lte: end }, type: 'expense', tags: { $ne: [] } } },
+      { $unwind: '$tags' },
+      { $group: { _id: '$tags', total: { $sum: '$amount' }, count: { $sum: 1 } } },
+      { $sort: { total: -1 } },
+      { $limit: limit },
+    ]),
+
   // Totals by type+category within a custom date range (joined to categories).
   byTypeAndCategory: (userId: string, start: Date, end: Date): Promise<AggRow[]> =>
     TransactionModel.aggregate([

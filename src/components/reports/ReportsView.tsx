@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, LineChart, TrendingUp, TrendingDown, PiggyBank, Trophy } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ChevronLeft, ChevronRight, LineChart, TrendingUp, TrendingDown, PiggyBank, Trophy, Tag } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMonthlyAnalytics, useYearlyAnalytics } from '@/hooks/useAnalytics';
+import { useMonthlyAnalytics, useYearlyAnalytics, useTagAnalytics } from '@/hooks/useAnalytics';
 import { useYearlyReport } from '@/hooks/useReports';
 import { fmt, cn } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
@@ -25,6 +26,7 @@ function totalFor(rows: Array<{ _id: string; total: number }> | undefined, type:
 
 export function ReportsView() {
   const { user } = useAuth();
+  const router = useRouter();
   const currency = user?.currency ?? 'INR';
   const now = new Date();
   const curYear = now.getFullYear();
@@ -41,6 +43,7 @@ export function ReportsView() {
   const { data: prevMonthly } = useMonthlyAnalytics(prevY, prevM);
   const { data: yearlyA } = useYearlyAnalytics(year);
   const { data: yearlyReport } = useYearlyReport(year);
+  const { data: tagData } = useTagAnalytics(year, month);
 
   const income = monthly?.summary.income ?? 0;
   const expense = monthly?.summary.expense ?? 0;
@@ -158,6 +161,45 @@ export function ReportsView() {
                         </div>
                         <div className="mt-1 h-1.5 w-full rounded-full bg-slate-100 dark:bg-ink-700 overflow-hidden">
                           <div className="h-full rounded-full" style={{ width: `${share}%`, backgroundColor: c.category?.color ?? '#64748B' }} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+
+          {/* Spending by tag — click a tag to see those transactions */}
+          <Card>
+            <div className="mb-3 flex items-center gap-2">
+              <Tag size={15} strokeWidth={2.3} className="text-brand-500" />
+              <Heading level={5}>Spending by tag</Heading>
+            </div>
+            {(tagData?.tags ?? []).length === 0 ? (
+              <Text variant="small" className="text-slate-400">Add tags to your expenses to see them grouped here.</Text>
+            ) : (
+              <div className="space-y-2.5">
+                {(tagData?.tags ?? []).slice(0, 8).map((t) => {
+                  const share = (tagData?.totalTagged ?? 0) > 0 ? Math.round((t.total / tagData!.totalTagged) * 100) : 0;
+                  const open = () => router.push(`/transactions?q=${encodeURIComponent(t.tag)}`);
+                  return (
+                    <div
+                      key={t.tag}
+                      role="button"
+                      tabIndex={0}
+                      onClick={open}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } }}
+                      className="flex w-full cursor-pointer items-center gap-3 rounded-lg p-1 transition-colors hover:bg-slate-50 dark:hover:bg-ink-800/60"
+                    >
+                      <Badge variant="brand" className="shrink-0 lowercase">#{t.tag}</Badge>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <Text as="span" variant="small" className="truncate text-slate-500">{t.count} txn{t.count === 1 ? '' : 's'}</Text>
+                          <Text as="span" variant="small" className="tabular-nums shrink-0">{fmtCur(t.total)} · {share}%</Text>
+                        </div>
+                        <div className="mt-1 h-1.5 w-full rounded-full bg-slate-100 dark:bg-ink-700 overflow-hidden">
+                          <div className="h-full rounded-full bg-brand-500" style={{ width: `${share}%` }} />
                         </div>
                       </div>
                     </div>

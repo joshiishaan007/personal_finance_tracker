@@ -47,4 +47,10 @@ export const analyticsController = {
     const { userId } = await requireAuth();
     return ok(await svc.monthlyPL(userId));
   },
+
+  async tags(req: NextRequest) {
+    const { userId } = await requireAuth();
+    const { year, month } = validateQuery(YearMonthSchema, req);
+    return ok(await svc.tags(userId, year, month));
+  },
 };

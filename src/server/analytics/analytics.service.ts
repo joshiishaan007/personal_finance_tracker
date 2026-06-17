@@ -113,6 +113,22 @@ export const analyticsService = {
     return { months, cumulative, totalIncome, totalExpense };
   },
 
+  async tags(userId: string, year: number, month: number) {
+    const start = new Date(year, month - 1, 1);
+    const end = new Date(year, month, 0, 23, 59, 59, 999);
+    const [rows, currencyMeta] = await Promise.all([
+      repo.tagBreakdown(userId, start, end, 30),
+      repo.userMeta(userId),
+    ]);
+    const tags = rows.map((r) => ({
+      tag: String(r._id),
+      total: typeof r.total === 'number' ? r.total : 0,
+      count: typeof r.count === 'number' ? r.count : 0,
+    }));
+    const totalTagged = tags.reduce((s, t) => s + t.total, 0);
+    return { tags, totalTagged, ...currencyMeta };
+  },
+
   // Old shape: the envelope `data` IS the raw aggregation array. Preserve exactly.
   custom(userId: string, startDate: string, endDate: string) {
     return repo.byTypeAndCategory(userId, new Date(startDate), new Date(endDate));

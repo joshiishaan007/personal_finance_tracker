@@ -28,6 +28,23 @@ export interface YearlyAnalytics extends CurrencyMeta {
 
 export type CustomAnalytics = Array<{ _id: { type: string }; total: number; category?: { name: string } }>;
 
+export interface TagAnalytics extends CurrencyMeta {
+  tags: Array<{ tag: string; total: number; count: number }>;
+  totalTagged: number;
+}
+
+export function useTagAnalytics(year: number, month: number, enabled = true) {
+  return useQuery({
+    queryKey: ['analytics', 'tags', year, month],
+    queryFn: () =>
+      api
+        .get<{ data: TagAnalytics }>(ENDPOINTS.analytics.tags(`year=${year}&month=${month}`))
+        .then((r) => r.data.data),
+    enabled,
+    placeholderData: keepPreviousData,
+  });
+}
+
 export function useDashboard() {
   return useQuery({
     queryKey: ['analytics', 'dashboard'],

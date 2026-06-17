@@ -76,6 +76,7 @@ export const ENDPOINTS = {
     yearly: (qs?: string) => `/api/analytics/yearly${qs ? `?${qs}` : ''}`,
     custom: (qs?: string) => `/api/analytics/custom${qs ? `?${qs}` : ''}`,
     pl: '/api/analytics/pl',
+    tags: (qs?: string) => `/api/analytics/tags${qs ? `?${qs}` : ''}`,
   },
   pl: (qs?: string) => `/api/pl${qs ? `?${qs}` : ''}`,
   reports: {

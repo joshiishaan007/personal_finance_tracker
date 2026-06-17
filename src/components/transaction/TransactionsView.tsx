@@ -75,12 +75,18 @@ export function TransactionsView() {
   const [deleteId,    setDeleteId]    = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // The shell FAB links to /transactions?new=1 — open the add modal, then strip
-  // the param so a refresh (or back nav) doesn't reopen it.
+  // The shell FAB links to /transactions?new=1 — open the add modal; a tag click
+  // from Reports links to ?q=<tag> — prefill the search. Strip the param after so
+  // a refresh (or back nav) doesn't re-trigger it.
   useEffect(() => {
     if (searchParams.get('new') === '1') {
       setEditTx(null);
       setFormOpen(true);
+      router.replace('/transactions');
+    }
+    const q = searchParams.get('q');
+    if (q) {
+      setFilters((f) => ({ ...f, search: q }));
       router.replace('/transactions');
     }
   }, [searchParams, router]);
@@ -322,7 +328,7 @@ export function TransactionsView() {
         title={items.find((t) => t._id === deleteId)?.type === 'reimbursement' ? 'Revert this reimbursement?' : 'Delete transaction?'}
         description={items.find((t) => t._id === deleteId)?.type === 'reimbursement'
           ? 'The reimbursement will be removed and the related entry returns to pending under People owe you.'
-          : 'This transaction will be permanently removed from your records.'}
+          : 'This moves the transaction to Trash — you can restore it within 30 days from Profile.'}
         confirmLabel={items.find((t) => t._id === deleteId)?.type === 'reimbursement' ? 'Revert' : 'Delete'}
         variant={items.find((t) => t._id === deleteId)?.type === 'reimbursement' ? 'warn' : 'danger'}
         loading={deleteTx.isPending}
