@@ -14,6 +14,7 @@ import migration009 from './009_seed_reimbursement_category';
 import migration010 from './010_instant_card_sort_order';
 import migration011 from './011_reimbursement_transaction_type';
 import migration012 from './012_transaction_soft_delete_ttl';
+import migration013 from './013_refresh_token_indexes';
 
 // Next stores local secrets in .env.local; this standalone script doesn't go
 // through Next, so load .env.local first (priority), then .env as a fallback.
@@ -39,6 +40,7 @@ const migrations: Migration[] = [
   migration010,
   migration011,
   migration012,
+  migration013,
 ];
 
 // Same Windows/Node quirk db.ts handles: c-ares can fall back to a dead 127.0.0.1

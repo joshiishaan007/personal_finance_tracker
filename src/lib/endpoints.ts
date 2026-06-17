@@ -4,6 +4,7 @@ export const ENDPOINTS = {
     google: '/api/auth/google',
     logout: '/api/auth/logout',
     me: '/api/auth/me',
+    refresh: '/api/auth/refresh',
   },
   transactions: {
     list: (qs?: string) => `/api/transactions${qs ? `?${qs}` : ''}`,
