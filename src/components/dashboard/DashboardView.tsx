@@ -28,6 +28,7 @@ import { QuickAddBar } from '@/components/transaction/QuickAddBar';
 import { InstantCards } from '@/components/transaction/InstantCards';
 import { SpendingPlanSummary } from '@/components/spendingPlan/SpendingPlanSummary';
 import { SpendingHeatmap } from '@/components/analytics/SpendingHeatmap';
+import { LocalInsights } from '@/components/dashboard/LocalInsights';
 import { StreakBadge } from '@/components/engagement/StreakBadge';
 import { EndOfDayCard } from '@/components/engagement/EndOfDayCard';
 import { ChartCard } from '@/components/charts/ChartCard';
@@ -235,6 +236,8 @@ export function DashboardView() {
             tone="aqua"
           />
         </div>
+
+      <LocalInsights />
 
       <div className="grid lg:grid-cols-2 gap-6">
         <ChartCard
