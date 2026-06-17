@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { ShieldCheck, Lock } from 'lucide-react';
+import { ShieldCheck, Lock, Fingerprint } from 'lucide-react';
 import { useAppLock } from '@/contexts/AppLockContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
+import { Switch } from '@/components/ui/Switch';
 import { Heading } from '@/components/ui/Heading';
 import { Text } from '@/components/ui/Text';
 import { IconBadge } from '@/components/ui/IconBadge';
@@ -16,8 +17,19 @@ type Mode = 'set' | 'change' | 'remove' | null;
 const onlyDigits = (v: string) => v.replace(/\D/g, '');
 
 export function AppLockSettings() {
-  const { enabled, setPin, changePin, disable, lockNow } = useAppLock();
+  const {
+    enabled, setPin, changePin, disable, lockNow,
+    biometricSupported, biometricEnabled, enableBiometric, disableBiometric,
+  } = useAppLock();
   const [mode, setMode] = useState<Mode>(null);
+  const [bioError, setBioError] = useState<string | null>(null);
+
+  async function toggleBiometric(on: boolean) {
+    setBioError(null);
+    if (!on) return disableBiometric();
+    const ok = await enableBiometric();
+    if (!ok) setBioError("Couldn't set up fingerprint unlock. Try again.");
+  }
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -74,6 +86,22 @@ export function AppLockSettings() {
           </Button>
         )}
       </div>
+
+      {/* Fingerprint — only once a PIN exists (the required fallback) and the
+          device has a platform authenticator. */}
+      {enabled && biometricSupported && (
+        <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 dark:border-white/5 pt-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Fingerprint size={18} strokeWidth={2.2} className="shrink-0 text-brand-500" />
+            <div className="min-w-0">
+              <Text className="font-medium">Unlock with fingerprint</Text>
+              <Text variant="small">Use your device biometrics; PIN still works as a backup</Text>
+            </div>
+          </div>
+          <Switch checked={biometricEnabled} onChange={toggleBiometric} label="Unlock with fingerprint" className="shrink-0" />
+        </div>
+      )}
+      {bioError && <Text variant="small" className="mt-2 text-danger-600 dark:text-danger-400">{bioError}</Text>}
 
       <Modal
         open={mode !== null}
