@@ -113,6 +113,20 @@ export const analyticsService = {
     return { months, cumulative, totalIncome, totalExpense };
   },
 
+  // Daily expense totals for the last ~53 weeks — the spending heatmap window.
+  async spendingHeatmap(userId: string) {
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - 53 * 7);
+    const [days, currencyMeta] = await Promise.all([
+      repo.dailyExpenseTotals(userId, from, to),
+      repo.userMeta(userId),
+    ]);
+    const peak = days.reduce((m, d) => Math.max(m, d.value), 0);
+    const total = days.reduce((s, d) => s + d.value, 0);
+    return { days, peak, total, ...currencyMeta };
+  },
+
   async tags(userId: string, year: number, month: number) {
     const start = new Date(year, month - 1, 1);
     const end = new Date(year, month, 0, 23, 59, 59, 999);

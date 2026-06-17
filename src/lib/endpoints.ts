@@ -77,6 +77,7 @@ export const ENDPOINTS = {
     custom: (qs?: string) => `/api/analytics/custom${qs ? `?${qs}` : ''}`,
     pl: '/api/analytics/pl',
     tags: (qs?: string) => `/api/analytics/tags${qs ? `?${qs}` : ''}`,
+    spendingHeatmap: '/api/analytics/spending-heatmap',
   },
   pl: (qs?: string) => `/api/pl${qs ? `?${qs}` : ''}`,
   reports: {

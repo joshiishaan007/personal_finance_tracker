@@ -6,7 +6,7 @@ import {
   Sunrise, Sun, Moon, Sprout, Repeat, LineChart,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDashboard } from '@/hooks/useAnalytics';
+import { useDashboard, useSpendingHeatmap } from '@/hooks/useAnalytics';
 import { useRecurring } from '@/hooks/useRecurring';
 import { useGoals } from '@/hooks/useGoals';
 import { useBalance } from '@/hooks/useBalance';
@@ -27,6 +27,7 @@ import { StatCard } from '@/components/StatCard';
 import { QuickAddBar } from '@/components/transaction/QuickAddBar';
 import { InstantCards } from '@/components/transaction/InstantCards';
 import { SpendingPlanSummary } from '@/components/spendingPlan/SpendingPlanSummary';
+import { SpendingHeatmap } from '@/components/analytics/SpendingHeatmap';
 import { StreakBadge } from '@/components/engagement/StreakBadge';
 import { EndOfDayCard } from '@/components/engagement/EndOfDayCard';
 import { ChartCard } from '@/components/charts/ChartCard';
@@ -118,6 +119,7 @@ export function DashboardView() {
   const { data: balance, isLoading: balanceLoading } = useBalance();
   const { data: investments } = useInvestments();
   const { data: plan } = useSpendingPlan();
+  const { data: heatmap } = useSpendingHeatmap();
 
   // Gate the whole data region on the three queries that feed it, so the user
   // never sees half-filled cards (zeros, "No goals yet") flash before the real
@@ -267,6 +269,16 @@ export function DashboardView() {
           />
         </ChartCard>
       </div>
+
+      {/* Spending activity heatmap — last 12 months of daily expense */}
+      {heatmap && heatmap.total > 0 && (
+        <Card>
+          <SectionHeader title="Spending activity" subtitle="Daily expense over the last 12 months" icon={CalendarClock} />
+          <div className="mt-4">
+            <SpendingHeatmap days={heatmap.days} peak={heatmap.peak} total={heatmap.total} currency={heatmap.currency ?? currency} />
+          </div>
+        </Card>
+      )}
 
       {/* Investment stats — only when user has investments */}
       {invList.length > 0 && (
