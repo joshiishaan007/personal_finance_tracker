@@ -131,6 +131,9 @@ export const ENDPOINTS = {
     json: '/api/export/json',
     transactionsCsv: '/api/export/transactions/csv',
   },
+  import: {
+    json: '/api/import/json',
+  },
   user: {
     preferences: '/api/user/preferences',
     account: '/api/user/account',

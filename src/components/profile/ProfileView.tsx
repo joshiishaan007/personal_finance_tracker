@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
-  Trophy, Medal, Award, Sprout, Download, FileSpreadsheet, FileText,
+  Trophy, Medal, Award, Sprout, Download, FileSpreadsheet, FileText, Upload,
   CalendarDays, ShieldAlert, Trash2, AlertTriangle, History, type LucideIcon,
 } from 'lucide-react';
 import { ExportReportDialog } from '@/components/profile/ExportReportDialog';
@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ENDPOINTS } from '@/lib/endpoints';
 import { fmtDate } from '@/lib/utils';
 import { useTrash } from '@/hooks/useTrash';
-import { useDeleteAccount, useExportJson } from '@/hooks/useUser';
+import { useDeleteAccount, useExportJson, useImportJson } from '@/hooks/useUser';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -36,13 +36,38 @@ export function ProfileView() {
   const [confirmEmail, setConfirmEmail] = useState('');
   const [pdfOpen, setPdfOpen] = useState(false);
   const [trashOpen, setTrashOpen] = useState(false);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const exportData = useExportJson();
+  const importData = useImportJson();
   const deleteAccount = useDeleteAccount();
   const { data: trash } = useTrash();
 
   function onDelete() {
     deleteAccount.mutate(confirmEmail, { onSuccess: () => void logout() });
+  }
+
+  async function onPickBackup(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // let the user re-pick the same file later
+    if (!file) return;
+    setImportMsg(null);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(await file.text());
+    } catch {
+      setImportMsg('That file is not valid JSON.');
+      return;
+    }
+    importData.mutate(parsed, {
+      onSuccess: (r) =>
+        setImportMsg(
+          `Restored ${r.transactions} transactions, ${r.categories} categories, ${r.budgets} budgets, ${r.goals} goals` +
+            (r.skipped ? ` · ${r.skipped} already present.` : '.'),
+        ),
+      onError: () => setImportMsg('Import failed — please check the file and try again.'),
+    });
   }
 
   if (!user) return null;
@@ -100,6 +125,17 @@ export function ProfileView() {
               Export JSON
             </Button>
           </div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+            <div className="min-w-0">
+              <Text className="font-medium">Restore from backup</Text>
+              <Text variant="small">Import a JSON export — existing data is kept</Text>
+            </div>
+            <Button variant="secondary" size="sm" loading={importData.isPending} onClick={() => fileRef.current?.click()} leftIcon={<Upload size={15} strokeWidth={2.2} />} className="w-full sm:w-36 shrink-0">
+              Import JSON
+            </Button>
+          </div>
+          <Input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={onPickBackup} />
+          {importMsg && <Text variant="small" className="text-slate-500">{importMsg}</Text>}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
             <div className="min-w-0">
               <Text className="font-medium">Profit &amp; loss report</Text>

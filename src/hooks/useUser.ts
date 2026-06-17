@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { ENDPOINTS } from '@/lib/endpoints';
+import type { ImportResult } from '@/shared';
 
 export function useUpdatePreferences(refetchUser?: () => Promise<void>) {
   const qc = useQueryClient();
@@ -19,6 +20,22 @@ export function useDeleteAccount() {
   return useMutation({
     mutationFn: (confirmEmail: string) =>
       api.delete(ENDPOINTS.user.account, { data: { confirmEmail } }),
+  });
+}
+
+export function useImportJson() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (backup: unknown) =>
+      api.post<{ data: ImportResult }>(ENDPOINTS.import.json, backup).then((r) => r.data.data),
+    onSuccess: () => {
+      for (const key of [
+        ['transactions'], ['trash'], ['categories'], ['budgets'], ['goals'],
+        ['analytics'], ['spendingPlan'], ['engagement'], ['balance'],
+      ]) {
+        void qc.invalidateQueries({ queryKey: key });
+      }
+    },
   });
 }
 
