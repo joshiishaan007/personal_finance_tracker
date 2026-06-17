@@ -24,6 +24,9 @@ const ReactQueryDevtools =
 const PERSIST_KEYS = new Set([
   'analytics', 'balance', 'transactions', 'categories', 'user',
   'spendingPlan', 'investments', 'recurring',
+  // Form options + transaction-page widgets so they work offline (instant cards
+  // carry the category/icon/colour the add-form needs; debts feed the owe lists).
+  'instantCards', 'debts',
   'goals', 'lifeGoals', 'goalsSummary', 'goalsToday', 'contributionHeatmap',
 ]);
 

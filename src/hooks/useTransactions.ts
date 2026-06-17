@@ -131,11 +131,38 @@ export function useCreateTransaction() {
   });
 }
 
+// Patch a transaction in-place across every cached transaction list (regular and
+// infinite shapes) so an offline edit shows immediately.
+function patchCachedTransaction(qc: ReturnType<typeof useQueryClient>, id: string, data: UpdateTransaction) {
+  qc.setQueriesData({ queryKey: ['transactions'] }, (old: unknown) => {
+    if (!old || typeof old !== 'object') return old;
+    const merge = (t: Transaction) => (t._id === id ? { ...t, ...data } as Transaction : t);
+    if ('pages' in old) {
+      const o = old as { pages: { items: Transaction[] }[] };
+      return { ...o, pages: o.pages.map((p) => ({ ...p, items: p.items.map(merge) })) };
+    }
+    if ('items' in old) {
+      const o = old as { items: Transaction[] };
+      return { ...o, items: o.items.map(merge) };
+    }
+    return old;
+  });
+}
+
 export function useUpdateTransaction(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: UpdateTransaction) => api.patch(ENDPOINTS.transactions.detail(id), data),
+    mutationFn: async (data: UpdateTransaction) => {
+      if (isOffline()) {
+        // Queue the edit (replays on reconnect) and reflect it in the cache now.
+        await enqueue(ENDPOINTS.transactions.detail(id), 'PATCH', data);
+        patchCachedTransaction(qc, id, data);
+        return;
+      }
+      return api.patch(ENDPOINTS.transactions.detail(id), data);
+    },
     onSuccess: () => {
+      if (isOffline()) return; // keep the optimistic cache; OfflineSync refreshes on reconnect
       void qc.invalidateQueries({ queryKey: ['transactions'] });
       void qc.invalidateQueries({ queryKey: ['analytics'] });
       void qc.invalidateQueries({ queryKey: ['spendingPlan'] });
@@ -143,11 +170,34 @@ export function useUpdateTransaction(id: string) {
   });
 }
 
+function removeCachedTransaction(qc: ReturnType<typeof useQueryClient>, id: string) {
+  qc.setQueriesData({ queryKey: ['transactions'] }, (old: unknown) => {
+    if (!old || typeof old !== 'object') return old;
+    if ('pages' in old) {
+      const o = old as { pages: { items: Transaction[]; total: number }[] };
+      return { ...o, pages: o.pages.map((p) => ({ ...p, items: p.items.filter((t) => t._id !== id), total: Math.max(0, p.total - 1) })) };
+    }
+    if ('items' in old) {
+      const o = old as { items: Transaction[]; total: number };
+      return { ...o, items: o.items.filter((t) => t._id !== id), total: Math.max(0, o.total - 1) };
+    }
+    return old;
+  });
+}
+
 export function useDeleteTransaction() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(ENDPOINTS.transactions.detail(id)),
+    mutationFn: async (id: string) => {
+      if (isOffline()) {
+        await enqueue(ENDPOINTS.transactions.detail(id), 'DELETE', undefined);
+        removeCachedTransaction(qc, id);
+        return;
+      }
+      return api.delete(ENDPOINTS.transactions.detail(id));
+    },
     onSuccess: () => {
+      if (isOffline()) return; // keep the optimistic removal; OfflineSync refreshes on reconnect
       void qc.invalidateQueries({ queryKey: ['transactions'] });
       void qc.invalidateQueries({ queryKey: ['trash'] });
       void qc.invalidateQueries({ queryKey: ['analytics'] });
