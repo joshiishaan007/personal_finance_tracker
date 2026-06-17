@@ -30,6 +30,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useMode } from '@/contexts/ModeContext';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { NotificationBell } from '@/components/NotificationBell';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { ModeSwitcher } from '@/components/layout/ModeSwitcher';
@@ -138,8 +139,14 @@ function Avatar({ src, name }: { src?: string; name: string }) {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const { mode } = useMode();
+  const online = useOnlineStatus();
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
+
+  // Goals/tasks can't be created offline (no offline write-queue for them), so
+  // hide the add-FAB in Goals mode when offline. Finance keeps it — transaction
+  // creation is offline-queued.
+  const showFab = online || mode !== 'goals';
 
   useEffect(() => { setMoreOpen(false); }, [pathname]);
 
@@ -266,13 +273,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           {/* Center FAB cell — explicitly centered (not via abspos static position) */}
           <div className="relative">
-            <Link
-              href={fab.href}
-              aria-label={fab.label}
-              className="absolute left-1/2 -top-5 -translate-x-1/2 w-14 h-14 rounded-full bg-aurora shadow-glow grid place-items-center text-white no-underline hover:no-underline active:scale-95 transition-transform"
-            >
-              <Plus size={26} strokeWidth={2.4} className="text-white" />
-            </Link>
+            {showFab && (
+              <Link
+                href={fab.href}
+                aria-label={fab.label}
+                className="absolute left-1/2 -top-5 -translate-x-1/2 w-14 h-14 rounded-full bg-aurora shadow-glow grid place-items-center text-white no-underline hover:no-underline active:scale-95 transition-transform"
+              >
+                <Plus size={26} strokeWidth={2.4} className="text-white" />
+              </Link>
+            )}
           </div>
 
           {bottomRightNav.map(renderBottomItem)}

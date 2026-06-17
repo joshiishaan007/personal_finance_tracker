@@ -17,6 +17,12 @@ export function OfflineSync() {
       void queryClient.invalidateQueries({ queryKey: ['transactions'] });
       void queryClient.invalidateQueries({ queryKey: ['analytics'] });
       void queryClient.invalidateQueries({ queryKey: ['engagement'] });
+      // Goal logs queued offline replay too — refresh the goal caches they touch.
+      void queryClient.invalidateQueries({ queryKey: ['lifeGoals'] });
+      void queryClient.invalidateQueries({ queryKey: ['goalsToday'] });
+      void queryClient.invalidateQueries({ queryKey: ['goalsSummary'] });
+      void queryClient.invalidateQueries({ queryKey: ['contributions'] });
+      void queryClient.invalidateQueries({ queryKey: ['contributionHeatmap'] });
     }
 
     if (navigator.onLine) void sync();

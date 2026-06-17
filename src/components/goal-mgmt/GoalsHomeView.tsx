@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus, Flame, Target, ListChecks, CircleAlert, Trophy, TrendingUp, Check } from 'lucide-react';
 import { useLifeGoals, useGoalsSummary, useGoalsToday, lifeGoalProgress, type LifeGoal, type GoalToday } from '@/hooks/useLifeGoals';
 import { useContributionHeatmap, useLogContribution } from '@/hooks/useContributions';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { LifeGoalForm } from '@/components/goal-mgmt/LifeGoalForm';
 import { ActivityHeatmap } from '@/components/goal-mgmt/ActivityHeatmap';
 import { Card } from '@/components/ui/Card';
@@ -42,6 +43,7 @@ export function GoalsHomeView() {
   const { data: summary } = useGoalsSummary();
   const { data: today } = useGoalsToday();
   const logContribution = useLogContribution();
+  const online = useOnlineStatus();
 
   const { from, to } = useHeatmapRange();
   const { data: heatmap } = useContributionHeatmap(from, to);
@@ -78,9 +80,11 @@ export function GoalsHomeView() {
           <Heading level={1} className="text-2xl">Goals</Heading>
           <Text variant="small" className="mt-0.5 text-slate-500">Everything you&apos;re working toward</Text>
         </div>
-        <Button size="sm" variant="gradient" leftIcon={<Plus size={15} strokeWidth={2.4} />} onClick={() => setFormOpen(true)}>
-          New goal
-        </Button>
+        {online && (
+          <Button size="sm" variant="gradient" leftIcon={<Plus size={15} strokeWidth={2.4} />} onClick={() => setFormOpen(true)}>
+            New goal
+          </Button>
+        )}
       </div>
 
       {/* Summary cards */}

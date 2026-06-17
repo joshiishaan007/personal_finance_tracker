@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { ENDPOINTS } from '@/lib/endpoints';
 import { clearQueue } from '@/lib/offlineQueue';
+import { clearPersistedCache } from '@/lib/queryPersister';
 
 interface UserData {
   _id: string;
@@ -63,6 +64,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   function applyUser(u: UserData | null) {
     setUser(u);
     writeCache(u);
+    // No signed-in user (logout / expired token) → drop the offline snapshot so
+    // financial data never rehydrates for the next person on a shared device.
+    if (!u) void clearPersistedCache().catch(() => {});
   }
 
   async function fetchUser() {
