@@ -33,21 +33,6 @@ export interface TagAnalytics extends CurrencyMeta {
   totalTagged: number;
 }
 
-export interface SpendingHeatmapData extends CurrencyMeta {
-  days: Array<{ date: string; value: number }>;
-  peak: number;
-  total: number;
-}
-
-export function useSpendingHeatmap() {
-  return useQuery({
-    queryKey: ['analytics', 'spendingHeatmap'],
-    queryFn: () =>
-      api.get<{ data: SpendingHeatmapData }>(ENDPOINTS.analytics.spendingHeatmap).then((r) => r.data.data),
-    staleTime: 5 * 60 * 1000,
-  });
-}
-
 export function useTagAnalytics(year: number, month: number, enabled = true) {
   return useQuery({
     queryKey: ['analytics', 'tags', year, month],

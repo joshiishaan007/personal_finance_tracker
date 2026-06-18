@@ -106,15 +106,6 @@ export const analyticsRepository = {
       { $sort: { '_id.year': 1, '_id.month': 1 } },
     ]),
 
-  // Daily expense totals within a date range — feeds the spending heatmap.
-  dailyExpenseTotals: (userId: string, start: Date, end: Date): Promise<{ date: string; value: number }[]> =>
-    TransactionModel.aggregate([
-      { $match: { userId: new Types.ObjectId(userId), type: 'expense', date: { $gte: start, $lte: end } } },
-      { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } }, value: { $sum: '$amount' } } },
-      { $project: { _id: 0, date: '$_id', value: 1 } },
-      { $sort: { date: 1 } },
-    ]) as Promise<{ date: string; value: number }[]>,
-
   // Expense totals + counts per tag within a date range (one row per tag used).
   tagBreakdown: (userId: string, start: Date, end: Date, limit: number): Promise<AggRow[]> =>
     TransactionModel.aggregate([
