@@ -56,6 +56,15 @@ describe('Goals domain (real Mongo)', () => {
     expect(s.streak).toBeGreaterThanOrEqual(1); // contributed today
   });
 
+  it('clearing targetValue on update unsets it instead of keeping the old value', async () => {
+    const userId = new Types.ObjectId().toString();
+    const goal = await makeGoal(userId, { targetValue: 10 });
+    const r = await lifeGoalService.update(userId, String(goal._id), { targetValue: null });
+    expect(r.state).toBe('ok');
+    const doc = await LifeGoalModel.findById(goal._id).lean();
+    expect(doc?.targetValue).toBeUndefined();
+  });
+
   it('toggling a task done stamps doneAt', async () => {
     const userId = new Types.ObjectId().toString();
     const t = await taskService.create(userId, { title: 'Write', done: false, priority: 'med' });

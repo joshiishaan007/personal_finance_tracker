@@ -140,7 +140,22 @@ export function LifeGoalForm({ open, onClose, editGoal }: Props) {
       targetDate,
     };
     if (editGoal) {
-      update.mutate({ ...shared, status: v.status ?? 'active' }, { onSuccess: onClose });
+      // On edit, an emptied field must be sent as null (not undefined, which JSON
+      // drops) so the server clears it instead of keeping the old value.
+      update.mutate(
+        {
+          ...shared,
+          status:         v.status ?? 'active',
+          description:    shared.description ?? null,
+          targetValue:    shared.targetValue ?? null,
+          dailyTarget:    shared.dailyTarget ?? null,
+          trackDays:      shared.trackDays ?? null,
+          unit:           shared.unit ?? null,
+          manualProgress: shared.manualProgress ?? null,
+          targetDate:     shared.targetDate ?? null,
+        },
+        { onSuccess: onClose },
+      );
     } else {
       const payload: CreateLifeGoal = { ...shared, status: 'active', currentValue: 0 };
       create.mutate(payload, { onSuccess: onClose });
