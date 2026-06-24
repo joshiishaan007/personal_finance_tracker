@@ -7,8 +7,19 @@ export const lifeGoalRepository = {
 
   create: (doc: Record<string, unknown>) => LifeGoalModel.create(doc),
 
-  update: (userId: string, id: string, set: Record<string, unknown>) =>
-    LifeGoalModel.findOneAndUpdate({ _id: id, userId }, { $set: set }, { new: true }).lean(),
+  update: (userId: string, id: string, patch: Record<string, unknown>) => {
+    // A null/undefined value clears the field ($unset); a real value writes it ($set).
+    const $set: Record<string, unknown> = {};
+    const $unset: Record<string, ''> = {};
+    for (const [k, v] of Object.entries(patch)) {
+      if (v === null || v === undefined) $unset[k] = '';
+      else $set[k] = v;
+    }
+    const update: Record<string, unknown> = {};
+    if (Object.keys($set).length) update.$set = $set;
+    if (Object.keys($unset).length) update.$unset = $unset;
+    return LifeGoalModel.findOneAndUpdate({ _id: id, userId }, update, { new: true }).lean();
+  },
 
   remove: (userId: string, id: string) =>
     LifeGoalModel.findOneAndDelete({ _id: id, userId }).lean(),

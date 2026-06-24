@@ -26,7 +26,17 @@ export const CreateLifeGoalSchema = z.object({
   targetDate: z.string().datetime().optional(),
 });
 
-export const UpdateLifeGoalSchema = CreateLifeGoalSchema.partial();
+// On update, an explicit null clears the field (mapped to $unset server-side);
+// an absent key leaves the stored value untouched.
+export const UpdateLifeGoalSchema = CreateLifeGoalSchema.partial().extend({
+  description: z.string().max(1000).nullable().optional(),
+  targetValue: z.number().positive().nullable().optional(),
+  dailyTarget: z.number().positive().nullable().optional(),
+  trackDays: z.array(z.number().int().min(0).max(6)).max(7).nullable().optional(),
+  unit: z.string().max(20).nullable().optional(),
+  manualProgress: z.number().min(0).max(100).nullable().optional(),
+  targetDate: z.string().datetime().nullable().optional(),
+});
 
 export type CreateLifeGoal = z.infer<typeof CreateLifeGoalSchema>;
 export type UpdateLifeGoal = z.infer<typeof UpdateLifeGoalSchema>;
