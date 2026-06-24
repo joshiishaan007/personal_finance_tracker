@@ -1,0 +1,12 @@
+# pnpm 11 reads overrides + build approvals here (no longer from package.json).
+overrides:
+  glob@>=10.2.0 <10.5.0: '>=10.5.0'
+
+# Which dependencies may run install/build scripts. esbuild (build binary),
+# mongodb-memory-server (test mongo binary) and unrs-resolver (lint native
+# bindings) need theirs; core-js's is only a funding notice.
+allowBuilds:
+  esbuild: true
+  mongodb-memory-server: true
+  unrs-resolver: true
+  core-js: false
