@@ -87,6 +87,44 @@ export function useInfiniteTransactions(filters: Omit<Partial<TransactionFilter>
   });
 }
 
+function echoFromCreate(data: CreateTransaction, id: string): Transaction {
+  return {
+    _id: id,
+    amount: data.amount,
+    type: data.type,
+    categoryId: data.categoryId,
+    date: data.date,
+    incurredAt: data.incurredAt,
+    note: data.note,
+    tags: data.tags ?? [],
+    paymentMethod: data.paymentMethod,
+    isRecurring: data.isRecurring ?? false,
+    investmentId: data.investmentId,
+  };
+}
+
+// Insert a transaction at the top of every cached list — both the regular `items`
+// shape and the infinite `pages` shape — so it shows instantly. Non-list caches
+// (e.g. ['transactions','frequent']) pass through untouched.
+function insertOptimisticTransaction(qc: ReturnType<typeof useQueryClient>, echo: Transaction) {
+  qc.setQueriesData({ queryKey: ['transactions'] }, (old: unknown) => {
+    if (!old || typeof old !== 'object') return old;
+    if ('pages' in old) {
+      const o = old as { pages: { items: Transaction[]; total: number; hasMore: boolean }[] };
+      if (o.pages.length === 0) return old;
+      return {
+        ...o,
+        pages: o.pages.map((p, i) => (i === 0 ? { ...p, items: [echo, ...p.items], total: p.total + 1 } : p)),
+      };
+    }
+    if ('items' in old) {
+      const o = old as { items: Transaction[]; total: number };
+      return { ...o, items: [echo, ...o.items], total: o.total + 1 };
+    }
+    return old;
+  });
+}
+
 export function useCreateTransaction() {
   const qc = useQueryClient();
   return useMutation({
@@ -98,29 +136,27 @@ export function useCreateTransaction() {
         // Persist to the IndexedDB queue; it replays on reconnect. The server
         // upserts on clientId, so a replay never duplicates.
         await enqueue(ENDPOINTS.transactions.create, 'POST', body);
-        const echo: Transaction = {
-          _id: clientId, amount: body.amount, type: body.type, categoryId: body.categoryId,
-          date: body.date, note: body.note, tags: body.tags ?? [],
-          paymentMethod: body.paymentMethod, isRecurring: body.isRecurring ?? false,
-        };
-        // Optimistically show it in any cached transaction list (skip non-list
-        // caches like ['transactions','frequent']).
-        qc.setQueriesData({ queryKey: ['transactions'] }, (old: unknown) => {
-          if (old && typeof old === 'object' && 'items' in old) {
-            const o = old as { items: Transaction[]; total: number; hasMore: boolean };
-            return { ...o, items: [echo, ...o.items], total: o.total + 1 };
-          }
-          return old;
-        });
-        // Offline: clientId will become the server _id on replay.
         return clientId;
       }
 
       const resp = await api.post<{ data: { _id: string } }>(ENDPOINTS.transactions.create, body);
       return resp.data.data._id;
     },
-    onSuccess: () => {
-      // Offline: keep the optimistic cache and skip refetches that would just fail.
+    // Show the row immediately instead of blocking on the POST + a list refetch.
+    // The temp id (clientId ≠ server _id) is a placeholder; onSettled's background
+    // refetch swaps in the authoritative row with correct ordering/filtering.
+    onMutate: async (data) => {
+      await qc.cancelQueries({ queryKey: ['transactions'] });
+      const previous = qc.getQueriesData({ queryKey: ['transactions'] });
+      insertOptimisticTransaction(qc, echoFromCreate(data, data.clientId ?? newClientId()));
+      return { previous };
+    },
+    // The DB insert (or offline enqueue) failed → roll the optimistic row back.
+    onError: (_err, _data, ctx) => {
+      ctx?.previous?.forEach(([key, snapshot]) => qc.setQueryData(key, snapshot));
+    },
+    onSettled: () => {
+      // Offline: keep the optimistic cache; OfflineSync reconciles on reconnect.
       if (isOffline()) return;
       void qc.invalidateQueries({ queryKey: ['transactions'] });
       void qc.invalidateQueries({ queryKey: ['analytics'] });
